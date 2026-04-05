@@ -362,7 +362,7 @@ async function fetchMetars() {
     data.forEach(item => {
       const id = (item.icaoId || item.icaoid || item.stationId || '').toUpperCase();
       const raw = item.rawOb || item.raw_text || item.rawText;
-      const category = item.flightCategory || item.flight_category;
+      const category = item.fltCat || item.flightCategory || item.flight_category;
       if (!id) return;
       const airport = airports.find(a => a.id === id);
       if (airport && category && colors[category]) airport.cat = category;
