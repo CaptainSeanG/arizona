@@ -361,9 +361,12 @@ function showTooltip(airportId,clientX,clientY){
   const temp=record&&(record.temp!==undefined?record.temp:record.tempC);
   const clouds=record&&Array.isArray(record.clouds)&&record.clouds.length?record.clouds[0]:null;
   const decodedParts=[category];
-  if (airport.obsDate) {
-  const ageMin = Math.round((Date.now() - airport.obsDate.getTime()) / 60000);
-  decodedParts.push(`${ageMin}m old`);
+  if (airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime())) {
+  const ageMs = Date.now() - airport.obsDate.getTime();
+  if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
+    const ageMin = Math.round(ageMs / 60000);
+    decodedParts.push(`${ageMin}m old`);
+  }
 }
 
   if(visibility) decodedParts.push(`${visibility}SM`);
@@ -406,12 +409,6 @@ function attachTooltipHandlers(){
 function drawHomeCompass(){
   homeCompass.innerHTML='';
   const recordAgeMin = (() => {
-  const airport = airports.find(a => a.id === homeAirportId);
-  if (!airport || !airport.obsDate) return null;
-  return Math.max(0, Math.round((Date.now() - airport.obsDate.getTime()) / 60000));
-})();
-
-const recordAgeMin = (() => {
   const airport = airports.find(a => a.id === homeAirportId);
   if (!airport || !airport.obsDate) return null;
 
