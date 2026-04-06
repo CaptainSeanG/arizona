@@ -1,0 +1,37 @@
+name: Update METAR Cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-metars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch METAR JSON
+        run: |
+          curl -L "https://aviationweather.gov/api/data/metar?format=json&ids=KPHX,KDVT,KSDL,KFFZ,KIWA,KCHD,KGYR,KGEU,KLUF,KTUS,KDUG,KOLS,KPGA,KFLG,KINW,KPRC,KGCN,KSEZ,KSOW,KSAD,KSJN,KIGM,KHII,KIFP,KNYL,KRYN,KCGZ" -o metars.json
+
+      - name: Validate JSON
+        run: |
+          python - <<'PY'
+          import json
+          with open("metars.json","r",encoding="utf-8") as f:
+              json.load(f)
+          print("metars.json is valid JSON")
+          PY
+
+      - name: Commit updated metars.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metars.json
+          git diff --cached --quiet || git commit -m "Update metars.json"
+          git push
