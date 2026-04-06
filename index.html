@@ -434,7 +434,7 @@ function attachTooltipHandlers(){
 function drawHomeCompass(){
   homeCompass.innerHTML='';
 
-  const title=document.createElementNS('http://www.w3.org/2000/svg','text');
+  const airport = airports.find(a => a.id === homeAirportId);
   const record = metarRecordById.get(homeAirportId);
 
   let recordAgeMin = null;
@@ -449,9 +449,9 @@ function drawHomeCompass(){
     ? 'HOME AIRPORT WIND'
     : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
 
-  const cx=110,cy=110,r=84;
+  const cx = 110, cy = 110, r = 84;
 
-  const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
   ring.setAttribute('cx',cx);
   ring.setAttribute('cy',cy);
   ring.setAttribute('r',r);
@@ -459,24 +459,24 @@ function drawHomeCompass(){
   homeCompass.appendChild(ring);
 
   [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
-    const rad=(deg-90)*Math.PI/180;
-    const tx=cx+Math.cos(rad)*(r-14);
-    const ty=cy+Math.sin(rad)*(r-14)+4;
-    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    const rad = (deg-90) * Math.PI / 180;
+    const tx = cx + Math.cos(rad) * (r-14);
+    const ty = cy + Math.sin(rad) * (r-14) + 4;
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x',tx);
     t.setAttribute('y',ty);
     t.setAttribute('class','compass-card');
-    t.textContent=label;
+    t.textContent = label;
     homeCompass.appendChild(t);
   });
 
-  for(let deg=0;deg<360;deg+=30){
-    const rad=(deg-90)*Math.PI/180;
-    const x1=cx+Math.cos(rad)*(r-8);
-    const y1=cy+Math.sin(rad)*(r-8);
-    const x2=cx+Math.cos(rad)*(r-2);
-    const y2=cy+Math.sin(rad)*(r-2);
-    const tick=document.createElementNS('http://www.w3.org/2000/svg','line');
+  for(let deg=0; deg<360; deg+=30){
+    const rad = (deg-90) * Math.PI / 180;
+    const x1 = cx + Math.cos(rad) * (r-8);
+    const y1 = cy + Math.sin(rad) * (r-8);
+    const x2 = cx + Math.cos(rad) * (r-2);
+    const y2 = cy + Math.sin(rad) * (r-2);
+    const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
     tick.setAttribute('x1',x1);
     tick.setAttribute('y1',y1);
     tick.setAttribute('x2',x2);
@@ -485,67 +485,65 @@ function drawHomeCompass(){
     homeCompass.appendChild(tick);
   }
 
-  const record=metarRecordById.get(homeAirportId);
-
-  const title=document.createElementNS('http://www.w3.org/2000/svg','text');
+  const title = document.createElementNS('http://www.w3.org/2000/svg','text');
   title.setAttribute('x',cx);
   title.setAttribute('y',20);
   title.setAttribute('class','compass-text');
-  title.textContent=homeAirportId||'----';
+  title.textContent = homeAirportId || '----';
   homeCompass.appendChild(title);
 
-  if(!airport||!record){
-    const sub=document.createElementNS('http://www.w3.org/2000/svg','text');
+  if(!airport || !record){
+    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
     sub.setAttribute('x',cx);
     sub.setAttribute('y',cy+6);
     sub.setAttribute('class','compass-sub');
-    sub.textContent='NO WIND DATA';
+    sub.textContent = 'NO WIND DATA';
     homeCompass.appendChild(sub);
     return;
   }
 
-  const {dir,speed,gust}=extractWind(record);
+  const {dir,speed,gust} = extractWind(record);
 
-  if(dir===undefined||dir===null||speed===undefined||speed===null||dir==='VRB'){
-    const sub=document.createElementNS('http://www.w3.org/2000/svg','text');
+  if(dir===undefined || dir===null || speed===undefined || speed===null || dir==='VRB'){
+    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
     sub.setAttribute('x',cx);
     sub.setAttribute('y',cy+6);
     sub.setAttribute('class','compass-sub');
-    sub.textContent=dir==='VRB'?`VRB ${speed||''}KT`:'NO WIND DATA';
+    sub.textContent = dir==='VRB' ? `VRB ${speed || ''}KT` : 'NO WIND DATA';
     homeCompass.appendChild(sub);
     return;
   }
 
-  const deg=Number(dir);
-  const arrowRad=(deg-90)*Math.PI/180;
-  const tipX=cx+Math.cos(arrowRad)*(r-22);
-  const tipY=cy+Math.sin(arrowRad)*(r-22);
-  const baseX=cx-Math.cos(arrowRad)*18;
-  const baseY=cy-Math.sin(arrowRad)*18;
-  const leftRad=arrowRad+Math.PI/2;
-  const rightRad=arrowRad-Math.PI/2;
-  const leftX=baseX+Math.cos(leftRad)*10;
-  const leftY=baseY+Math.sin(leftRad)*10;
-  const rightX=baseX+Math.cos(rightRad)*10;
-  const rightY=baseY+Math.sin(rightRad)*10;
+  const deg = Number(dir);
+  const arrowRad = (deg-90) * Math.PI / 180;
+  const tipX = cx + Math.cos(arrowRad) * (r-22);
+  const tipY = cy + Math.sin(arrowRad) * (r-22);
+  const baseX = cx - Math.cos(arrowRad) * 18;
+  const baseY = cy - Math.sin(arrowRad) * 18;
+  const leftRad = arrowRad + Math.PI / 2;
+  const rightRad = arrowRad - Math.PI / 2;
+  const leftX = baseX + Math.cos(leftRad) * 10;
+  const leftY = baseY + Math.sin(leftRad) * 10;
+  const rightX = baseX + Math.cos(rightRad) * 10;
+  const rightY = baseY + Math.sin(rightRad) * 10;
 
-  const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  const arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
   arrow.setAttribute('points',`${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`);
   arrow.setAttribute('class','compass-arrow');
   homeCompass.appendChild(arrow);
 
-  const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
   text.setAttribute('x',cx);
   text.setAttribute('y',cy+52);
   text.setAttribute('class','compass-text');
-  text.textContent=`${String(dir).padStart(3,'0')}° ${speed}KT${gust?` G${gust}`:''}`;
+  text.textContent = `${String(dir).padStart(3,'0')}° ${speed}KT${gust ? ` G${gust}` : ''}`;
   homeCompass.appendChild(text);
 
-  const sub=document.createElementNS('http://www.w3.org/2000/svg','text');
+  const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
   sub.setAttribute('x',cx);
   sub.setAttribute('y',cy+72);
   sub.setAttribute('class','compass-sub');
-  sub.textContent=airport.stale?'STALE METAR':'LIVE WIND';
+  sub.textContent = airport.stale ? 'STALE METAR' : 'LIVE WIND';
   homeCompass.appendChild(sub);
 }
 
