@@ -145,6 +145,7 @@ let showMetarHud=false;
 let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
+let compassIntervalId=null;
 
 function albersAZ(lat,lon){
   const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=29.5*Math.PI/180,phi2=45.5*Math.PI/180,phi0=34.2*Math.PI/180,lambda0=-111.7*Math.PI/180;
@@ -627,21 +628,20 @@ function draw(){
 function stopIntervals(){
   if(clockIntervalId) clearInterval(clockIntervalId);
   if(metarIntervalId) clearInterval(metarIntervalId);
+  if(compassIntervalId) clearInterval(compassIntervalId);
   clockIntervalId=null;
   metarIntervalId=null;
-  if(compassIntervalId) clearInterval(compassIntervalId);
-compassIntervalId=null;
+  compassIntervalId=null;
 }
 
 function startApp(){
+  stopIntervals();
   welcomeOverlay.classList.remove('show');
   draw();
   fetchMetars();
-  stopIntervals();
   clockIntervalId=setInterval(drawClocks,1000);
   metarIntervalId=setInterval(fetchMetars,5*60*1000);
   compassIntervalId=setInterval(drawHomeCompass,60000);
-  let compassIntervalId=null;
 }
 
 function initWelcome(){
