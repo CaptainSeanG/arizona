@@ -405,7 +405,15 @@ function attachTooltipHandlers(){
 
 function drawHomeCompass(){
   homeCompass.innerHTML='';
-  homeTitle.textContent='HOME AIRPORT WIND';
+  const recordAgeMin = (() => {
+  const airport = airports.find(a => a.id === homeAirportId);
+  if (!airport || !airport.obsDate) return null;
+  return Math.max(0, Math.round((Date.now() - airport.obsDate.getTime()) / 60000));
+})();
+
+homeTitle.textContent = recordAgeMin === null
+  ? 'HOME AIRPORT WIND'
+  : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
 
   const cx=110,cy=110,r=84;
 
