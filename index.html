@@ -330,12 +330,11 @@ function parseObsTime(record){
   return null;
 }
 
-  function isStaleObs(obsDate){
+function isStaleObs(obsDate){
   if (!obsDate) return false;
 
   const ageMs = Date.now() - obsDate.getTime();
 
-  // ignore impossible / bad parses
   if (ageMs < 0) return false;
   if (ageMs > 36 * 3600000) return false;
 
