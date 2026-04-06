@@ -329,8 +329,9 @@ function attachTooltipHandlers() {
 function updateHudButtons() {
   fullscreenBtn.textContent = document.fullscreenElement ? 'EXIT FULL' : 'FULLSCREEN';
   kioskBtn.textContent = kioskMode ? 'EXIT KIOSK' : 'KIOSK';
-  metarStatusBtn.textContent = lastMetarError ? `METAR: ${liveMetarStatus} (${lastMetarError})` : `METAR: ${liveMetarStatus}`;
-}`;
+  metarStatusBtn.textContent = lastMetarError
+    ? `METAR: ${liveMetarStatus} (${lastMetarError})`
+    : `METAR: ${liveMetarStatus}`;
 }
 
 async function toggleFullscreen() {
