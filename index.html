@@ -357,27 +357,27 @@ async function toggleKioskMode() {
 }
 
 async function fetchMetars() {
-  const ids = airports.map(a => a.id).join(',');
-  const url = `https://aviationweather.gov/api/data/metar?format=json&ids=${ids}`;
+  const url = `./metars.json?t=${Date.now()}`;
   liveMetarStatus = 'FETCHING';
   lastMetarError = '';
   updateHudButtons();
 
   try {
-    const response = await fetch(url, { cache: 'no-store', mode: 'cors' });
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const text = await response.text();
-    let data;
+    let payload;
     try {
-      data = JSON.parse(text);
+      payload = JSON.parse(text);
     } catch (parseError) {
-      console.warn('METAR response was not valid JSON:', text.slice(0, 400));
+      console.warn('metars.json was not valid JSON:', text.slice(0, 400));
       throw new Error('BAD JSON');
     }
 
-    if (!Array.isArray(data)) {
-      console.warn('Unexpected METAR payload shape:', data);
+    const data = Array.isArray(payload) ? payload : (Array.isArray(payload.data) ? payload.data : null);
+    if (!data) {
+      console.warn('Unexpected metars.json payload shape:', payload);
       throw new Error('BAD SHAPE');
     }
 
@@ -395,13 +395,13 @@ async function fetchMetars() {
       metarRecordById.set(id, item);
     });
 
-    liveMetarStatus = metarById.size ? `LIVE ${metarById.size}` : 'NO RAW';
+    liveMetarStatus = metarById.size ? `CACHE ${metarById.size}` : 'NO RAW';
     if (!metarById.size && data.length) console.log('METAR sample payload:', data[0]);
 
     try {
       drawDots();
     } catch (renderError) {
-      console.error('drawDots failed after live METAR fetch:', renderError);
+      console.error('drawDots failed after cached METAR load:', renderError);
       throw new Error(`DRAW ${renderError.message}`);
     }
 
@@ -410,7 +410,7 @@ async function fetchMetars() {
     liveMetarStatus = 'FALLBACK';
     lastMetarError = (error && error.message) ? error.message : 'UNKNOWN';
     updateHudButtons();
-    console.warn('METAR fetch failed; using fallback tooltip text.', error);
+    console.warn('Cached METAR load failed; using fallback tooltip text.', error);
   }
 }
 
