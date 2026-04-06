@@ -629,6 +629,8 @@ function stopIntervals(){
   if(metarIntervalId) clearInterval(metarIntervalId);
   clockIntervalId=null;
   metarIntervalId=null;
+  if(compassIntervalId) clearInterval(compassIntervalId);
+compassIntervalId=null;
 }
 
 function startApp(){
@@ -638,7 +640,8 @@ function startApp(){
   stopIntervals();
   clockIntervalId=setInterval(drawClocks,1000);
   metarIntervalId=setInterval(fetchMetars,5*60*1000);
-  setInterval(drawHomeCompass, 60000);
+  compassIntervalId=setInterval(drawHomeCompass,60000);
+  let compassIntervalId=null;
 }
 
 function initWelcome(){
