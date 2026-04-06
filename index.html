@@ -485,7 +485,6 @@ function drawHomeCompass(){
     homeCompass.appendChild(tick);
   }
 
-  const airport=airports.find(a=>a.id===homeAirportId);
   const record=metarRecordById.get(homeAirportId);
 
   const title=document.createElementNS('http://www.w3.org/2000/svg','text');
