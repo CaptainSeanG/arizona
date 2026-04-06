@@ -440,6 +440,29 @@ function runTests() {
   assert(typeof extractAirportId === 'function' && typeof extractRawMetar === 'function', 'METAR parsing helpers should exist');
 }
 
+function initializeApp() {
+  try {
+    runTests();
+  } catch (error) {
+    console.error('runTests failed:', error);
+    liveMetarStatus = 'TEST ERR';
+    lastMetarError = error.message || 'UNKNOWN';
+  }
+
+  try {
+    draw();
+  } catch (error) {
+    console.error('draw failed:', error);
+    liveMetarStatus = 'DRAW ERR';
+    lastMetarError = error.message || 'UNKNOWN';
+  }
+
+  updateHudButtons();
+  fetchMetars();
+  setInterval(drawClocks, 1000);
+  setInterval(fetchMetars, 5 * 60 * 1000);
+}
+
 function draw() {
   drawMap();
   drawDots();
@@ -463,12 +486,7 @@ document.addEventListener('keydown', async (event) => {
   }
 });
 
-runTests();
-draw();
-updateHudButtons();
-fetchMetars();
-setInterval(drawClocks, 1000);
-setInterval(fetchMetars, 5 * 60 * 1000);
+initializeApp();
 </script>
 </body>
 </html>
