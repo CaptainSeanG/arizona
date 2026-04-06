@@ -556,10 +556,10 @@ async function fetchMetars(){
       metarRecordById.set(id,item);
 
       if(airport){
-        const obs=parseObsTime(item);
-        airport.stale = isStaleObs(obs);
-airport.obsDate = obs;
-      }
+  const obs = parseObsTime(item);
+  airport.stale = isStaleObs(obs);
+  airport.obsDate = obs;
+}
     });
 
     liveMetarStatus=metarById.size?`CACHE ${metarById.size}`:'NO RAW';
