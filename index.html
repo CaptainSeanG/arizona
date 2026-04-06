@@ -433,24 +433,21 @@ function attachTooltipHandlers(){
 
 function drawHomeCompass(){
   homeCompass.innerHTML='';
-  const recordAgeMin = (() => {
+
   const airport = airports.find(a => a.id === homeAirportId);
-  if (!airport || !airport.obsDate) return null;
+  const record = metarRecordById.get(homeAirportId);
 
-  const obs = airport.obsDate;
-  if (!(obs instanceof Date) || isNaN(obs.getTime())) return null;
+  let recordAgeMin = null;
+  if (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime())) {
+    const ageMs = Date.now() - airport.obsDate.getTime();
+    if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
+      recordAgeMin = Math.round(ageMs / 60000);
+    }
+  }
 
-  const ageMs = Date.now() - obs.getTime();
-
-  if (ageMs < 0) return null;
-  if (ageMs > 24 * 60 * 60 * 1000) return null;
-
-  return Math.round(ageMs / 60000);
-})();
-
-homeTitle.textContent = recordAgeMin === null
-  ? 'HOME AIRPORT WIND'
-  : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
+  homeTitle.textContent = recordAgeMin === null
+    ? 'HOME AIRPORT WIND'
+    : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
 
   const cx=110,cy=110,r=84;
 
