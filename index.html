@@ -55,8 +55,7 @@
   <div id="tooltip"></div>
   <div id="hud">
     <button id="metarStatusBtn" class="hud-btn" type="button">METAR: STARTING</button>
-    <button id="fullscreenBtn" class="hud-btn" type="button">FULLSCREEN</button>
-    <button id="kioskBtn" class="hud-btn" type="button">KIOSK</button>
+    
   </div>
 </div>
 <script>
@@ -101,8 +100,8 @@ const map = document.getElementById('map');
 const dots = document.getElementById('dots');
 const clocks = document.getElementById('clocks');
 const tooltip = document.getElementById('tooltip');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const kioskBtn = document.getElementById('kioskBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn'); // may be null (hidden UI)
+const kioskBtn = document.getElementById('kioskBtn'); // may be null (hidden UI)
 const metarStatusBtn = document.getElementById('metarStatusBtn');
 const metarById = new Map();
 const metarRecordById = new Map();
@@ -359,10 +358,15 @@ function attachTooltipHandlers() {
 }
 
 function updateHudButtons() {
-  fullscreenBtn.textContent = document.fullscreenElement ? 'EXIT FULL' : 'FULLSCREEN';
-  kioskBtn.textContent = kioskMode ? 'EXIT KIOSK' : 'KIOSK';
+  if (fullscreenBtn) fullscreenBtn.textContent = document.fullscreenElement ? 'EXIT FULL' : 'FULLSCREEN';
+  if (kioskBtn) kioskBtn.textContent = kioskMode ? 'EXIT KIOSK' : 'KIOSK';
   const updatedLabel = lastMetarUpdatedAt
     ? ` • ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC', hour12: false })}Z`
+    : '';
+  metarStatusBtn.textContent = lastMetarError
+    ? `METAR: ${liveMetarStatus} (${lastMetarError})`
+    : `METAR: ${liveMetarStatus}${updatedLabel}`;
+})}Z`
     : '';
   metarStatusBtn.textContent = lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
@@ -507,8 +511,8 @@ function draw() {
   drawClocks();
 }
 
-fullscreenBtn.addEventListener('click', toggleFullscreen);
-kioskBtn.addEventListener('click', toggleKioskMode);
+if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
+if (kioskBtn) kioskBtn.addEventListener('click', toggleKioskMode);
 document.addEventListener('fullscreenchange', updateHudButtons);
 document.addEventListener('keydown', async (event) => {
   if (event.key === 'f' || event.key === 'F') {
