@@ -546,7 +546,15 @@ homeTitle.textContent = recordAgeMin === null
   sub.setAttribute('x',cx);
   sub.setAttribute('y',cy+72);
   sub.setAttribute('class','compass-sub');
-  sub.textContent = airport.stale ? 'STALE METAR' : 'LIVE WIND';
+  const obs = parseObsTime(record);
+if (obs instanceof Date && !isNaN(obs.getTime())) {
+  const ageMin = Math.round((Date.now() - obs.getTime()) / 60000);
+  sub.textContent = ageMin >= 0 && ageMin <= 24 * 60
+    ? `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`
+    : (airport.stale ? 'STALE METAR' : 'NO AGE DATA');
+} else {
+  sub.textContent = airport.stale ? 'STALE METAR' : 'NO AGE DATA';
+}
   homeCompass.appendChild(sub);
 }
 
@@ -624,6 +632,7 @@ function startApp(){
   stopIntervals();
   clockIntervalId=setInterval(drawClocks,1000);
   metarIntervalId=setInterval(fetchMetars,5*60*1000);
+  setInterval(drawHomeCompass, 60000);
 }
 
 function initWelcome(){
