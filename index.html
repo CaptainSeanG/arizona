@@ -360,6 +360,7 @@ function attachTooltipHandlers() {
 function updateHudButtons() {
   if (fullscreenBtn) fullscreenBtn.textContent = document.fullscreenElement ? 'EXIT FULL' : 'FULLSCREEN';
   if (kioskBtn) kioskBtn.textContent = kioskMode ? 'EXIT KIOSK' : 'KIOSK';
+
   const updatedLabel = lastMetarUpdatedAt
     ? ` • ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB', {
         hour: '2-digit',
@@ -369,11 +370,7 @@ function updateHudButtons() {
         hour12: false
       })}Z`
     : '';
-  metarStatusBtn.textContent = lastMetarError
-    ? `METAR: ${liveMetarStatus} (${lastMetarError})`
-    : `METAR: ${liveMetarStatus}${updatedLabel}`;
-})}Z`
-    : '';
+
   metarStatusBtn.textContent = lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
     : `METAR: ${liveMetarStatus}${updatedLabel}`;
