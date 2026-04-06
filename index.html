@@ -434,7 +434,7 @@ function attachTooltipHandlers(){
 function drawHomeCompass(){
   homeCompass.innerHTML='';
 
-  const airport = airports.find(a => a.id === homeAirportId);
+  const title=document.createElementNS('http://www.w3.org/2000/svg','text');
   const record = metarRecordById.get(homeAirportId);
 
   let recordAgeMin = null;
