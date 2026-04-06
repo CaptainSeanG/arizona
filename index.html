@@ -292,37 +292,55 @@ function extractRawMetar(item){
 }
 
 function parseObsTime(record){
-  const value=
-    record.obsTime||
-    record.observation_time||
-    record.reportTime||
-    record.report_time||
-    record.obsTimeUtc;
+  const candidates = [
+    record.obsTime,
+    record.observation_time,
+    record.reportTime,
+    record.report_time,
+    record.obsTimeUtc
+  ].filter(Boolean);
 
-  if(value){
-    let d=new Date(value);
-    if(!Number.isNaN(d.getTime())) return d;
-
-    const s=String(value).trim();
-    if(s.length===7&&s.endsWith('Z')){
-      const day=Number(s.slice(0,2));
-      const hour=Number(s.slice(2,4));
-      const minute=Number(s.slice(4,6));
-      if(Number.isFinite(day)&&Number.isFinite(hour)&&Number.isFinite(minute)){
-        const now=new Date();
-        d=new Date(Date.UTC(
-          now.getUTCFullYear(),
-          now.getUTCMonth(),
-          day,
-          hour,
-          minute,
-          0
-        ));
-        if(d.getTime()>now.getTime()+3600000) d.setUTCMonth(d.getUTCMonth()-1);
-        return d;
-      }
+  for (const value of candidates) {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) {
+      return d;
     }
   }
+
+  const raw = record.rawOb || record.raw_text || record.rawText || record.raw || '';
+  const m = String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
+  if (m) {
+    const now = new Date();
+    const d = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      Number(m[1]),
+      Number(m[2]),
+      Number(m[3]),
+      0
+    ));
+
+    if (d.getTime() > now.getTime() + 6 * 3600000) {
+      d.setUTCMonth(d.getUTCMonth() - 1);
+    }
+
+    return d;
+  }
+
+  return null;
+}
+
+  function isStaleObs(obsDate){
+  if (!obsDate) return false;
+
+  const ageMs = Date.now() - obsDate.getTime();
+
+  // ignore impossible / bad parses
+  if (ageMs < 0) return false;
+  if (ageMs > 36 * 3600000) return false;
+
+  return ageMs > 150 * 60 * 1000;
+}
 
   const raw=record.rawOb||record.raw_text||record.rawText||record.raw||'';
   const m=String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
@@ -361,6 +379,10 @@ function showTooltip(airportId,clientX,clientY){
   const temp=record&&(record.temp!==undefined?record.temp:record.tempC);
   const clouds=record&&Array.isArray(record.clouds)&&record.clouds.length?record.clouds[0]:null;
   const decodedParts=[category];
+  if (airport.obsDate) {
+  const ageMin = Math.round((Date.now() - airport.obsDate.getTime()) / 60000);
+  decodedParts.push(`${ageMin}m old`);
+}
 
   if(visibility) decodedParts.push(`${visibility}SM`);
   if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
@@ -536,7 +558,8 @@ async function fetchMetars(){
 
       if(airport){
         const obs=parseObsTime(item);
-        airport.stale=obs ? ((Date.now()-obs.getTime())>150*60*1000) : false;
+        airport.stale = isStaleObs(obs);
+airport.obsDate = obs;
       }
     });
 
