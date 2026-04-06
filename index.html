@@ -455,6 +455,36 @@ homeTitle.textContent = recordAgeMin === null
   ? 'HOME AIRPORT WIND'
   : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
 
+Replace it with this:
+
+let recordAgeMin = null;
+
+const obsForTitle =
+  (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
+    ? airport.obsDate
+    : (record ? parseObsTime(record) : null);
+
+const fallbackUpdated =
+  lastMetarUpdatedAt ? new Date(lastMetarUpdatedAt) : null;
+
+const bestTitleDate =
+  (obsForTitle instanceof Date && !isNaN(obsForTitle.getTime()))
+    ? obsForTitle
+    : ((fallbackUpdated instanceof Date && !isNaN(fallbackUpdated.getTime()))
+        ? fallbackUpdated
+        : null);
+
+if (bestTitleDate) {
+  const ageMs = Date.now() - bestTitleDate.getTime();
+  if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
+    recordAgeMin = Math.round(ageMs / 60000);
+  }
+}
+
+homeTitle.textContent = recordAgeMin === null
+  ? 'HOME AIRPORT WIND'
+  : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
+
   const cx = 110, cy = 110, r = 84;
 
   const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
