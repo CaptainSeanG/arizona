@@ -341,24 +341,7 @@ function isStaleObs(obsDate){
   return ageMs > 150 * 60 * 1000;
 }
 
-  const raw=record.rawOb||record.raw_text||record.rawText||record.raw||'';
-  const m=String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
-  if(m){
-    const now=new Date();
-    const d=new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      Number(m[1]),
-      Number(m[2]),
-      Number(m[3]),
-      0
-    ));
-    if(d.getTime()>now.getTime()+3600000) d.setUTCMonth(d.getUTCMonth()-1);
-    return d;
-  }
-
-  return null;
-}
+  
 
 function extractWind(record){
   const dir=record.wdir!==undefined?record.wdir:(record.windDir!==undefined?record.windDir:record.wind_direction);
