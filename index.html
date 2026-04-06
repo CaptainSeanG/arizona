@@ -545,25 +545,37 @@ homeTitle.textContent = recordAgeMin === null
   text.textContent = `${String(dir).padStart(3,'0')}° ${speed}KT${gust ? ` G${gust}` : ''}`;
   homeCompass.appendChild(text);
 
-  const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
-  sub.setAttribute('x',cx);
-  sub.setAttribute('y',cy+72);
-  sub.setAttribute('class','compass-sub');
-  const obs =
+const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+sub.setAttribute('x',cx);
+sub.setAttribute('y',cy+72);
+sub.setAttribute('class','compass-sub');
+
+const obs =
   (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
     ? airport.obsDate
-    : parseObsTime(record);
+    : (record ? parseObsTime(record) : null);
 
-if (obs instanceof Date && !isNaN(obs.getTime())) {
-  const ageMin = Math.round((Date.now() - obs.getTime()) / 60000);
-  sub.textContent = ageMin >= 0 && ageMin <= 24 * 60
-    ? `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`
-    : (airport.stale ? 'STALE METAR' : 'NO AGE DATA');
+const fallbackUpdated =
+  lastMetarUpdatedAt ? new Date(lastMetarUpdatedAt) : null;
+
+const bestDate =
+  (obs instanceof Date && !isNaN(obs.getTime()))
+    ? obs
+    : ((fallbackUpdated instanceof Date && !isNaN(fallbackUpdated.getTime()))
+        ? fallbackUpdated
+        : null);
+
+if (bestDate) {
+  const ageMin = Math.round((Date.now() - bestDate.getTime()) / 60000);
+  sub.textContent =
+    ageMin >= 0 && ageMin <= 24 * 60
+      ? `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`
+      : (airport.stale ? 'STALE METAR' : 'NO AGE DATA');
 } else {
   sub.textContent = airport.stale ? 'STALE METAR' : 'NO AGE DATA';
-} 
-  homeCompass.appendChild(sub);
 }
+
+homeCompass.appendChild(sub);
 
 async function fetchMetars(){
   const url=`./metars.json?t=${Date.now()}`;
