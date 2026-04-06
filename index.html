@@ -361,7 +361,17 @@ function updateHudButtons() {
   if (fullscreenBtn) fullscreenBtn.textContent = document.fullscreenElement ? 'EXIT FULL' : 'FULLSCREEN';
   if (kioskBtn) kioskBtn.textContent = kioskMode ? 'EXIT KIOSK' : 'KIOSK';
   const updatedLabel = lastMetarUpdatedAt
-    ? ` • ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC', hour12: false }
+    ? ` • ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'UTC',
+        hour12: false
+      })}Z`
+    : '';
+  metarStatusBtn.textContent = lastMetarError
+    ? `METAR: ${liveMetarStatus} (${lastMetarError})`
+    : `METAR: ${liveMetarStatus}${updatedLabel}`;
 })}Z`
     : '';
   metarStatusBtn.textContent = lastMetarError
