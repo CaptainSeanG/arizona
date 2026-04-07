@@ -23,9 +23,9 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px}
 #windToggle{
   position:absolute;
-  right:34px;
+  right:91px;
   top:286px;
-  width:260px;
+  width:140px;
   height:34px;
   border:1px solid rgba(249,115,22,.55);
   background:rgba(0,0,0,.88);
@@ -349,8 +349,8 @@ function drawClocks(){
     : 'WAITING';
 
   const panel=svgEl('g');
-  const clockX=896;
-  const boxWidth=300;
+  const clockX=818;
+  const boxWidth=278;
   const box1=svgEl('rect',{x:clockX,y:40,rx:18,ry:18,width:boxWidth,height:92,class:'clock-box'});
   const box2=svgEl('rect',{x:clockX,y:146,rx:18,ry:18,width:boxWidth,height:92,class:'clock-box'});
   panel.appendChild(box1);
