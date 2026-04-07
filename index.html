@@ -560,7 +560,7 @@ homeTitle.textContent = recordAgeMin === null
 
   const text = document.createElementNS('http://www.w3.org/2000/svg','text');
   text.setAttribute('x',cx);
-  text.setAttribute('y',cy+85);
+  text.setAttribute('y',cy+95);
   text.setAttribute('class','compass-text');
   text.textContent = `${String(dir).padStart(3,'0')}° ${speed}KT${gust ? ` G${gust}` : ''}`;
   homeCompass.appendChild(text);
