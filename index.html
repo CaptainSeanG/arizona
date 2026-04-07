@@ -521,6 +521,7 @@ function drawHomeCompass(){
   const ageMin=getDisplayAgeMinutes(record,airport);
   const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
   const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
+  const badgeTextColor=badgeColor===colors.VFR?'#020617':'#f8fafc';
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
@@ -548,7 +549,7 @@ function drawHomeCompass(){
     fill:badgeColor,
     stroke:badgeStroke
   });
-  const statusText=svgEl('text',{x:220,y:34,class:'windsock-status'},airport?airport.cat:'WAITING');
+  const statusText=svgEl('text',{x:220,y:34,class:'windsock-status',fill:badgeTextColor},airport?airport.cat:'WAITING');
   homeCompass.appendChild(statusBadge);
   homeCompass.appendChild(statusText);
 
