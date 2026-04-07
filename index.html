@@ -24,12 +24,12 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 #windToggle{
   position:absolute;
   right:22px;
-  top:274px;
-  width:112px;
+  top:286px;
+  width:160px;
   height:34px;
-  border:1px solid rgba(148,163,184,.45);
-  background:rgba(2,6,23,.78);
-  color:#e5eefc;
+  border:1px solid rgba(249,115,22,.55);
+  background:rgba(0,0,0,.88);
+  color:#f97316;
   border-radius:999px;
   font-family:'Orbitron',sans-serif;
   font-size:12px;
@@ -37,8 +37,9 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
   z-index:30;
 }
 #windToggle.is-off{
-  background:rgba(15,23,42,.42);
-  color:#94a3b8;
+  background:rgba(0,0,0,.58);
+  color:rgba(249,115,22,.55);
+  border-color:rgba(249,115,22,.32);
 }
 #tooltip{position:absolute;display:none;pointer-events:none;max-width:360px;background:rgba(2,6,23,.96);color:#e5eefc;border:1px solid #64748b;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35;z-index:20}
 #tooltip .tip-id{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:4px}
@@ -127,7 +128,7 @@ body.hide-windsock #homePanel{display:none}
     <g id="clocks"></g>
   </svg>
   <div id="tooltip"></div>
-  <button id="windToggle" type="button">WIND</button>
+  <button id="windToggle" type="button">WINDSOCK</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
@@ -348,15 +349,16 @@ function drawClocks(){
     : 'WAITING';
 
   const panel=svgEl('g');
-  const box1=svgEl('rect',{x:796,y:40,rx:18,ry:18,width:300,height:92,class:'clock-box'});
-  const box2=svgEl('rect',{x:796,y:146,rx:18,ry:18,width:300,height:92,class:'clock-box'});
+  const clockX=896;
+  const box1=svgEl('rect',{x:clockX,y:40,rx:18,ry:18,width:200,height:92,class:'clock-box'});
+  const box2=svgEl('rect',{x:clockX,y:146,rx:18,ry:18,width:200,height:92,class:'clock-box'});
   panel.appendChild(box1);
-  panel.appendChild(svgEl('text',{x:821,y:74,class:'clock-title'},'ZULU'));
-  panel.appendChild(svgEl('text',{x:821,y:114,class:'clock-time'},zulu));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:74,class:'clock-title'},'ZULU'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:114,class:'clock-time'},zulu));
   panel.appendChild(box2);
-  panel.appendChild(svgEl('text',{x:821,y:180,class:'clock-title'},'LOCAL'));
-  panel.appendChild(svgEl('text',{x:821,y:220,class:'clock-time'},local));
-  panel.appendChild(svgEl('text',{x:821,y:262,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:180,class:'clock-title'},'LOCAL'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:220,class:'clock-time'},local));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:262,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
   clocks.appendChild(panel);
 }
 
