@@ -438,26 +438,7 @@ function drawHomeCompass(){
   const airport = airports.find(a => a.id === homeAirportId);
   const record = metarRecordById.get(homeAirportId);
 
-let recordAgeMin = null;
-const obsForTitle =
-  (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
-    ? airport.obsDate
-    : (record ? parseObsTime(record) : null);
-
-if (obsForTitle instanceof Date && !isNaN(obsForTitle.getTime())) {
-  const ageMs = Date.now() - obsForTitle.getTime();
-  if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
-    recordAgeMin = Math.round(ageMs / 60000);
-  }
-}
-
-homeTitle.textContent = recordAgeMin === null
-  ? 'HOME AIRPORT WIND'
-  : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
-
-Replace it with this:
-
-let recordAgeMin = null;
+  let recordAgeMin = null;
 
 const obsForTitle =
   (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
