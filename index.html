@@ -20,6 +20,7 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 .clock-box{fill:rgba(2,6,23,.78);stroke:#64748b;stroke-width:2}
 .clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
 .clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
+.clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
 #windToggle{
   position:absolute;
@@ -345,7 +346,9 @@ function drawClocks(){
   clocks.innerHTML='';
   const now=new Date();
   const zulu=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false});
-  const local=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  const localParts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).split(' ');
+  const localTime=localParts[0]||'';
+  const localMeridiem=localParts[1]||'';
   const updatedZulu=lastMetarUpdatedAt
     ? new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+'Z'
     : 'WAITING';
@@ -364,7 +367,8 @@ function drawClocks(){
   panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`));
   panel.appendChild(box2);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},local));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},localTime));
+  panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+67,class:'clock-meridiem'},localMeridiem));
   clocks.appendChild(panel);
   positionWindToggle();
 }
