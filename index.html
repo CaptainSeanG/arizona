@@ -515,7 +515,7 @@ function parseSockStyle(style=''){
   return vars;
 }
 
-function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
+function buildSockBand(group,startX,width,startHeight,endHeight,cls,style='',flowOffset=0,totalFlowSteps=1){
   const vars=parseSockStyle(style);
   const flutter=parseFloat((vars['--flutter']||'0').replace('px',''))||0;
   const bend=parseFloat((vars['--bend']||'0').replace('deg',''))||0;
@@ -528,7 +528,9 @@ function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
     const segmentWidth=(i===steps-1)?(startX+width-cursorX):(width/steps);
     const segStartHeight=startHeight+(endHeight-startHeight)*t0;
     const segEndHeight=startHeight+(endHeight-startHeight)*t1;
-    const segStyle=`--flutter:${(flutter+i*0.14).toFixed(2)}px;--bend:${(bend+i*0.30).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
+    const globalIndex=flowOffset+i;
+    const flowT=totalFlowSteps>1?globalIndex/(totalFlowSteps-1):0;
+    const segStyle=`--flutter:${(flutter+flowT*1.0).toFixed(2)}px;--bend:${(bend+flowT*2.1).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
     buildSockSegment(group,cursorX,segmentWidth,segStartHeight,segEndHeight,cls,segStyle);
     cursorX+=segmentWidth;
   }
@@ -638,7 +640,9 @@ function drawHomeCompass(){
     {startX:53,width:14,startHeight:10,endHeight:8,cls:'windsock-segment-white',flutter:0.2,bend:0.65,ms:90},
     {startX:65,width:13,startHeight:8,endHeight:6,cls:'windsock-segment-orange',flutter:0.26,bend:0.9,ms:120}
   ];
-  segmentDefs.slice(0,segmentCount).forEach(def=>{
+  const visibleDefs=segmentDefs.slice(0,segmentCount);
+  const totalFlowSteps=visibleDefs.length*4;
+  visibleDefs.forEach((def,index)=>{
     buildSockBand(
       segments,
       def.startX,
@@ -646,7 +650,9 @@ function drawHomeCompass(){
       def.startHeight,
       def.endHeight,
       def.cls,
-      `--flutter:${(Number(flutterPx)+def.flutter).toFixed(2)}px;--bend:${(Number(bendDeg)+def.bend).toFixed(2)}deg;--cloth-ms:${clothMs+def.ms}ms`
+      `--flutter:${(Number(flutterPx)+def.flutter).toFixed(2)}px;--bend:${(Number(bendDeg)+def.bend).toFixed(2)}deg;--cloth-ms:${clothMs+def.ms}ms`,
+      index*4,
+      totalFlowSteps
     );
   });
 
