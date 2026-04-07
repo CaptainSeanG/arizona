@@ -485,7 +485,7 @@ const recordAgeMin = getDisplayAgeMinutes(record, airport);
 
 homeTitle.textContent = recordAgeMin === null
   ? 'HOME AIRPORT WIND'
-;
+  : `HOME AIRPORT WIND - ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
 
   const cx = 110, cy = 110, r = 84;
 
