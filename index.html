@@ -369,7 +369,7 @@ function isStaleObs(obsDate){
   const ageMs=Date.now()-obsDate.getTime();
   if(ageMs<0) return false;
   if(ageMs>36*3600000) return false;
-  return ageMs>150*60*1000;
+  return ageMs>60*60*1000;
 }
 
 function extractWind(record){
