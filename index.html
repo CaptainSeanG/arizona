@@ -23,8 +23,8 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px}
 #windToggle{
   position:absolute;
-  right:91px;
-  top:140px;
+  left:0;
+  top:0;
   width:140px;
   height:28px;
   border:1px solid rgba(249,115,22,.55);
@@ -210,6 +210,7 @@ let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
+const CLOCK_LAYOUT={x:818,width:278,boxHeight:92,box1Y:40,box2Y:178};
 
 function svgEl(name,attrs={},text=''){
   const el=document.createElementNS('http://www.w3.org/2000/svg',name);
@@ -349,18 +350,39 @@ function drawClocks(){
     : 'WAITING';
 
   const panel=svgEl('g');
-  const clockX=818;
-  const boxWidth=278;
-  const box1=svgEl('rect',{x:clockX,y:40,rx:18,ry:18,width:boxWidth,height:92,class:'clock-box'});
-  const box2=svgEl('rect',{x:clockX,y:146,rx:18,ry:18,width:boxWidth,height:92,class:'clock-box'});
+  const clockX=CLOCK_LAYOUT.x;
+  const boxWidth=CLOCK_LAYOUT.width;
+  const box1Y=CLOCK_LAYOUT.box1Y;
+  const box2Y=CLOCK_LAYOUT.box2Y;
+  const boxHeight=CLOCK_LAYOUT.boxHeight;
+  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
   panel.appendChild(box1);
-  panel.appendChild(svgEl('text',{x:clockX+25,y:74,class:'clock-title'},'ZULU'));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:114,class:'clock-time'},zulu));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+74,class:'clock-time'},zulu));
   panel.appendChild(box2);
-  panel.appendChild(svgEl('text',{x:clockX+25,y:180,class:'clock-title'},'LOCAL'));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:220,class:'clock-time'},local));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:262,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+74,class:'clock-time'},local));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+116,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
   clocks.appendChild(panel);
+  positionWindToggle();
+}
+
+function positionWindToggle(){
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const viewWidth=1118;
+  const viewHeight=1196;
+  const scale=Math.min(wrapRect.width/viewWidth,wrapRect.height/viewHeight);
+  const offsetX=(wrapRect.width-viewWidth*scale)/2;
+  const offsetY=(wrapRect.height-viewHeight*scale)/2;
+  const buttonWidth=140;
+  const buttonHeight=28;
+  const centerX=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width/2)*scale;
+  const gapTop=offsetY+(CLOCK_LAYOUT.box1Y+CLOCK_LAYOUT.boxHeight)*scale;
+  const gapBottom=offsetY+CLOCK_LAYOUT.box2Y*scale;
+  const top=gapTop+Math.max(0,(gapBottom-gapTop-buttonHeight)/2);
+  windToggle.style.left=`${Math.round(centerX-buttonWidth/2)}px`;
+  windToggle.style.top=`${Math.round(top)}px`;
 }
 
 function getFallbackMetar(airport){
@@ -764,6 +786,8 @@ document.getElementById('homePanel').addEventListener('click',()=>{
   welcomeInput.value=homeAirportId||'';
   setTimeout(()=>welcomeInput.focus(),50);
 });
+
+window.addEventListener('resize',positionWindToggle);
 
 initWelcome();
 </script>
