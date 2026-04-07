@@ -80,7 +80,6 @@ body.hide-windsock #homePanel{display:none}
 .windsock-outline{fill:none;stroke:rgba(15,23,42,.65);stroke-width:1}
 .windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
 .windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
-.wind-alert{animation:windAlertBlink .7s infinite steps(1)}
 .windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
 .windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
 .windsock-badge{stroke-width:1.5}
@@ -710,11 +709,11 @@ function drawHomeCompass(){
   const gustAlert=gust&&Number(gust)>=20;
   const windText=svgEl('text',{x:123,y:248,class:'windsock-copy'});
   const dirSpan=svgEl('tspan',{},`${String(windDir).padStart(3,'0')} DEG `);
-  const speedSpan=svgEl('tspan',{class:speedAlert?'wind-alert':''},`${windSpeed}KT`);
+  const speedSpan=svgEl('tspan',speedAlert?{style:'animation:windAlertBlink .7s infinite steps(1); fill:#ffffff;'}:{},`${windSpeed}KT`);
   windText.appendChild(dirSpan);
   windText.appendChild(speedSpan);
   if(gust){
-    const gustSpan=svgEl('tspan',{class:gustAlert?'wind-alert':''},` G${gust}`);
+    const gustSpan=svgEl('tspan',gustAlert?{style:'animation:windAlertBlink .7s infinite steps(1); fill:#ffffff;'}:{},` G${gust}`);
     windText.appendChild(gustSpan);
   }
 
