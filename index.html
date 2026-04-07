@@ -516,17 +516,22 @@ function parseSockStyle(style=''){
 }
 
 function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
-  const firstWidth=width/2;
-  const secondWidth=width-firstWidth;
-  const midHeight=startHeight+(endHeight-startHeight)*(firstWidth/width);
   const vars=parseSockStyle(style);
   const flutter=parseFloat((vars['--flutter']||'0').replace('px',''))||0;
   const bend=parseFloat((vars['--bend']||'0').replace('deg',''))||0;
   const clothMs=parseFloat((vars['--cloth-ms']||'0').replace('ms',''))||0;
-  const styleA=`--flutter:${flutter.toFixed(2)}px;--bend:${bend.toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
-  const styleB=`--flutter:${(flutter+0.24).toFixed(2)}px;--bend:${(bend+0.45).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs+55)}ms`;
-  buildSockSegment(group,startX,firstWidth,startHeight,midHeight,cls,styleA);
-  buildSockSegment(group,startX+firstWidth,secondWidth,midHeight,endHeight,cls,styleB);
+  const steps=4;
+  let cursorX=startX;
+  for(let i=0;i<steps;i++){
+    const t0=i/steps;
+    const t1=(i+1)/steps;
+    const segmentWidth=(i===steps-1)?(startX+width-cursorX):(width/steps);
+    const segStartHeight=startHeight+(endHeight-startHeight)*t0;
+    const segEndHeight=startHeight+(endHeight-startHeight)*t1;
+    const segStyle=`--flutter:${(flutter+i*0.18).toFixed(2)}px;--bend:${(bend+i*0.38).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs+i*38)}ms`;
+    buildSockSegment(group,cursorX,segmentWidth,segStartHeight,segEndHeight,cls,segStyle);
+    cursorX+=segmentWidth;
+  }
 }
 
 function getSockSegmentCount(speed){
