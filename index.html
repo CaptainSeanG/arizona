@@ -576,6 +576,14 @@ const bestDate =
     ? fallbackUpdatedSub
     : null);
 
+  console.log('HOME DEBUG', {
+  homeAirportId,
+  airportObsDate: airport?.obsDate,
+  parsedObs: record ? parseObsTime(record) : null,
+  lastMetarUpdatedAt,
+  bestDate
+});
+
 if (bestDate) {
   const ageMin = Math.round((Date.now() - bestDate.getTime()) / 60000);
   sub.textContent =
