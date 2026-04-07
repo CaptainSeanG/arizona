@@ -171,7 +171,36 @@ const imageBounds={
   maxY:Math.max(...imageOutline.map(p=>p[1]))
 };
 
-function project(lat,lon){
+
+  function getDisplayAgeMinutes(record, airport){
+  const primary =
+    (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
+      ? airport.obsDate
+      : (record ? parseObsTime(record) : null);
+
+  if (primary instanceof Date && !isNaN(primary.getTime())) {
+    const ageMs = Date.now() - primary.getTime();
+    if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
+      return Math.round(ageMs / 60000);
+    }
+  }
+
+  if (lastMetarUpdatedAt) {
+    const fallback = new Date(lastMetarUpdatedAt);
+    if (!isNaN(fallback.getTime())) {
+      const ageMs = Date.now() - fallback.getTime();
+      if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
+        return Math.round(ageMs / 60000);
+      }
+    }
+  }
+
+  return null;
+}
+  
+  
+  
+  function project(lat,lon){
   const p=albersAZ(lat,lon);
   const nx=(p.x-projBounds.minX)/(projBounds.maxX-projBounds.minX);
   const ny=(p.y-projBounds.minY)/(projBounds.maxY-projBounds.minY);
@@ -462,6 +491,8 @@ if (bestTitleDate) {
   }
 }
 
+const recordAgeMin = getDisplayAgeMinutes(record, airport);
+
 homeTitle.textContent = recordAgeMin === null
   ? 'HOME AIRPORT WIND'
   : `HOME AIRPORT WIND - UPDATED ${recordAgeMin} MIN${recordAgeMin === 1 ? '' : 'S'} AGO`;
@@ -560,6 +591,13 @@ const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
 sub.setAttribute('x',cx);
 sub.setAttribute('y',cy+72);
 sub.setAttribute('class','compass-sub');
+
+const ageMin = getDisplayAgeMinutes(record, airport);
+sub.textContent = ageMin === null
+  ? (airport.stale ? 'STALE METAR' : 'NO AGE DATA')
+  : `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`;
+
+homeCompass.appendChild(sub);
 
 const obs =
   (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
