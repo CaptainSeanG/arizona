@@ -42,7 +42,7 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   cursor:pointer;
 }
 #homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:8px;text-align:center}
-#homeCompass{width:246px;height:266px;display:block;margin:0 auto}
+#homeCompass{width:246px;height:266px;display:block;margin:0 auto;background:transparent}
 .windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
 .windsock-boom{stroke:#e2e8f0;stroke-width:4;stroke-linecap:round}
 .windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
@@ -58,8 +58,8 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 .windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
 .windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;text-anchor:middle}
 .windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
-.windsock-status{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
-.windsock-badge{fill:rgba(15,23,42,.78);stroke:rgba(148,163,184,.4);stroke-width:1.5}
+.windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.windsock-badge{stroke-width:1.5}
 .windsock-rig{animation:sockRigWave var(--wave-ms,1400ms) ease-in-out infinite;transform-origin:0 0}
 .windsock-segment{animation:sockCloth var(--cloth-ms,720ms) ease-in-out infinite alternate;transform-origin:0 0}
 .windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
@@ -460,6 +460,7 @@ function drawHomeCompass(){
 
   homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:67,class:'windsock-ring'}));
   homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:46,class:'windsock-ring-inner'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
   [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
     const rad=(deg-90)*Math.PI/180;
     const tx=123+Math.cos(rad)*54;
