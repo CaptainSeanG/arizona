@@ -467,29 +467,7 @@ function drawHomeCompass(){
   const airport = airports.find(a => a.id === homeAirportId);
   const record = metarRecordById.get(homeAirportId);
 
-  let recordAgeMin = null;
-
-const obsForTitle =
-  (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
-    ? airport.obsDate
-    : (record ? parseObsTime(record) : null);
-
-const fallbackUpdated =
-  lastMetarUpdatedAt ? new Date(lastMetarUpdatedAt) : null;
-
-const bestTitleDate =
-  (obsForTitle instanceof Date && !isNaN(obsForTitle.getTime()))
-    ? obsForTitle
-    : ((fallbackUpdated instanceof Date && !isNaN(fallbackUpdated.getTime()))
-        ? fallbackUpdated
-        : null);
-
-if (bestTitleDate) {
-  const ageMs = Date.now() - bestTitleDate.getTime();
-  if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
-    recordAgeMin = Math.round(ageMs / 60000);
-  }
-}
+ 
 
 const recordAgeMin = getDisplayAgeMinutes(record, airport);
 
@@ -597,42 +575,7 @@ sub.textContent = ageMin === null
   ? (airport.stale ? 'STALE METAR' : 'NO AGE DATA')
   : `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`;
 
-homeCompass.appendChild(sub);
-
-const obs =
-  (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
-    ? airport.obsDate
-    : (record ? parseObsTime(record) : null);
-
-const fallbackUpdatedSub =
-  lastMetarUpdatedAt ? new Date(lastMetarUpdatedAt) : null;
-
-const bestDate =
-  (obs instanceof Date && !isNaN(obs.getTime()))
-    ? obs
-    : ((fallbackUpdatedSub instanceof Date && !isNaN(fallbackUpdatedSub.getTime()))
-    ? fallbackUpdatedSub
-    : null);
-
-  console.log('HOME DEBUG', {
-  homeAirportId,
-  airportObsDate: airport?.obsDate,
-  parsedObs: record ? parseObsTime(record) : null,
-  lastMetarUpdatedAt,
-  bestDate
-});
-
-if (bestDate) {
-  const ageMin = Math.round((Date.now() - bestDate.getTime()) / 60000);
-  sub.textContent =
-    ageMin >= 0 && ageMin <= 24 * 60
-      ? `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`
-      : (airport.stale ? 'STALE METAR' : 'NO AGE DATA');
-} else {
-  sub.textContent = airport.stale ? 'STALE METAR' : 'NO AGE DATA';
-}
-
-homeCompass.appendChild(sub);
+  homeCompass.appendChild(sub);
 }
 async function fetchMetars(){
   const url=`./metars.json?t=${Date.now()}`;
