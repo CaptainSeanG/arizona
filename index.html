@@ -25,15 +25,16 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
   position:absolute;
   left:0;
   top:0;
-  width:140px;
-  height:28px;
+  width:278px;
+  height:38px;
   border:1px solid rgba(249,115,22,.55);
   background:rgba(0,0,0,.88);
   color:#f97316;
   border-radius:999px;
   font-family:'Orbitron',sans-serif;
-  font-size:11px;
-  letter-spacing:1px;
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:2px;
   z-index:30;
 }
 #windToggle.is-off{
@@ -375,14 +376,14 @@ function positionWindToggle(){
   const scale=Math.min(wrapRect.width/viewWidth,wrapRect.height/viewHeight);
   const offsetX=(wrapRect.width-viewWidth*scale)/2;
   const offsetY=(wrapRect.height-viewHeight*scale)/2;
-  const buttonWidth=140;
-  const buttonHeight=28;
-  const centerX=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width/2)*scale;
-  const gapTop=offsetY+(CLOCK_LAYOUT.box1Y+CLOCK_LAYOUT.boxHeight)*scale;
-  const gapBottom=offsetY+CLOCK_LAYOUT.box2Y*scale;
-  const top=gapTop+Math.max(0,(gapBottom-gapTop-buttonHeight)/2);
-  windToggle.style.left=`${Math.round(centerX-buttonWidth/2)}px`;
+  const buttonWidth=278;
+  const buttonHeight=38;
+  const left=offsetX+CLOCK_LAYOUT.x*scale;
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+18)*scale;
+  windToggle.style.left=`${Math.round(left)}px`;
   windToggle.style.top=`${Math.round(top)}px`;
+  windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
+  windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
 }
 
 function getFallbackMetar(airport){
