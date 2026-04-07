@@ -48,6 +48,10 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 .windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
 .windsock-hinge{fill:#f8fafc;stroke:#64748b;stroke-width:2}
 .windsock-ground{stroke:rgba(51,65,85,.9);stroke-width:3;stroke-linecap:round}
+.windsock-ring{fill:rgba(15,23,42,.35);stroke:rgba(148,163,184,.35);stroke-width:2}
+.windsock-ring-inner{fill:none;stroke:rgba(148,163,184,.18);stroke-width:1.5}
+.windsock-tick{stroke:rgba(148,163,184,.55);stroke-width:2}
+.windsock-card{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle}
 .windsock-segment-orange{fill:#f97316}
 .windsock-segment-white{fill:#fff7ed}
 .windsock-outline{fill:none;stroke:rgba(15,23,42,.65);stroke-width:1}
@@ -435,6 +439,15 @@ function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style='')
   group.appendChild(segment);
 }
 
+function getSockSegmentCount(speed){
+  const windSpeed=Math.max(0,Number(speed)||0);
+  if(windSpeed < 5) return 1;
+  if(windSpeed < 9) return 2;
+  if(windSpeed <= 11) return 3;
+  if(windSpeed <= 15) return 4;
+  return 5;
+}
+
 function drawHomeCompass(){
   homeCompass.innerHTML='';
   const airport=airports.find(a=>a.id===homeAirportId);
@@ -444,11 +457,27 @@ function drawHomeCompass(){
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
   homeCompass.appendChild(svgEl('rect',{x:7,y:7,width:232,height:252,rx:16,ry:16,fill:'rgba(2,6,23,.28)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
-  homeCompass.appendChild(svgEl('line',{x1:26,y1:218,x2:220,y2:218,class:'windsock-ground'}));
-  homeCompass.appendChild(svgEl('rect',{x:50,y:210,width:26,height:16,rx:4,ry:4,class:'windsock-base'}));
-  homeCompass.appendChild(svgEl('line',{x1:63,y1:216,x2:63,y2:66,class:'windsock-mast'}));
-  homeCompass.appendChild(svgEl('circle',{cx:123,y:116,r:38,fill:'rgba(15,23,42,.18)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
-  homeCompass.appendChild(svgEl('circle',{cx:123,y:116,r:8,class:'windsock-hinge'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:67,class:'windsock-ring'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:46,class:'windsock-ring-inner'}));
+  [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
+    const rad=(deg-90)*Math.PI/180;
+    const tx=123+Math.cos(rad)*54;
+    const ty=118+Math.sin(rad)*54+4;
+    homeCompass.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
+  });
+  for(let deg=0;deg<360;deg+=30){
+    const rad=(deg-90)*Math.PI/180;
+    const x1=123+Math.cos(rad)*58;
+    const y1=118+Math.sin(rad)*58;
+    const x2=123+Math.cos(rad)*65;
+    const y2=118+Math.sin(rad)*65;
+    homeCompass.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
+  }
+  homeCompass.appendChild(svgEl('line',{x1:36,y1:216,x2:210,y2:216,class:'windsock-ground'}));
+  homeCompass.appendChild(svgEl('rect',{x:112,y:206,width:22,height:14,rx:4,ry:4,class:'windsock-base'}));
+  homeCompass.appendChild(svgEl('line',{x1:123,y1:212,x2:123,y2:154,class:'windsock-mast'}));
+  homeCompass.appendChild(svgEl('line',{x1:123,y1:160,x2:123,y2:134,class:'windsock-boom'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,y:118,r:8,class:'windsock-hinge'}));
   homeCompass.appendChild(svgEl('text',{x:123,y:30,class:'windsock-airport'},homeAirportId||'----'));
 
   const statusBadge=svgEl('rect',{x:132,y:16,width:88,height:20,rx:10,ry:10,class:'windsock-badge'});
@@ -479,47 +508,66 @@ function drawHomeCompass(){
   const windSpeed=Math.max(0,Number(speed)||0);
   const gustSpeed=Math.max(windSpeed,Number(gust)||0);
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
-  const intensity=Math.min(1,(windSpeed*0.55+gustDelta*1.2)/30);
+  const segmentCount=getSockSegmentCount(windSpeed);
+  const calmFactor=Math.min(1,windSpeed/12);
+  const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
   const streamAngle=(windDir+180)%360;
-  const swayDeg=(1.2+intensity*3.8).toFixed(2);
-  const flutterPx=(0.7+intensity*1.7).toFixed(2);
-  const bendDeg=(1.4+intensity*3.1).toFixed(2);
-  const tailBend=(2.4+intensity*4.3).toFixed(2);
-  const waveMs=Math.round(2100-intensity*700);
-  const clothMs=Math.round(980-intensity*180);
-  const tailMs=Math.round(760-intensity*120);
+  const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.08).toFixed(2);
+  const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.09).toFixed(2);
+  const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.12).toFixed(2);
+  const tailBend=(1.4+calmFactor*2.7+gustDelta*0.15).toFixed(2);
+  const waveMs=Math.round(2350-intensity*650);
+  const clothMs=Math.round(1080-intensity*180);
+  const tailMs=Math.round(840-intensity*120);
 
-  const anchor=svgEl('g',{transform:'translate(123 116)'});
+  const anchor=svgEl('g',{transform:'translate(123 118)'});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
   });
   const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
   const segments=svgEl('g');
-  buildSockSegment(segments,8,28,20,17,'windsock-segment-orange',`--flutter:${flutterPx}px;--bend:${bendDeg}deg;--cloth-ms:${clothMs}ms`);
-  buildSockSegment(segments,33,24,17,13,'windsock-segment-white',`--flutter:${(Number(flutterPx)+0.4).toFixed(2)}px;--bend:${(Number(bendDeg)+0.8).toFixed(2)}deg;--cloth-ms:${clothMs+50}ms`);
-  buildSockSegment(segments,54,20,13,9,'windsock-segment-orange',`--flutter:${(Number(flutterPx)+0.8).toFixed(2)}px;--bend:${(Number(bendDeg)+1.5).toFixed(2)}deg;--cloth-ms:${clothMs+100}ms`);
+  const segmentDefs=[
+    {startX:10,width:18,startHeight:16,endHeight:14,cls:'windsock-segment-orange',flutter:0,bend:0,ms:0},
+    {startX:26,width:16,startHeight:14,endHeight:12,cls:'windsock-segment-white',flutter:0.08,bend:0.25,ms:30},
+    {startX:40,width:15,startHeight:12,endHeight:10,cls:'windsock-segment-orange',flutter:0.14,bend:0.45,ms:60},
+    {startX:53,width:14,startHeight:10,endHeight:8,cls:'windsock-segment-white',flutter:0.2,bend:0.65,ms:90},
+    {startX:65,width:13,startHeight:8,endHeight:6,cls:'windsock-segment-orange',flutter:0.26,bend:0.9,ms:120}
+  ];
+  segmentDefs.slice(0,segmentCount).forEach(def=>{
+    buildSockSegment(
+      segments,
+      def.startX,
+      def.width,
+      def.startHeight,
+      def.endHeight,
+      def.cls,
+      `--flutter:${(Number(flutterPx)+def.flutter).toFixed(2)}px;--bend:${(Number(bendDeg)+def.bend).toFixed(2)}deg;--cloth-ms:${clothMs+def.ms}ms`
+    );
+  });
 
   const tail=svgEl('g',{
     class:'windsock-tail',
-    style:`--tail-drop:${(Number(flutterPx)+2.6).toFixed(2)}px;--tail-bend:${tailBend}deg;--tail-ms:${tailMs}ms`
+    style:`--tail-drop:${(Number(flutterPx)+0.75).toFixed(2)}px;--tail-bend:${tailBend}deg;--tail-ms:${tailMs}ms`
   });
+  const tailStart=segmentDefs[Math.max(0,segmentCount-1)].startX+segmentDefs[Math.max(0,segmentCount-1)].width-1;
+  const tailEnd=tailStart+12;
   const tailPoly=svgEl('polygon',{
-    points:'72,-4 96,-2 96,2 72,4',
+    points:`${tailStart},-2.5 ${tailEnd},-1.3 ${tailEnd},1.3 ${tailStart},2.5`,
     class:'windsock-segment-white'
   });
   const tailOutline=svgEl('polygon',{
-    points:'72,-4 96,-2 96,2 72,4',
+    points:`${tailStart},-2.5 ${tailEnd},-1.3 ${tailEnd},1.3 ${tailStart},2.5`,
     class:'windsock-outline'
   });
   const mountRing=svgEl('ellipse',{
-    cx:8,cy:0,rx:7,ry:11,
+    cx:8,cy:0,rx:6,ry:9,
     fill:'rgba(248,250,252,.28)',
     stroke:'rgba(226,232,240,.9)',
     'stroke-width':'2'
   });
   const hubShadow=svgEl('ellipse',{
-    cx:8,cy:0,rx:3,ry:5,
+    cx:8,cy:0,rx:2.5,ry:4,
     fill:'rgba(15,23,42,.75)'
   });
   rotated.appendChild(mountRing);
@@ -535,7 +583,7 @@ function drawHomeCompass(){
 
   const windCopy=`${String(windDir).padStart(3,'0')} DEG ${windSpeed}KT${gust?` G${gust}`:''}`;
   const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
-  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTS ${gust}KT DRIVE EXTRA WAVE`:'STEADY WIND';
+  const gustCopy=`${segmentCount} SEGMENT${segmentCount===1?'':'S'}${gust&&Number(gust)>windSpeed?` - GUSTS ${gust}KT`:''}`;
 
   homeCompass.appendChild(svgEl('text',{x:123,y:180,class:'windsock-copy'},windCopy));
   homeCompass.appendChild(svgEl('text',{x:123,y:202,class:'windsock-sub'},ageCopy));
