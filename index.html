@@ -514,13 +514,19 @@ function buildSockRibbon(group,{
   wavePhase=0,
   waveAmp=1,
   sag=2,
-  gustAmp=0
+  gustAmp=0,
+  angleDeg=0
 }){
+  const angleRad=angleDeg*Math.PI/180;
+  const dirX=Math.cos(angleRad);
+  const dirY=Math.sin(angleRad);
+  const normalX=-dirY;
+  const normalY=dirX;
   const samples=24;
   const pts=[];
   for(let i=0;i<=samples;i++){
     const t=i/samples;
-    const x=8+t*totalLength;
+    const along=8+t*totalLength;
     const width=(mouthRadius*2)*(1-t)+tailWidth*t;
     const sagCurve=sag*Math.pow(t,1.3);
     const flowT=1-t;
@@ -528,7 +534,8 @@ function buildSockRibbon(group,{
       Math.sin((flowT*1.9+wavePhase)*Math.PI*2)*waveAmp*(0.28+0.92*t)+
       Math.sin((flowT*3.6+wavePhase*1.35)*Math.PI*2)*(waveAmp*0.45+gustAmp*0.55)*(0.08+1.05*t)
     );
-    const y=sagCurve+wave;
+    const x=along*dirX + wave*normalX;
+    const y=along*dirY + wave*normalY + sagCurve;
     pts.push({x,y,width});
   }
 
@@ -667,7 +674,6 @@ function drawHomeCompass(){
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
   });
-  const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
   const cloth=svgEl('g');
   const bandLengths=[18,16,15,14,13].slice(0,segmentCount);
   const totalLength=bandLengths.reduce((sum,length)=>sum+length,0)+12;
@@ -682,11 +688,11 @@ function drawHomeCompass(){
     wavePhase,
     waveAmp:Number(flutterPx)*(0.55+1.2*(1-inflate)),
     sag:(1-inflate)*18,
-    gustAmp:Math.max(0,gustDelta)*0.95
+    gustAmp:Math.max(0,gustDelta)*0.95,
+    angleDeg:streamAngle
   });
 
-  rotated.appendChild(cloth);
-  motion.appendChild(rotated);
+  motion.appendChild(cloth);
   anchor.appendChild(motion);
   homeCompass.appendChild(anchor);
 
