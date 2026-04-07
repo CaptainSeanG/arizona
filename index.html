@@ -80,6 +80,7 @@ body.hide-windsock #homePanel{display:none}
 .windsock-outline{fill:none;stroke:rgba(15,23,42,.65);stroke-width:1}
 .windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
 .windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
+.windsock-copy.alert{animation:windAlertBlink .7s infinite steps(1)}
 .windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
 .windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
 .windsock-badge{stroke-width:1.5}
@@ -101,6 +102,10 @@ body.hide-windsock #homePanel{display:none}
 @keyframes sockTail{
   0%{transform:translateY(calc(var(--tail-drop,3px) * -1)) rotate(calc(var(--tail-bend,7deg) * -1))}
   100%{transform:translateY(var(--tail-drop,3px)) rotate(var(--tail-bend,7deg))}
+}
+@keyframes windAlertBlink{
+  0%,49%{fill:#ffffff}
+  50%,100%{fill:#ef4444}
 }
 #welcomeOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.86);z-index:50}
 #welcomeOverlay.show{display:flex}
@@ -702,8 +707,9 @@ function drawHomeCompass(){
   const windCopy=`${String(windDir).padStart(3,'0')} DEG ${windSpeed}KT${gust?` G${gust}`:''}`;
   const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
   const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'';
+  const windAlert=windSpeed>20 || (gust&&Number(gust)>20);
 
-  homeCompass.appendChild(svgEl('text',{x:123,y:248,class:'windsock-copy'},windCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:248,class:`windsock-copy${windAlert?' alert':''}`},windCopy));
   homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageCopy));
   if(gustCopy){
     homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},gustCopy));
