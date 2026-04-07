@@ -572,14 +572,14 @@ homeTitle.textContent = recordAgeMin === null
 
   const text = document.createElementNS('http://www.w3.org/2000/svg','text');
   text.setAttribute('x',cx);
-  text.setAttribute('y',cy+95);
+  text.setAttribute('y',cy+100);
   text.setAttribute('class','compass-text');
   text.textContent = `${String(dir).padStart(3,'0')}° ${speed}KT${gust ? ` G${gust}` : ''}`;
   homeCompass.appendChild(text);
 
 const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
 sub.setAttribute('x',cx);
-sub.setAttribute('y',cy+72);
+sub.setAttribute('y',cy+85);
 sub.setAttribute('class','compass-sub');
 
 const ageMin = getDisplayAgeMinutes(record, airport);
