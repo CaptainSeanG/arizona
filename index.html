@@ -33,7 +33,7 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   left:22px;
   bottom:22px;
   width:270px;
-  background:linear-gradient(180deg,rgba(2,6,23,.86),rgba(15,23,42,.86));
+  background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));
   border:1px solid rgba(148,163,184,.45);
   border-radius:14px;
   padding:12px;
@@ -454,10 +454,10 @@ function drawHomeCompass(){
   const record=metarRecordById.get(homeAirportId);
   const ageMin=getDisplayAgeMinutes(record,airport);
   const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
+  const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
-  homeCompass.appendChild(svgEl('rect',{x:7,y:7,width:232,height:252,rx:16,ry:16,fill:'rgba(2,6,23,.28)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
   homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:67,class:'windsock-ring'}));
   homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:46,class:'windsock-ring-inner'}));
   [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
@@ -479,7 +479,7 @@ function drawHomeCompass(){
   const statusBadge=svgEl('rect',{
     x:174,y:42,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
     fill:badgeColor,
-    stroke:badgeColor
+    stroke:badgeStroke
   });
   const statusText=svgEl('text',{x:200,y:56,class:'windsock-status'},airport?airport.cat:'WAITING');
   homeCompass.appendChild(statusBadge);
@@ -518,7 +518,7 @@ function drawHomeCompass(){
   const segmentCount=getSockSegmentCount(windSpeed);
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
-  const streamAngle=(windDir+180)%360;
+  const streamAngle=windDir%360;
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.08).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.09).toFixed(2);
   const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.12).toFixed(2);
