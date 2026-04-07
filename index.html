@@ -211,7 +211,7 @@ let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
-const CLOCK_LAYOUT={x:818,width:278,boxHeight:92,box1Y:40,box2Y:178};
+const CLOCK_LAYOUT={x:818,width:278,boxHeight:92,box1Y:40,box2Y:160};
 
 function svgEl(name,attrs={},text=''){
   const el=document.createElementNS('http://www.w3.org/2000/svg',name);
@@ -379,7 +379,7 @@ function positionWindToggle(){
   const buttonWidth=278;
   const buttonHeight=38;
   const left=offsetX+CLOCK_LAYOUT.x*scale;
-  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+18)*scale;
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+38)*scale;
   windToggle.style.left=`${Math.round(left)}px`;
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
