@@ -528,7 +528,7 @@ function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
     const segmentWidth=(i===steps-1)?(startX+width-cursorX):(width/steps);
     const segStartHeight=startHeight+(endHeight-startHeight)*t0;
     const segEndHeight=startHeight+(endHeight-startHeight)*t1;
-    const segStyle=`--flutter:${(flutter+i*0.18).toFixed(2)}px;--bend:${(bend+i*0.38).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs+i*38)}ms`;
+    const segStyle=`--flutter:${(flutter+i*0.14).toFixed(2)}px;--bend:${(bend+i*0.30).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
     buildSockSegment(group,cursorX,segmentWidth,segStartHeight,segEndHeight,cls,segStyle);
     cursorX+=segmentWidth;
   }
