@@ -65,7 +65,9 @@ body.hide-windsock #homePanel{display:none}
 .windsock-segment{animation:sockCloth var(--cloth-ms,720ms) ease-in-out infinite alternate;transform-origin:0 0}
 .windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
 .stale .led-glow,.stale .led-core{animation:staleBlink 1.1s infinite steps(1)}
+.missing .led-glow,.missing .led-core{animation:missingPulse 1.8s ease-in-out infinite}
 @keyframes staleBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+@keyframes missingPulse{0%,100%{opacity:.22}50%{opacity:1}}
 @keyframes sockRigWave{
   0%,100%{transform:rotate(calc(var(--sway,4deg) * -1))}
   50%{transform:rotate(var(--sway,4deg))}
@@ -284,7 +286,11 @@ function drawDots(){
   const denseIds=new Set(['KPHX','KDVT','KSDL','KFFZ','KCHD','KGEU','KLUF','KGYR','KIWA','KRYN','KCGZ']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
-    const g=svgEl('g',{class:`led-group${a.stale?' stale':''}`});
+    const isMissing=!metarRecordById.has(a.id);
+    const classes=['led-group'];
+    if(a.stale) classes.push('stale');
+    if(isMissing) classes.push('missing');
+    const g=svgEl('g',{class:classes.join(' ')});
     g.dataset.airportId=a.id;
     const dotColor=getAirportDisplayColor(a);
 
