@@ -19,7 +19,7 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 .label-small{font-size:16px}
 .clock-box{fill:rgba(2,6,23,.78);stroke:#64748b;stroke-width:2}
 .clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
-.clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:middle}
+.clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:end}
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
 #windToggle{
   position:absolute;
@@ -211,7 +211,7 @@ let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
-const CLOCK_LAYOUT={x:798,width:298,boxHeight:102,box1Y:40,box2Y:156};
+const CLOCK_LAYOUT={x:748,width:348,boxHeight:102,box1Y:40,box2Y:156};
 
 function svgEl(name,attrs={},text=''){
   const el=document.createElementNS('http://www.w3.org/2000/svg',name);
@@ -360,11 +360,11 @@ function drawClocks(){
   const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
   panel.appendChild(box1);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU'));
-  panel.appendChild(svgEl('text',{x:clockX+boxWidth/2,y:box1Y+72,class:'clock-time'},zulu));
+  panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box1Y+72,class:'clock-time'},zulu));
   panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`));
   panel.appendChild(box2);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
-  panel.appendChild(svgEl('text',{x:clockX+boxWidth/2,y:box2Y+72,class:'clock-time'},local));
+  panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+72,class:'clock-time'},local));
   clocks.appendChild(panel);
   positionWindToggle();
 }
