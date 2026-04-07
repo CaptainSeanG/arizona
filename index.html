@@ -505,34 +505,72 @@ function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style='')
   group.appendChild(segment);
 }
 
-function parseSockStyle(style=''){
-  const vars={};
-  String(style).split(';').forEach(part=>{
-    const [rawKey,rawValue]=part.split(':');
-    if(!rawKey||!rawValue) return;
-    vars[rawKey.trim()]=rawValue.trim();
-  });
-  return vars;
-}
+function buildSockRibbon(group,{
+  bandLengths=[],
+  totalLength=80,
+  mouthRadius=10,
+  tailWidth=3,
+  inflate=1,
+  wavePhase=0,
+  waveAmp=1,
+  sag=2,
+  gustAmp=0
+}){
+  const samples=24;
+  const pts=[];
+  for(let i=0;i<=samples;i++){
+    const t=i/samples;
+    const x=8+t*totalLength;
+    const width=(mouthRadius*2)*(1-t)+tailWidth*t;
+    const sagCurve=sag*Math.pow(t,1.3);
+    const wave=(
+      Math.sin((t*2.4+wavePhase)*Math.PI*2)*waveAmp*(0.18+0.82*t)+
+      Math.sin((t*4.4+wavePhase*1.6)*Math.PI*2)*gustAmp*(0.05+0.95*t)
+    );
+    const y=sagCurve+wave;
+    pts.push({x,y,width});
+  }
 
-function buildSockBand(group,startX,width,startHeight,endHeight,cls,style='',flowOffset=0,totalFlowSteps=1){
-  const vars=parseSockStyle(style);
-  const flutter=parseFloat((vars['--flutter']||'0').replace('px',''))||0;
-  const bend=parseFloat((vars['--bend']||'0').replace('deg',''))||0;
-  const clothMs=parseFloat((vars['--cloth-ms']||'0').replace('ms',''))||0;
-  const steps=4;
-  let cursorX=startX;
-  for(let i=0;i<steps;i++){
-    const t0=i/steps;
-    const t1=(i+1)/steps;
-    const segmentWidth=(i===steps-1)?(startX+width-cursorX):(width/steps);
-    const segStartHeight=startHeight+(endHeight-startHeight)*t0;
-    const segEndHeight=startHeight+(endHeight-startHeight)*t1;
-    const globalIndex=flowOffset+i;
-    const flowT=totalFlowSteps>1?globalIndex/(totalFlowSteps-1):0;
-    const segStyle=`--flutter:${(flutter+flowT*1.0).toFixed(2)}px;--bend:${(bend+flowT*2.1).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
-    buildSockSegment(group,cursorX,segmentWidth,segStartHeight,segEndHeight,cls,segStyle);
-    cursorX+=segmentWidth;
+  let consumed=0;
+  const bandStops=bandLengths.map(length=>{
+    const start=consumed/totalLength;
+    consumed+=length;
+    return {start,end:consumed/totalLength};
+  });
+
+  for(let i=0;i<samples;i++){
+    const a=pts[i];
+    const b=pts[i+1];
+    const dx=b.x-a.x;
+    const dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len;
+    const ny=dx/len;
+    const midT=((i+0.5)/samples);
+    let bandIndex=bandStops.findIndex(stop=>midT>=stop.start&&midT<stop.end);
+    if(bandIndex===-1) bandIndex=bandStops.length-1;
+    const fill=bandIndex%2===0?'windsock-segment-orange':'windsock-segment-white';
+
+    const poly=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:fill
+    });
+    const outline=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:'windsock-outline'
+    });
+    group.appendChild(poly);
+    group.appendChild(outline);
   }
 }
 
@@ -620,11 +658,7 @@ function drawHomeCompass(){
   const streamAngle=(windDir+90)%360;
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
-  const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.28).toFixed(2);
-  const tailBend=(1.4+calmFactor*2.7+gustDelta*0.34).toFixed(2);
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
-  const clothMs=Math.max(520,Math.round(980-intensity*180-gustDelta*42));
-  const tailMs=Math.max(420,Math.round(760-intensity*120-gustDelta*34));
 
   const anchor=svgEl('g',{transform:'translate(123 114)'});
   const motion=svgEl('g',{
@@ -632,49 +666,24 @@ function drawHomeCompass(){
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
   });
   const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
-  const segments=svgEl('g');
-  const segmentDefs=[
-    {startX:10,width:18,startHeight:16,endHeight:14,cls:'windsock-segment-orange',flutter:0,bend:0,ms:0},
-    {startX:26,width:16,startHeight:14,endHeight:12,cls:'windsock-segment-white',flutter:0.08,bend:0.25,ms:30},
-    {startX:40,width:15,startHeight:12,endHeight:10,cls:'windsock-segment-orange',flutter:0.14,bend:0.45,ms:60},
-    {startX:53,width:14,startHeight:10,endHeight:8,cls:'windsock-segment-white',flutter:0.2,bend:0.65,ms:90},
-    {startX:65,width:13,startHeight:8,endHeight:6,cls:'windsock-segment-orange',flutter:0.26,bend:0.9,ms:120}
-  ];
-  const visibleDefs=segmentDefs.slice(0,segmentCount);
-  const totalFlowSteps=visibleDefs.length*4;
-  visibleDefs.forEach((def,index)=>{
-    buildSockBand(
-      segments,
-      def.startX,
-      def.width,
-      def.startHeight,
-      def.endHeight,
-      def.cls,
-      `--flutter:${(Number(flutterPx)+def.flutter).toFixed(2)}px;--bend:${(Number(bendDeg)+def.bend).toFixed(2)}deg;--cloth-ms:${clothMs+def.ms}ms`,
-      index*4,
-      totalFlowSteps
-    );
+  const cloth=svgEl('g');
+  const bandLengths=[18,16,15,14,13].slice(0,segmentCount);
+  const totalLength=bandLengths.reduce((sum,length)=>sum+length,0)+12;
+  const inflate=Math.min(1,windSpeed/15);
+  const wavePhase=((Date.now()%2400)/2400);
+  buildSockRibbon(cloth,{
+    bandLengths,
+    totalLength,
+    mouthRadius:10,
+    tailWidth:Math.max(2.5,7-(segmentCount*0.8)),
+    inflate,
+    wavePhase,
+    waveAmp:Number(flutterPx)*(0.2+0.9*(1-inflate)),
+    sag:(1-inflate)*18,
+    gustAmp:Math.max(0,gustDelta)*0.55
   });
 
-  const tail=svgEl('g',{
-    class:'windsock-tail',
-    style:`--tail-drop:${(Number(flutterPx)+0.75).toFixed(2)}px;--tail-bend:${tailBend}deg;--tail-ms:${tailMs}ms`
-  });
-  const tailStart=segmentDefs[Math.max(0,segmentCount-1)].startX+segmentDefs[Math.max(0,segmentCount-1)].width-1;
-  const tailEnd=tailStart+12;
-  const tailPoly=svgEl('polygon',{
-    points:`${tailStart},-2.5 ${tailEnd},-1.3 ${tailEnd},1.3 ${tailStart},2.5`,
-    class:'windsock-segment-white'
-  });
-  const tailOutline=svgEl('polygon',{
-    points:`${tailStart},-2.5 ${tailEnd},-1.3 ${tailEnd},1.3 ${tailStart},2.5`,
-    class:'windsock-outline'
-  });
-  tail.appendChild(tailPoly);
-  tail.appendChild(tailOutline);
-
-  rotated.appendChild(segments);
-  rotated.appendChild(tail);
+  rotated.appendChild(cloth);
   motion.appendChild(rotated);
   anchor.appendChild(motion);
   homeCompass.appendChild(anchor);
