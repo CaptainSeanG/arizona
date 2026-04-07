@@ -41,6 +41,7 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   z-index:30;
   cursor:pointer;
 }
+body.hide-windsock #homePanel{display:none}
 #homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:4px;text-align:center}
 #homeCompass{width:220px;height:300px;display:block;margin:0 auto;background:transparent}
 .windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
@@ -180,6 +181,7 @@ let liveMetarStatus='STARTING';
 let lastMetarError='';
 let lastMetarUpdatedAt=null;
 let showMetarHud=false;
+let showWindsock=true;
 let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
@@ -254,6 +256,7 @@ function project(lat,lon){
 
 function updateHudButtons(){
   document.body.classList.toggle('show-metar-hud',showMetarHud);
+  document.body.classList.toggle('hide-windsock',!showWindsock);
   const updatedLabel=lastMetarUpdatedAt
     ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
     : '';
@@ -690,6 +693,11 @@ document.addEventListener('keydown',async e=>{
 
   if(e.key==='m'||e.key==='M'){
     showMetarHud=!showMetarHud;
+    updateHudButtons();
+  }
+
+  if(e.key==='w'||e.key==='W'){
+    showWindsock=!showWindsock;
     updateHudButtons();
   }
 
