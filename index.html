@@ -151,7 +151,7 @@ const airports=[
 {id:'KCGZ',lat:32.9550,lon:-111.767,cat:'VFR',dx:10,dy:-10}
 ];
 
-const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef'};
+const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
 
 const imageOutline=[[1026.0,1170.5],[684.0,1170.5],[629.0,1152.5],[588.0,1133.5],[564.0,1128.5],[541.0,1116.5],[520.0,1112.5],[494.0,1099.5],[449.0,1086.5],[415.0,1070.5],[383.0,1062.5],[345.0,1044.5],[306.0,1034.5],[268.0,1016.5],[247.0,1012.5],[223.0,1000.5],[168.0,984.5],[143.0,970.5],[121.0,966.5],[86.0,948.5],[59.0,942.5],[55.5,939.0],[55.5,913.0],[64.5,906.0],[73.5,887.0],[101.0,885.5],[103.5,873.0],[109.5,863.0],[105.5,836.0],[82.0,830.5],[73.5,822.0],[72.5,813.0],[78.5,789.0],[69.5,777.0],[73.5,768.0],[70.5,755.0],[85.0,748.5],[93.5,735.0],[97.5,716.0],[106.5,696.0],[101.5,676.0],[101.5,656.0],[115.5,623.0],[122.0,613.5],[134.0,605.5],[141.0,605.5],[166.5,580.0],[166.5,571.0],[150.0,559.5],[123.5,531.0],[109.5,489.0],[81.5,451.0],[85.5,423.0],[84.5,408.0],[91.5,404.0],[91.5,377.0],[87.5,357.0],[75.5,333.0],[80.5,306.0],[71.5,286.0],[71.5,267.0],[77.5,248.0],[65.5,230.0],[63.5,214.0],[72.0,202.5],[81.0,197.5],[102.0,193.5],[126.0,193.5],[153.0,220.5],[159.0,221.5],[165.5,216.0],[183.5,187.0],[183.0,13.5],[1026.5,16.0],[1028.5,1168.0],[1026.0,1170.5]];
 const azOutline=[[-114.816,32.493],[-114.808,32.650],[-114.800,32.800],[-114.790,32.950],[-114.770,33.120],[-114.750,33.260],[-114.730,33.420],[-114.710,33.580],[-114.690,33.740],[-114.670,33.900],[-114.650,34.060],[-114.630,34.200],[-114.610,34.340],[-114.600,34.450],[-114.590,34.550],[-114.580,34.650],[-114.560,34.780],[-114.540,34.920],[-114.510,35.050],[-114.480,35.180],[-114.450,35.320],[-114.420,35.450],[-114.390,35.600],[-114.360,35.750],[-114.330,35.900],[-114.300,36.050],[-114.270,36.200],[-114.240,36.350],[-114.210,36.500],[-114.180,36.650],[-114.150,36.800],[-114.120,36.900],[-114.100,37.000],[-112.500,37.000],[-111.000,37.000],[-109.045,37.000],[-109.045,35.500],[-109.045,34.000],[-109.045,32.600],[-109.045,31.332],[-110.500,31.400],[-111.250,31.520],[-112.000,31.700],[-112.700,31.900],[-113.300,32.080],[-113.850,32.220],[-114.250,32.330],[-114.816,32.493]];
@@ -251,7 +251,7 @@ function project(lat,lon){
 function updateHudButtons(){
   document.body.classList.toggle('show-metar-hud',showMetarHud);
   const updatedLabel=lastMetarUpdatedAt
-    ? ` • ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
+    ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
     : '';
   metarStatusBtn.textContent=lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
@@ -267,6 +267,11 @@ function drawMap(){
   map.appendChild(outline);
 }
 
+function getAirportDisplayColor(airport){
+  if(!metarRecordById.has(airport.id)) return colors.NONE;
+  return colors[airport.cat]||colors.VFR;
+}
+
 function drawDots(){
   dots.innerHTML='';
   const denseIds=new Set(['KPHX','KDVT','KSDL','KFFZ','KCHD','KGEU','KLUF','KGYR','KIWA','KRYN','KCGZ']);
@@ -274,9 +279,10 @@ function drawDots(){
     const p=project(a.lat,a.lon);
     const g=svgEl('g',{class:`led-group${a.stale?' stale':''}`});
     g.dataset.airportId=a.id;
+    const dotColor=getAirportDisplayColor(a);
 
-    const glow=svgEl('circle',{cx:p.x,cy:p.y,r:14,fill:colors[a.cat]||colors.VFR,class:'led-glow'});
-    const core=svgEl('circle',{cx:p.x,cy:p.y,r:5,fill:colors[a.cat]||colors.VFR,class:'led-core'});
+    const glow=svgEl('circle',{cx:p.x,cy:p.y,r:14,fill:dotColor,class:'led-glow'});
+    const core=svgEl('circle',{cx:p.x,cy:p.y,r:5,fill:dotColor,class:'led-core'});
     const label=svgEl('text',{
       x:p.x+(a.dx||10),
       y:p.y+(a.dy||-10),
@@ -439,10 +445,10 @@ function drawHomeCompass(){
 
   homeCompass.appendChild(svgEl('rect',{x:7,y:7,width:232,height:252,rx:16,ry:16,fill:'rgba(2,6,23,.28)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
   homeCompass.appendChild(svgEl('line',{x1:26,y1:218,x2:220,y2:218,class:'windsock-ground'}));
-  homeCompass.appendChild(svgEl('rect',{x:43,y:212,width:26,height:14,rx:4,ry:4,class:'windsock-base'}));
-  homeCompass.appendChild(svgEl('line',{x1:56,y1:216,x2:56,y2:48,class:'windsock-mast'}));
-  homeCompass.appendChild(svgEl('line',{x1:56,y1:58,x2:96,y2:58,class:'windsock-boom'}));
-  homeCompass.appendChild(svgEl('circle',{cx:96,cy:58,r:5,class:'windsock-hinge'}));
+  homeCompass.appendChild(svgEl('rect',{x:50,y:210,width:26,height:16,rx:4,ry:4,class:'windsock-base'}));
+  homeCompass.appendChild(svgEl('line',{x1:63,y1:216,x2:63,y2:66,class:'windsock-mast'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,y:116,r:38,fill:'rgba(15,23,42,.18)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,y:116,r:8,class:'windsock-hinge'}));
   homeCompass.appendChild(svgEl('text',{x:123,y:30,class:'windsock-airport'},homeAirportId||'----'));
 
   const statusBadge=svgEl('rect',{x:132,y:16,width:88,height:20,rx:10,ry:10,class:'windsock-badge'});
@@ -475,37 +481,49 @@ function drawHomeCompass(){
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
   const intensity=Math.min(1,(windSpeed*0.55+gustDelta*1.2)/30);
   const streamAngle=(windDir+180)%360;
-  const swayDeg=(2.2+intensity*7.8).toFixed(2);
-  const flutterPx=(1.4+intensity*4.2).toFixed(2);
-  const bendDeg=(2.6+intensity*6.4).toFixed(2);
-  const tailBend=(5+intensity*9).toFixed(2);
-  const waveMs=Math.round(1800-intensity*950);
-  const clothMs=Math.round(840-intensity*260);
-  const tailMs=Math.round(620-intensity*170);
+  const swayDeg=(1.2+intensity*3.8).toFixed(2);
+  const flutterPx=(0.7+intensity*1.7).toFixed(2);
+  const bendDeg=(1.4+intensity*3.1).toFixed(2);
+  const tailBend=(2.4+intensity*4.3).toFixed(2);
+  const waveMs=Math.round(2100-intensity*700);
+  const clothMs=Math.round(980-intensity*180);
+  const tailMs=Math.round(760-intensity*120);
 
-  const anchor=svgEl('g',{transform:'translate(96 58)'});
+  const anchor=svgEl('g',{transform:'translate(123 116)'});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
   });
   const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
   const segments=svgEl('g');
-  buildSockSegment(segments,0,24,22,18,'windsock-segment-orange',`--flutter:${flutterPx}px;--bend:${bendDeg}deg;--cloth-ms:${clothMs}ms`);
-  buildSockSegment(segments,22,22,18,15,'windsock-segment-white',`--flutter:${(Number(flutterPx)+0.8).toFixed(2)}px;--bend:${(Number(bendDeg)+1.1).toFixed(2)}deg;--cloth-ms:${clothMs+60}ms`);
-  buildSockSegment(segments,42,20,15,11,'windsock-segment-orange',`--flutter:${(Number(flutterPx)+1.5).toFixed(2)}px;--bend:${(Number(bendDeg)+2.4).toFixed(2)}deg;--cloth-ms:${clothMs+120}ms`);
+  buildSockSegment(segments,8,28,20,17,'windsock-segment-orange',`--flutter:${flutterPx}px;--bend:${bendDeg}deg;--cloth-ms:${clothMs}ms`);
+  buildSockSegment(segments,33,24,17,13,'windsock-segment-white',`--flutter:${(Number(flutterPx)+0.4).toFixed(2)}px;--bend:${(Number(bendDeg)+0.8).toFixed(2)}deg;--cloth-ms:${clothMs+50}ms`);
+  buildSockSegment(segments,54,20,13,9,'windsock-segment-orange',`--flutter:${(Number(flutterPx)+0.8).toFixed(2)}px;--bend:${(Number(bendDeg)+1.5).toFixed(2)}deg;--cloth-ms:${clothMs+100}ms`);
 
   const tail=svgEl('g',{
     class:'windsock-tail',
     style:`--tail-drop:${(Number(flutterPx)+2.6).toFixed(2)}px;--tail-bend:${tailBend}deg;--tail-ms:${tailMs}ms`
   });
   const tailPoly=svgEl('polygon',{
-    points:'60,-5 86,-3 86,3 60,5',
+    points:'72,-4 96,-2 96,2 72,4',
     class:'windsock-segment-white'
   });
   const tailOutline=svgEl('polygon',{
-    points:'60,-5 86,-3 86,3 60,5',
+    points:'72,-4 96,-2 96,2 72,4',
     class:'windsock-outline'
   });
+  const mountRing=svgEl('ellipse',{
+    cx:8,cy:0,rx:7,ry:11,
+    fill:'rgba(248,250,252,.28)',
+    stroke:'rgba(226,232,240,.9)',
+    'stroke-width':'2'
+  });
+  const hubShadow=svgEl('ellipse',{
+    cx:8,cy:0,rx:3,ry:5,
+    fill:'rgba(15,23,42,.75)'
+  });
+  rotated.appendChild(mountRing);
+  rotated.appendChild(hubShadow);
   tail.appendChild(tailPoly);
   tail.appendChild(tailOutline);
 
