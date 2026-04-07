@@ -32,25 +32,47 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   position:absolute;
   left:22px;
   bottom:22px;
-  width:246px;
-  background:rgba(2,6,23,.78);
+  width:270px;
+  background:linear-gradient(180deg,rgba(2,6,23,.86),rgba(15,23,42,.86));
   border:1px solid rgba(148,163,184,.45);
   border-radius:14px;
   padding:12px;
   box-shadow:0 8px 24px rgba(0,0,0,.35);
   z-index:30;
-  cursor: pointer;
+  cursor:pointer;
 }
 #homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:8px;text-align:center}
-#homeCompass{width:220px;height:250px;display:block;margin:0 auto}
-.compass-ring{fill:rgba(15,23,42,.55);stroke:#64748b;stroke-width:2}
-.compass-tick{stroke:rgba(148,163,184,.6);stroke-width:2}
-.compass-card{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;text-anchor:middle}
-.compass-arrow{fill:#22c55e;opacity:.95}
-.compass-text{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;text-anchor:middle}
-.compass-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle}
+#homeCompass{width:246px;height:266px;display:block;margin:0 auto}
+.windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
+.windsock-boom{stroke:#e2e8f0;stroke-width:4;stroke-linecap:round}
+.windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
+.windsock-hinge{fill:#f8fafc;stroke:#64748b;stroke-width:2}
+.windsock-ground{stroke:rgba(51,65,85,.9);stroke-width:3;stroke-linecap:round}
+.windsock-segment-orange{fill:#f97316}
+.windsock-segment-white{fill:#fff7ed}
+.windsock-outline{fill:none;stroke:rgba(15,23,42,.65);stroke-width:1}
+.windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
+.windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;text-anchor:middle}
+.windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
+.windsock-status{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.windsock-badge{fill:rgba(15,23,42,.78);stroke:rgba(148,163,184,.4);stroke-width:1.5}
+.windsock-rig{animation:sockRigWave var(--wave-ms,1400ms) ease-in-out infinite;transform-origin:0 0}
+.windsock-segment{animation:sockCloth var(--cloth-ms,720ms) ease-in-out infinite alternate;transform-origin:0 0}
+.windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
 .stale .led-glow,.stale .led-core{animation:staleBlink 1.1s infinite steps(1)}
 @keyframes staleBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+@keyframes sockRigWave{
+  0%,100%{transform:rotate(calc(var(--sway,4deg) * -1))}
+  50%{transform:rotate(var(--sway,4deg))}
+}
+@keyframes sockCloth{
+  0%{transform:translateY(calc(var(--flutter,2px) * -1)) rotate(calc(var(--bend,3deg) * -1))}
+  100%{transform:translateY(var(--flutter,2px)) rotate(var(--bend,3deg))}
+}
+@keyframes sockTail{
+  0%{transform:translateY(calc(var(--tail-drop,3px) * -1)) rotate(calc(var(--tail-bend,7deg) * -1))}
+  100%{transform:translateY(var(--tail-drop,3px)) rotate(var(--tail-bend,7deg))}
+}
 #welcomeOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.86);z-index:50}
 #welcomeOverlay.show{display:flex}
 #welcomeCard{width:min(92vw,500px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
@@ -80,8 +102,8 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   </svg>
   <div id="tooltip"></div>
   <div id="homePanel">
-    <div id="homeTitle">HOME AIRPORT WIND</div>
-    <svg id="homeCompass" viewBox="0 0 220 220" aria-label="Home airport wind compass"></svg>
+    <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
+    <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
   </div>
   <div id="hud">
     <button id="metarStatusBtn" class="hud-btn" type="button">METAR: STARTING</button>
@@ -159,6 +181,13 @@ let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
 
+function svgEl(name,attrs={},text=''){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',name);
+  Object.entries(attrs).forEach(([key,val])=>el.setAttribute(key,val));
+  if(text) el.textContent=text;
+  return el;
+}
+
 function albersAZ(lat,lon){
   const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=29.5*Math.PI/180,phi2=45.5*Math.PI/180,phi0=34.2*Math.PI/180,lambda0=-111.7*Math.PI/180;
   const n=.5*(Math.sin(phi1)+Math.sin(phi2)),c=Math.cos(phi1)**2+2*n*Math.sin(phi1),rho=Math.sqrt(c-2*n*Math.sin(phi))/n,rho0=Math.sqrt(c-2*n*Math.sin(phi0))/n,theta=n*(lambda-lambda0);
@@ -183,36 +212,33 @@ const imageBounds={
   maxY:Math.max(...imageOutline.map(p=>p[1]))
 };
 
-
-  function getDisplayAgeMinutes(record, airport){
-  const primary =
-    (airport && airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime()))
+function getDisplayAgeMinutes(record,airport){
+  const primary=
+    airport&&airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())
       ? airport.obsDate
-      : (record ? parseObsTime(record) : null);
+      : (record?parseObsTime(record):null);
 
-  if (primary instanceof Date && !isNaN(primary.getTime())) {
-    const ageMs = Date.now() - primary.getTime();
-    if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
-      return Math.round(ageMs / 60000);
+  if(primary instanceof Date&&!isNaN(primary.getTime())){
+    const ageMs=Date.now()-primary.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      return Math.round(ageMs/60000);
     }
   }
 
-  if (lastMetarUpdatedAt) {
-    const fallback = new Date(lastMetarUpdatedAt);
-    if (!isNaN(fallback.getTime())) {
-      const ageMs = Date.now() - fallback.getTime();
-      if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
-        return Math.round(ageMs / 60000);
+  if(lastMetarUpdatedAt){
+    const fallback=new Date(lastMetarUpdatedAt);
+    if(!isNaN(fallback.getTime())){
+      const ageMs=Date.now()-fallback.getTime();
+      if(ageMs>=0&&ageMs<=24*60*60*1000){
+        return Math.round(ageMs/60000);
       }
     }
   }
 
   return null;
 }
-  
-  
-  
-  function project(lat,lon){
+
+function project(lat,lon){
   const p=albersAZ(lat,lon);
   const nx=(p.x-projBounds.minX)/(projBounds.maxX-projBounds.minX);
   const ny=(p.y-projBounds.minY)/(projBounds.maxY-projBounds.minY);
@@ -237,9 +263,7 @@ function drawMap(){
   let path='';
   imageOutline.forEach(([x,y],i)=>{path+=`${i===0?'M':'L'} ${x} ${y} `;});
   path+='Z';
-  const outline=document.createElementNS('http://www.w3.org/2000/svg','path');
-  outline.setAttribute('d',path);
-  outline.setAttribute('class','outline');
+  const outline=svgEl('path',{d:path,class:'outline'});
   map.appendChild(outline);
 }
 
@@ -248,30 +272,17 @@ function drawDots(){
   const denseIds=new Set(['KPHX','KDVT','KSDL','KFFZ','KCHD','KGEU','KLUF','KGYR','KIWA','KRYN','KCGZ']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
-    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('class',`led-group${a.stale?' stale':''}`);
+    const g=svgEl('g',{class:`led-group${a.stale?' stale':''}`});
     g.dataset.airportId=a.id;
 
-    const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    glow.setAttribute('cx',p.x);
-    glow.setAttribute('cy',p.y);
-    glow.setAttribute('r',14);
-    glow.setAttribute('fill',colors[a.cat]||colors.VFR);
-    glow.setAttribute('class','led-glow');
-
-    const core=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    core.setAttribute('cx',p.x);
-    core.setAttribute('cy',p.y);
-    core.setAttribute('r',5);
-    core.setAttribute('fill',colors[a.cat]||colors.VFR);
-    core.setAttribute('class','led-core');
-
-    const label=document.createElementNS('http://www.w3.org/2000/svg','text');
-    label.setAttribute('x',p.x+(a.dx||10));
-    label.setAttribute('y',p.y+(a.dy||-10));
+    const glow=svgEl('circle',{cx:p.x,cy:p.y,r:14,fill:colors[a.cat]||colors.VFR,class:'led-glow'});
+    const core=svgEl('circle',{cx:p.x,cy:p.y,r:5,fill:colors[a.cat]||colors.VFR,class:'led-core'});
+    const label=svgEl('text',{
+      x:p.x+(a.dx||10),
+      y:p.y+(a.dy||-10),
+      class:denseIds.has(a.id)?'label label-small':'label'
+    },a.id);
     if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
-    label.setAttribute('class',denseIds.has(a.id)?'label label-small':'label');
-    label.textContent=a.id;
 
     g.appendChild(glow);
     g.appendChild(core);
@@ -290,35 +301,16 @@ function drawClocks(){
     ? new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+'Z'
     : 'WAITING';
 
-  const panel=document.createElementNS('http://www.w3.org/2000/svg','g');
-  const makeText=(x,y,cls,text)=>{
-    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',x);
-    t.setAttribute('y',y);
-    t.setAttribute('class',cls);
-    t.textContent=text;
-    return t;
-  };
-
-  const box1=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  box1.setAttribute('x',796); box1.setAttribute('y',40);
-  box1.setAttribute('rx',18); box1.setAttribute('ry',18);
-  box1.setAttribute('width',300); box1.setAttribute('height',92);
-  box1.setAttribute('class','clock-box');
-
-  const box2=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  box2.setAttribute('x',796); box2.setAttribute('y',146);
-  box2.setAttribute('rx',18); box2.setAttribute('ry',18);
-  box2.setAttribute('width',300); box2.setAttribute('height',92);
-  box2.setAttribute('class','clock-box');
-
+  const panel=svgEl('g');
+  const box1=svgEl('rect',{x:796,y:40,rx:18,ry:18,width:300,height:92,class:'clock-box'});
+  const box2=svgEl('rect',{x:796,y:146,rx:18,ry:18,width:300,height:92,class:'clock-box'});
   panel.appendChild(box1);
-  panel.appendChild(makeText(821,74,'clock-title','ZULU'));
-  panel.appendChild(makeText(821,114,'clock-time',zulu));
+  panel.appendChild(svgEl('text',{x:821,y:74,class:'clock-title'},'ZULU'));
+  panel.appendChild(svgEl('text',{x:821,y:114,class:'clock-time'},zulu));
   panel.appendChild(box2);
-  panel.appendChild(makeText(821,180,'clock-title','LOCAL'));
-  panel.appendChild(makeText(821,220,'clock-time',local));
-  panel.appendChild(makeText(821,262,'clock-sub',`METAR UPDATED ${updatedZulu}`));
+  panel.appendChild(svgEl('text',{x:821,y:180,class:'clock-title'},'LOCAL'));
+  panel.appendChild(svgEl('text',{x:821,y:220,class:'clock-time'},local));
+  panel.appendChild(svgEl('text',{x:821,y:262,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
   clocks.appendChild(panel);
 }
 
@@ -335,38 +327,18 @@ function extractRawMetar(item){
 }
 
 function parseObsTime(record){
-  const candidates = [
-    record.obsTime,
-    record.observation_time,
-    record.reportTime,
-    record.report_time,
-    record.obsTimeUtc
-  ].filter(Boolean);
-
-  for (const value of candidates) {
-    const d = new Date(value);
-    if (!Number.isNaN(d.getTime())) {
-      return d;
-    }
+  const candidates=[record.obsTime,record.observation_time,record.reportTime,record.report_time,record.obsTimeUtc].filter(Boolean);
+  for(const value of candidates){
+    const d=new Date(value);
+    if(!Number.isNaN(d.getTime())) return d;
   }
 
-  const raw = record.rawOb || record.raw_text || record.rawText || record.raw || '';
-  const m = String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
-  if (m) {
-    const now = new Date();
-    const d = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      Number(m[1]),
-      Number(m[2]),
-      Number(m[3]),
-      0
-    ));
-
-    if (d.getTime() > now.getTime() + 6 * 3600000) {
-      d.setUTCMonth(d.getUTCMonth() - 1);
-    }
-
+  const raw=record.rawOb||record.raw_text||record.rawText||record.raw||'';
+  const m=String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
+  if(m){
+    const now=new Date();
+    const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),Number(m[1]),Number(m[2]),Number(m[3]),0));
+    if(d.getTime()>now.getTime()+6*3600000) d.setUTCMonth(d.getUTCMonth()-1);
     return d;
   }
 
@@ -374,17 +346,12 @@ function parseObsTime(record){
 }
 
 function isStaleObs(obsDate){
-  if (!obsDate) return false;
-
-  const ageMs = Date.now() - obsDate.getTime();
-
-  if (ageMs < 0) return false;
-  if (ageMs > 36 * 3600000) return false;
-
-  return ageMs > 150 * 60 * 1000;
+  if(!obsDate) return false;
+  const ageMs=Date.now()-obsDate.getTime();
+  if(ageMs<0) return false;
+  if(ageMs>36*3600000) return false;
+  return ageMs>150*60*1000;
 }
-
-  
 
 function extractWind(record){
   const dir=record.wdir!==undefined?record.wdir:(record.windDir!==undefined?record.windDir:record.wind_direction);
@@ -394,73 +361,47 @@ function extractWind(record){
 }
 
 function showTooltip(airportId,clientX,clientY){
-  const airport = airports.find(a => a.id === airportId);
-  if (!airport) return;
+  const airport=airports.find(a=>a.id===airportId);
+  if(!airport) return;
 
-  const raw = metarById.get(airportId) || getFallbackMetar(airport);
-  const record = metarRecordById.get(airportId);
+  const raw=metarById.get(airportId)||getFallbackMetar(airport);
+  const record=metarRecordById.get(airportId);
+  const category=record?(record.fltCat||record.flightCategory||record.flight_category||airport.cat):airport.cat;
+  const visibility=record&&(record.visib||record.visibility||record.vis||record.prevail_vis_sm);
+  const tempC=record&&(record.temp!==undefined?record.temp:record.tempC);
+  const tempF=(tempC!==undefined&&tempC!==null&&tempC!=='')?Math.round((Number(tempC)*9/5)+32):null;
+  const clouds=record&&Array.isArray(record.clouds)&&record.clouds.length?record.clouds[0]:null;
 
-  const category = record
-    ? (record.fltCat || record.flightCategory || record.flight_category || airport.cat)
-    : airport.cat;
-
-  const visibility = record && (record.visib || record.visibility || record.vis || record.prevail_vis_sm);
-  const tempC = record && (record.temp !== undefined ? record.temp : record.tempC);
-  const tempF = (tempC !== undefined && tempC !== null && tempC !== '')
-    ? Math.round((Number(tempC) * 9 / 5) + 32)
-    : null;
-  const clouds = record && Array.isArray(record.clouds) && record.clouds.length
-    ? record.clouds[0]
-    : null;
-
-  const decodedParts = [category];
-
-  if (visibility) decodedParts.push(`${visibility}SM`);
-  if (clouds && (clouds.cover || clouds.base)) {
-    decodedParts.push(`${clouds.cover || ''}${clouds.base || ''}`);
-  }
-  if (tempF !== null && Number.isFinite(tempF)) {
-    decodedParts.push(`${tempF}°F`);
-  }
-  if (airport.obsDate instanceof Date && !isNaN(airport.obsDate.getTime())) {
-    const ageMs = Date.now() - airport.obsDate.getTime();
-    if (ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000) {
-      const ageMin = Math.round(ageMs / 60000);
-      decodedParts.push(`${ageMin}m old`);
+  const decodedParts=[category];
+  if(visibility) decodedParts.push(`${visibility}SM`);
+  if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
+  if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
+    const ageMs=Date.now()-airport.obsDate.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      decodedParts.push(`${Math.round(ageMs/60000)}m old`);
     }
   }
-  if (airport.stale) decodedParts.push('STALE');
+  if(airport.stale) decodedParts.push('STALE');
 
-  const decoded = record
-    ? decodedParts.join(' • ')
-    : (airport.stale ? `${airport.cat} • STALE` : '');
-
-  tooltip.innerHTML =
-    `<div class="tip-id">${airportId}</div>` +
-    `${decoded ? `<div class="tip-summary">${decoded}</div>` : ''}` +
+  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
+  tooltip.innerHTML=
+    `<div class="tip-id">${airportId}</div>`+
+    `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
     `<div class="tip-raw">${raw}</div>`;
+  tooltip.style.display='block';
 
-  tooltip.style.display = 'block';
-
-  const margin = 14;
-  const wrapRect = document.getElementById('wrap').getBoundingClientRect();
-  const tipRect = tooltip.getBoundingClientRect();
-
-  let left = clientX - wrapRect.left + margin;
-  let top = clientY - wrapRect.top + margin;
-
-  if (left + tipRect.width > wrapRect.width - margin) {
-    left = clientX - wrapRect.left - tipRect.width - margin;
-  }
-  if (top + tipRect.height > wrapRect.height - margin) {
-    top = clientY - wrapRect.top - tipRect.height - margin;
-  }
-
-  left = Math.max(margin, left);
-  top = Math.max(margin, top);
-
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
+  const margin=14;
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const tipRect=tooltip.getBoundingClientRect();
+  let left=clientX-wrapRect.left+margin;
+  let top=clientY-wrapRect.top+margin;
+  if(left+tipRect.width>wrapRect.width-margin) left=clientX-wrapRect.left-tipRect.width-margin;
+  if(top+tipRect.height>wrapRect.height-margin) top=clientY-wrapRect.top-tipRect.height-margin;
+  left=Math.max(margin,left);
+  top=Math.max(margin,top);
+  tooltip.style.left=`${left}px`;
+  tooltip.style.top=`${top}px`;
 }
 
 function hideTooltip(){ tooltip.style.display='none'; }
@@ -473,122 +414,116 @@ function attachTooltipHandlers(){
   });
 }
 
+function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style=''){
+  const segment=svgEl('g',{class:'windsock-segment',style});
+  const poly=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:cls
+  });
+  const outline=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:'windsock-outline'
+  });
+  segment.appendChild(poly);
+  segment.appendChild(outline);
+  group.appendChild(segment);
+}
+
 function drawHomeCompass(){
   homeCompass.innerHTML='';
+  const airport=airports.find(a=>a.id===homeAirportId);
+  const record=metarRecordById.get(homeAirportId);
+  const ageMin=getDisplayAgeMinutes(record,airport);
 
-  const airport = airports.find(a => a.id === homeAirportId);
-  const record = metarRecordById.get(homeAirportId);
+  homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
- 
+  homeCompass.appendChild(svgEl('rect',{x:7,y:7,width:232,height:252,rx:16,ry:16,fill:'rgba(2,6,23,.28)',stroke:'rgba(148,163,184,.18)','stroke-width':'1.5'}));
+  homeCompass.appendChild(svgEl('line',{x1:26,y1:218,x2:220,y2:218,class:'windsock-ground'}));
+  homeCompass.appendChild(svgEl('rect',{x:43,y:212,width:26,height:14,rx:4,ry:4,class:'windsock-base'}));
+  homeCompass.appendChild(svgEl('line',{x1:56,y1:216,x2:56,y2:48,class:'windsock-mast'}));
+  homeCompass.appendChild(svgEl('line',{x1:56,y1:58,x2:96,y2:58,class:'windsock-boom'}));
+  homeCompass.appendChild(svgEl('circle',{cx:96,cy:58,r:5,class:'windsock-hinge'}));
+  homeCompass.appendChild(svgEl('text',{x:123,y:30,class:'windsock-airport'},homeAirportId||'----'));
 
-const recordAgeMin = getDisplayAgeMinutes(record, airport);
+  const statusBadge=svgEl('rect',{x:132,y:16,width:88,height:20,rx:10,ry:10,class:'windsock-badge'});
+  const statusText=svgEl('text',{x:176,y:30,class:'windsock-status'},airport?airport.cat:'WAITING');
+  homeCompass.appendChild(statusBadge);
+  homeCompass.appendChild(statusText);
 
-homeTitle.textContent = recordAgeMin === null
-  ? 'HOME AIRPORT WIND'
-  : `HOME AIRPORT WIND`;
+  if(!airport||!record){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},'WAITING FOR METAR'));
+    return;
+  }
 
-  const cx = 110, cy = 110, r = 84;
+  const {dir,speed,gust}=extractWind(record);
+  if(dir===undefined||dir===null||speed===undefined||speed===null){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},airport.stale?'STALE METAR':'NO WIND FIELD'));
+    return;
+  }
 
-  const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
-  ring.setAttribute('cx',cx);
-  ring.setAttribute('cy',cy);
-  ring.setAttribute('r',r);
-  ring.setAttribute('class','compass-ring');
-  homeCompass.appendChild(ring);
+  if(dir==='VRB'){
+    homeCompass.appendChild(svgEl('text',{x:138,y:104,class:'windsock-copy'},`VRB ${speed}KT`));
+    homeCompass.appendChild(svgEl('text',{x:138,y:126,class:'windsock-sub'},airport.stale?'STALE METAR':'VARIABLE WIND'));
+    return;
+  }
 
-  [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
-    const rad = (deg-90) * Math.PI / 180;
-    const tx = cx + Math.cos(rad) * (r-14);
-    const ty = cy + Math.sin(rad) * (r-14) + 4;
-    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',tx);
-    t.setAttribute('y',ty);
-    t.setAttribute('class','compass-card');
-    t.textContent = label;
-    homeCompass.appendChild(t);
+  const windDir=Number(dir);
+  const windSpeed=Math.max(0,Number(speed)||0);
+  const gustSpeed=Math.max(windSpeed,Number(gust)||0);
+  const gustDelta=Math.max(0,gustSpeed-windSpeed);
+  const intensity=Math.min(1,(windSpeed*0.55+gustDelta*1.2)/30);
+  const streamAngle=(windDir+180)%360;
+  const swayDeg=(2.2+intensity*7.8).toFixed(2);
+  const flutterPx=(1.4+intensity*4.2).toFixed(2);
+  const bendDeg=(2.6+intensity*6.4).toFixed(2);
+  const tailBend=(5+intensity*9).toFixed(2);
+  const waveMs=Math.round(1800-intensity*950);
+  const clothMs=Math.round(840-intensity*260);
+  const tailMs=Math.round(620-intensity*170);
+
+  const anchor=svgEl('g',{transform:'translate(96 58)'});
+  const motion=svgEl('g',{
+    class:'windsock-rig',
+    style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
   });
+  const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
+  const segments=svgEl('g');
+  buildSockSegment(segments,0,24,22,18,'windsock-segment-orange',`--flutter:${flutterPx}px;--bend:${bendDeg}deg;--cloth-ms:${clothMs}ms`);
+  buildSockSegment(segments,22,22,18,15,'windsock-segment-white',`--flutter:${(Number(flutterPx)+0.8).toFixed(2)}px;--bend:${(Number(bendDeg)+1.1).toFixed(2)}deg;--cloth-ms:${clothMs+60}ms`);
+  buildSockSegment(segments,42,20,15,11,'windsock-segment-orange',`--flutter:${(Number(flutterPx)+1.5).toFixed(2)}px;--bend:${(Number(bendDeg)+2.4).toFixed(2)}deg;--cloth-ms:${clothMs+120}ms`);
 
-  for(let deg=0; deg<360; deg+=30){
-    const rad = (deg-90) * Math.PI / 180;
-    const x1 = cx + Math.cos(rad) * (r-8);
-    const y1 = cy + Math.sin(rad) * (r-8);
-    const x2 = cx + Math.cos(rad) * (r-2);
-    const y2 = cy + Math.sin(rad) * (r-2);
-    const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
-    tick.setAttribute('x1',x1);
-    tick.setAttribute('y1',y1);
-    tick.setAttribute('x2',x2);
-    tick.setAttribute('y2',y2);
-    tick.setAttribute('class','compass-tick');
-    homeCompass.appendChild(tick);
-  }
+  const tail=svgEl('g',{
+    class:'windsock-tail',
+    style:`--tail-drop:${(Number(flutterPx)+2.6).toFixed(2)}px;--tail-bend:${tailBend}deg;--tail-ms:${tailMs}ms`
+  });
+  const tailPoly=svgEl('polygon',{
+    points:'60,-5 86,-3 86,3 60,5',
+    class:'windsock-segment-white'
+  });
+  const tailOutline=svgEl('polygon',{
+    points:'60,-5 86,-3 86,3 60,5',
+    class:'windsock-outline'
+  });
+  tail.appendChild(tailPoly);
+  tail.appendChild(tailOutline);
 
-  const title = document.createElementNS('http://www.w3.org/2000/svg','text');
-  title.setAttribute('x',cx);
-  title.setAttribute('y',20);
-  title.setAttribute('class','compass-text');
-  title.textContent = homeAirportId || '----';
-  homeCompass.appendChild(title);
+  rotated.appendChild(segments);
+  rotated.appendChild(tail);
+  motion.appendChild(rotated);
+  anchor.appendChild(motion);
+  homeCompass.appendChild(anchor);
 
-  if(!airport || !record){
-    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
-    sub.setAttribute('x',cx);
-    sub.setAttribute('y',cy+6);
-    sub.setAttribute('class','compass-sub');
-    sub.textContent = 'NO WIND DATA';
-    homeCompass.appendChild(sub);
-    return;
-  }
+  const windCopy=`${String(windDir).padStart(3,'0')} DEG ${windSpeed}KT${gust?` G${gust}`:''}`;
+  const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
+  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTS ${gust}KT DRIVE EXTRA WAVE`:'STEADY WIND';
 
-  const {dir,speed,gust} = extractWind(record);
-
-  if(dir===undefined || dir===null || speed===undefined || speed===null || dir==='VRB'){
-    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
-    sub.setAttribute('x',cx);
-    sub.setAttribute('y',cy+6);
-    sub.setAttribute('class','compass-sub');
-    sub.textContent = dir==='VRB' ? `VRB ${speed || ''}KT` : 'NO WIND DATA';
-    homeCompass.appendChild(sub);
-    return;
-  }
-
-  const deg = Number(dir);
-  const arrowRad = (deg-90) * Math.PI / 180;
-  const tipX = cx + Math.cos(arrowRad) * (r-22);
-  const tipY = cy + Math.sin(arrowRad) * (r-22);
-  const baseX = cx - Math.cos(arrowRad) * 18;
-  const baseY = cy - Math.sin(arrowRad) * 18;
-  const leftRad = arrowRad + Math.PI / 2;
-  const rightRad = arrowRad - Math.PI / 2;
-  const leftX = baseX + Math.cos(leftRad) * 10;
-  const leftY = baseY + Math.sin(leftRad) * 10;
-  const rightX = baseX + Math.cos(rightRad) * 10;
-  const rightY = baseY + Math.sin(rightRad) * 10;
-
-  const arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-  arrow.setAttribute('points',`${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`);
-  arrow.setAttribute('class','compass-arrow');
-  homeCompass.appendChild(arrow);
-
-  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-  text.setAttribute('x',cx);
-  text.setAttribute('y',cy+112);
-  text.setAttribute('class','compass-text');
-  text.textContent = `${String(dir).padStart(3,'0')}° ${speed}KT${gust ? ` G${gust}` : ''}`;
-  homeCompass.appendChild(text);
-
-const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
-sub.setAttribute('x',cx);
-sub.setAttribute('y',cy+100);
-sub.setAttribute('class','compass-sub');
-
-const ageMin = getDisplayAgeMinutes(record, airport);
-sub.textContent = ageMin === null
-  ? (airport.stale ? 'STALE METAR' : 'NO AGE DATA')
-  : `${ageMin} MIN${ageMin === 1 ? '' : 'S'} AGO`;
-
-  homeCompass.appendChild(sub);
+  homeCompass.appendChild(svgEl('text',{x:123,y:180,class:'windsock-copy'},windCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:202,class:'windsock-sub'},ageCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:224,class:'windsock-sub'},gustCopy));
 }
+
 async function fetchMetars(){
   const url=`./metars.json?t=${Date.now()}`;
   liveMetarStatus='FETCHING';
@@ -614,21 +549,18 @@ async function fetchMetars(){
       if(!id) return;
 
       const airport=airports.find(a=>a.id===id);
-
       if(airport&&category&&colors[category]) airport.cat=category;
       if(raw) metarById.set(id,raw);
       metarRecordById.set(id,item);
-
       if(airport){
-  const obs = parseObsTime(item);
-  airport.stale = isStaleObs(obs);
-  airport.obsDate = obs;
-}
+        const obs=parseObsTime(item);
+        airport.stale=isStaleObs(obs);
+        airport.obsDate=obs;
+      }
     });
 
     liveMetarStatus=metarById.size?`CACHE ${metarById.size}`:'NO RAW';
     lastMetarUpdatedAt=new Date().toISOString();
-
     drawDots();
     drawHomeCompass();
     drawClocks();
@@ -717,21 +649,13 @@ document.addEventListener('keydown',async e=>{
   }
 });
 
-document.getElementById('homePanel').addEventListener('click', () => {
-  // Stop running intervals so things don’t stack
+document.getElementById('homePanel').addEventListener('click',()=>{
   stopIntervals();
-
-  // Show the welcome screen again
   welcomeOverlay.classList.add('show');
-
-  // Pre-fill with current airport (nice UX)
-  welcomeInput.value = homeAirportId || '';
-
-  // Focus the input so user can just type
-  setTimeout(() => welcomeInput.focus(), 50);
+  welcomeInput.value=homeAirportId||'';
+  setTimeout(()=>welcomeInput.focus(),50);
 });
 
-  
 initWelcome();
 </script>
 </body>
