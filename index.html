@@ -79,7 +79,7 @@ body.hide-windsock #homePanel{display:none}
 .windsock-segment-white{fill:#fff7ed}
 .windsock-outline{fill:none;stroke:rgba(15,23,42,.65);stroke-width:1}
 .windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
-.windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;text-anchor:middle}
+.windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
 .windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
 .windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
 .windsock-badge{stroke-width:1.5}
@@ -587,13 +587,13 @@ function drawHomeCompass(){
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
   const streamAngle=(windDir+90)%360;
-  const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.08).toFixed(2);
-  const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.09).toFixed(2);
-  const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.12).toFixed(2);
-  const tailBend=(1.4+calmFactor*2.7+gustDelta*0.15).toFixed(2);
-  const waveMs=Math.round(2350-intensity*650);
-  const clothMs=Math.round(1080-intensity*180);
-  const tailMs=Math.round(840-intensity*120);
+  const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
+  const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
+  const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.28).toFixed(2);
+  const tailBend=(1.4+calmFactor*2.7+gustDelta*0.34).toFixed(2);
+  const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
+  const clothMs=Math.max(520,Math.round(980-intensity*180-gustDelta*42));
+  const tailMs=Math.max(420,Math.round(760-intensity*120-gustDelta*34));
 
   const anchor=svgEl('g',{transform:'translate(123 114)'});
   const motion=svgEl('g',{
