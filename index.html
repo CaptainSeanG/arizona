@@ -211,7 +211,7 @@ let kioskMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
-const CLOCK_LAYOUT={x:818,width:278,boxHeight:92,box1Y:40,box2Y:160};
+const CLOCK_LAYOUT={x:818,width:278,boxHeight:92,box1Y:40,box2Y:154};
 
 function svgEl(name,attrs={},text=''){
   const el=document.createElementNS('http://www.w3.org/2000/svg',name);
@@ -361,7 +361,7 @@ function drawClocks(){
   panel.appendChild(box1);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU'));
   panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+74,class:'clock-time'},zulu));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+88,class:'clock-sub'},`METAR UPDATED ${updatedZulu}`));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+88,class:'clock-sub'},`UPDATED ${updatedZulu}`));
   panel.appendChild(box2);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+74,class:'clock-time'},local));
@@ -379,7 +379,7 @@ function positionWindToggle(){
   const buttonWidth=278;
   const buttonHeight=38;
   const left=offsetX+CLOCK_LAYOUT.x*scale;
-  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+38)*scale;
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+30)*scale;
   windToggle.style.left=`${Math.round(left)}px`;
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
