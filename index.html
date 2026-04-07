@@ -436,6 +436,26 @@ function extractWind(record){
   return{dir,speed,gust};
 }
 
+function inferFlightCategory(record){
+  const visibilityRaw=record.visib??record.visibility??record.vis??record.prevail_vis_sm;
+  const visibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
+    ? Number(visibilityRaw.replace('+',''))||10
+    : Number(visibilityRaw);
+  const cloudLayers=Array.isArray(record.clouds)&&record.clouds.length
+    ? record.clouds
+    : (record.cover||record.base ? [{cover:record.cover,base:record.base}] : []);
+  const ceilingBases=cloudLayers
+    .filter(layer=>['BKN','OVC','OVX'].includes(String(layer.cover||'').toUpperCase()))
+    .map(layer=>Number(layer.base))
+    .filter(base=>Number.isFinite(base));
+  const ceiling=ceilingBases.length?Math.min(...ceilingBases):Infinity;
+
+  if((Number.isFinite(visibility)&&visibility<1)||ceiling<500) return 'LIFR';
+  if((Number.isFinite(visibility)&&visibility<3)||ceiling<1000) return 'IFR';
+  if((Number.isFinite(visibility)&&visibility<=5)||ceiling<=3000) return 'MVFR';
+  return 'VFR';
+}
+
 function showTooltip(airportId,clientX,clientY){
   const airport=airports.find(a=>a.id===airportId);
   if(!airport) return;
@@ -744,7 +764,11 @@ async function fetchMetars(){
 
     metarById.clear();
     metarRecordById.clear();
-    airports.forEach(a=>{a.stale=false;});
+    airports.forEach(a=>{
+      a.stale=false;
+      a.cat='NONE';
+      a.obsDate=null;
+    });
 
     data.forEach(item=>{
       const id=extractAirportId(item);
@@ -753,7 +777,10 @@ async function fetchMetars(){
       if(!id) return;
 
       const airport=airports.find(a=>a.id===id);
-      if(airport&&category&&colors[category]) airport.cat=category;
+      if(airport){
+        const resolvedCategory=category&&colors[category]?category:inferFlightCategory(item);
+        airport.cat=resolvedCategory;
+      }
       if(raw) metarById.set(id,raw);
       metarRecordById.set(id,item);
       if(airport){
