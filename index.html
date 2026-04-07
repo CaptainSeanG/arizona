@@ -566,15 +566,15 @@ const obs =
     ? airport.obsDate
     : (record ? parseObsTime(record) : null);
 
-const fallbackUpdated =
+const fallbackUpdatedSub =
   lastMetarUpdatedAt ? new Date(lastMetarUpdatedAt) : null;
 
 const bestDate =
   (obs instanceof Date && !isNaN(obs.getTime()))
     ? obs
-    : ((fallbackUpdated instanceof Date && !isNaN(fallbackUpdated.getTime()))
-        ? fallbackUpdated
-        : null);
+    : ((fallbackUpdatedSub instanceof Date && !isNaN(fallbackUpdatedSub.getTime()))
+    ? fallbackUpdatedSub
+    : null);
 
 if (bestDate) {
   const ageMin = Math.round((Date.now() - bestDate.getTime()) / 60000);
