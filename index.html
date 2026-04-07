@@ -21,6 +21,25 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(circle at to
 .clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
 .clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:34px;font-weight:800;letter-spacing:2px}
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px}
+#windToggle{
+  position:absolute;
+  right:22px;
+  top:274px;
+  width:112px;
+  height:34px;
+  border:1px solid rgba(148,163,184,.45);
+  background:rgba(2,6,23,.78);
+  color:#e5eefc;
+  border-radius:999px;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  letter-spacing:1px;
+  z-index:30;
+}
+#windToggle.is-off{
+  background:rgba(15,23,42,.42);
+  color:#94a3b8;
+}
 #tooltip{position:absolute;display:none;pointer-events:none;max-width:360px;background:rgba(2,6,23,.96);color:#e5eefc;border:1px solid #64748b;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35;z-index:20}
 #tooltip .tip-id{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:4px}
 #tooltip .tip-raw{white-space:normal}
@@ -108,6 +127,7 @@ body.hide-windsock #homePanel{display:none}
     <g id="clocks"></g>
   </svg>
   <div id="tooltip"></div>
+  <button id="windToggle" type="button">WIND</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
@@ -167,6 +187,7 @@ const map=document.getElementById('map');
 const dots=document.getElementById('dots');
 const clocks=document.getElementById('clocks');
 const tooltip=document.getElementById('tooltip');
+const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
 const homeCompass=document.getElementById('homeCompass');
@@ -259,12 +280,18 @@ function project(lat,lon){
 function updateHudButtons(){
   document.body.classList.toggle('show-metar-hud',showMetarHud);
   document.body.classList.toggle('hide-windsock',!showWindsock);
+  windToggle.classList.toggle('is-off',!showWindsock);
   const updatedLabel=lastMetarUpdatedAt
     ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
     : '';
   metarStatusBtn.textContent=lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
     : `METAR: ${liveMetarStatus}${updatedLabel}`;
+}
+
+function toggleWindsock(){
+  showWindsock=!showWindsock;
+  updateHudButtons();
 }
 
 function drawMap(){
@@ -678,6 +705,8 @@ function initWelcome(){
   else startApp();
 }
 
+windToggle.addEventListener('click',toggleWindsock);
+
 welcomeBtn.addEventListener('click',()=>{
   const val=welcomeInput.value.trim().toUpperCase();
   if(!airports.some(a=>a.id===val)){
@@ -703,8 +732,7 @@ document.addEventListener('keydown',async e=>{
   }
 
   if(e.key==='w'||e.key==='W'){
-    showWindsock=!showWindsock;
-    updateHudButtons();
+    toggleWindsock();
   }
 
   if(e.key==='f'||e.key==='F'){
