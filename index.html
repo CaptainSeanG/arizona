@@ -453,6 +453,7 @@ function drawHomeCompass(){
   const airport=airports.find(a=>a.id===homeAirportId);
   const record=metarRecordById.get(homeAirportId);
   const ageMin=getDisplayAgeMinutes(record,airport);
+  const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
@@ -475,7 +476,11 @@ function drawHomeCompass(){
   }
   homeCompass.appendChild(svgEl('text',{x:123,y:30,class:'windsock-airport'},homeAirportId||'----'));
 
-  const statusBadge=svgEl('rect',{x:174,y:42,width:52,height:20,rx:10,ry:10,class:'windsock-badge'});
+  const statusBadge=svgEl('rect',{
+    x:174,y:42,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
+    fill:badgeColor,
+    stroke:badgeColor
+  });
   const statusText=svgEl('text',{x:200,y:56,class:'windsock-status'},airport?airport.cat:'WAITING');
   homeCompass.appendChild(statusBadge);
   homeCompass.appendChild(statusText);
@@ -503,6 +508,13 @@ function drawHomeCompass(){
   const windSpeed=Math.max(0,Number(speed)||0);
   const gustSpeed=Math.max(windSpeed,Number(gust)||0);
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
+
+  if(windSpeed===0){
+    homeCompass.appendChild(svgEl('text',{x:123,y:118,class:'windsock-copy'},'NO WIND'));
+    homeCompass.appendChild(svgEl('text',{x:123,y:218,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    return;
+  }
+
   const segmentCount=getSockSegmentCount(windSpeed);
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
@@ -566,11 +578,13 @@ function drawHomeCompass(){
 
   const windCopy=`${String(windDir).padStart(3,'0')} DEG ${windSpeed}KT${gust?` G${gust}`:''}`;
   const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
-  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'STEADY WIND';
+  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'';
 
-  homeCompass.appendChild(svgEl('text',{x:123,y:180,class:'windsock-copy'},windCopy));
-  homeCompass.appendChild(svgEl('text',{x:123,y:202,class:'windsock-sub'},ageCopy));
-  homeCompass.appendChild(svgEl('text',{x:123,y:224,class:'windsock-sub'},gustCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:210,class:'windsock-copy'},windCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:231,class:'windsock-sub'},ageCopy));
+  if(gustCopy){
+    homeCompass.appendChild(svgEl('text',{x:123,y:248,class:'windsock-sub'},gustCopy));
+  }
 }
 
 async function fetchMetars(){
