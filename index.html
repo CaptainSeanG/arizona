@@ -32,17 +32,17 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   position:absolute;
   left:22px;
   bottom:22px;
-  width:270px;
+  width:236px;
   background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));
   border:1px solid rgba(148,163,184,.45);
   border-radius:14px;
-  padding:12px;
+  padding:10px 10px 12px;
   box-shadow:0 8px 24px rgba(0,0,0,.35);
   z-index:30;
   cursor:pointer;
 }
 #homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:8px;text-align:center}
-#homeCompass{width:246px;height:266px;display:block;margin:0 auto;background:transparent}
+#homeCompass{width:216px;height:270px;display:block;margin:0 auto;background:transparent}
 .windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
 .windsock-boom{stroke:#e2e8f0;stroke-width:4;stroke-linecap:round}
 .windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
@@ -458,31 +458,31 @@ function drawHomeCompass(){
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:67,class:'windsock-ring'}));
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:46,class:'windsock-ring-inner'}));
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:118,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:116,r:76,class:'windsock-ring'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:116,r:54,class:'windsock-ring-inner'}));
+  homeCompass.appendChild(svgEl('circle',{cx:123,cy:116,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
   [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
     const rad=(deg-90)*Math.PI/180;
-    const tx=123+Math.cos(rad)*54;
-    const ty=118+Math.sin(rad)*54+4;
+    const tx=123+Math.cos(rad)*62;
+    const ty=116+Math.sin(rad)*62+4;
     homeCompass.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
   });
   for(let deg=0;deg<360;deg+=30){
     const rad=(deg-90)*Math.PI/180;
-    const x1=123+Math.cos(rad)*58;
-    const y1=118+Math.sin(rad)*58;
-    const x2=123+Math.cos(rad)*65;
-    const y2=118+Math.sin(rad)*65;
+    const x1=123+Math.cos(rad)*66;
+    const y1=116+Math.sin(rad)*66;
+    const x2=123+Math.cos(rad)*74;
+    const y2=116+Math.sin(rad)*74;
     homeCompass.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
   }
   homeCompass.appendChild(svgEl('text',{x:123,y:30,class:'windsock-airport'},homeAirportId||'----'));
 
   const statusBadge=svgEl('rect',{
-    x:174,y:42,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
+    x:164,y:42,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
     fill:badgeColor,
     stroke:badgeStroke
   });
-  const statusText=svgEl('text',{x:200,y:56,class:'windsock-status'},airport?airport.cat:'WAITING');
+  const statusText=svgEl('text',{x:190,y:56,class:'windsock-status'},airport?airport.cat:'WAITING');
   homeCompass.appendChild(statusBadge);
   homeCompass.appendChild(statusText);
 
@@ -511,15 +511,15 @@ function drawHomeCompass(){
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
 
   if(windSpeed===0){
-    homeCompass.appendChild(svgEl('text',{x:123,y:118,class:'windsock-copy'},'NO WIND'));
-    homeCompass.appendChild(svgEl('text',{x:123,y:218,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    homeCompass.appendChild(svgEl('text',{x:123,y:116,class:'windsock-copy'},'NO WIND'));
+    homeCompass.appendChild(svgEl('text',{x:123,y:228,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
     return;
   }
 
   const segmentCount=getSockSegmentCount(windSpeed);
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
-  const streamAngle=windDir%360;
+  const streamAngle=(windDir+180)%360;
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.08).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.09).toFixed(2);
   const bendDeg=(0.8+calmFactor*1.9+gustDelta*0.12).toFixed(2);
@@ -528,7 +528,7 @@ function drawHomeCompass(){
   const clothMs=Math.round(1080-intensity*180);
   const tailMs=Math.round(840-intensity*120);
 
-  const anchor=svgEl('g',{transform:'translate(123 118)'});
+  const anchor=svgEl('g',{transform:'translate(123 116)'});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
@@ -581,10 +581,10 @@ function drawHomeCompass(){
   const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
   const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'';
 
-  homeCompass.appendChild(svgEl('text',{x:123,y:210,class:'windsock-copy'},windCopy));
-  homeCompass.appendChild(svgEl('text',{x:123,y:231,class:'windsock-sub'},ageCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:220,class:'windsock-copy'},windCopy));
+  homeCompass.appendChild(svgEl('text',{x:123,y:241,class:'windsock-sub'},ageCopy));
   if(gustCopy){
-    homeCompass.appendChild(svgEl('text',{x:123,y:248,class:'windsock-sub'},gustCopy));
+    homeCompass.appendChild(svgEl('text',{x:123,y:258,class:'windsock-sub'},gustCopy));
   }
 }
 
