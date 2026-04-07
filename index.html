@@ -660,11 +660,12 @@ function drawHomeCompass(){
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
+  const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
 
   const anchor=svgEl('g',{transform:'translate(123 114)'});
   const motion=svgEl('g',{
     class:'windsock-rig',
-    style:`--sway:${swayDeg}deg;--wave-ms:${waveMs}ms`
+    style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
   });
   const rotated=svgEl('g',{transform:`rotate(${streamAngle})`});
   const cloth=svgEl('g');
@@ -675,13 +676,13 @@ function drawHomeCompass(){
   buildSockRibbon(cloth,{
     bandLengths,
     totalLength,
-    mouthRadius:10,
+    mouthRadius:12,
     tailWidth:Math.max(2.5,7-(segmentCount*0.8)),
     inflate,
     wavePhase,
-    waveAmp:Number(flutterPx)*(0.45+1.15*(1-inflate)),
+    waveAmp:Number(flutterPx)*(0.55+1.2*(1-inflate)),
     sag:(1-inflate)*18,
-    gustAmp:Math.max(0,gustDelta)*0.72
+    gustAmp:Math.max(0,gustDelta)*0.95
   });
 
   rotated.appendChild(cloth);
