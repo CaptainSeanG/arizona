@@ -772,7 +772,7 @@ function startApp(){
   fetchMetars();
   clockIntervalId=setInterval(drawClocks,1000);
   metarIntervalId=setInterval(fetchMetars,5*60*1000);
-  compassIntervalId=setInterval(drawHomeCompass,60000);
+  compassIntervalId=setInterval(drawHomeCompass,200);
 }
 
 function initWelcome(){
