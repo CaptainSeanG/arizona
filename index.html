@@ -505,6 +505,14 @@ function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style='')
   group.appendChild(segment);
 }
 
+function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
+  const firstWidth=width/2;
+  const secondWidth=width-firstWidth;
+  const midHeight=startHeight+(endHeight-startHeight)*(firstWidth/width);
+  buildSockSegment(group,startX,firstWidth,startHeight,midHeight,cls,style);
+  buildSockSegment(group,startX+firstWidth,secondWidth,midHeight,endHeight,cls,style);
+}
+
 function getSockSegmentCount(speed){
   const windSpeed=Math.max(0,Number(speed)||0);
   if(windSpeed < 5) return 1;
@@ -610,7 +618,7 @@ function drawHomeCompass(){
     {startX:65,width:13,startHeight:8,endHeight:6,cls:'windsock-segment-orange',flutter:0.26,bend:0.9,ms:120}
   ];
   segmentDefs.slice(0,segmentCount).forEach(def=>{
-    buildSockSegment(
+    buildSockBand(
       segments,
       def.startX,
       def.width,
