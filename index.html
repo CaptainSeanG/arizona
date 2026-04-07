@@ -530,10 +530,9 @@ function buildSockRibbon(group,{
     const width=(mouthRadius*2)*(1-t)+tailWidth*t;
     const sagCurve=sag*Math.pow(t,1.3);
     const flowT=1-t;
-    const wave=(
-      Math.sin((flowT*1.9+wavePhase)*Math.PI*2)*waveAmp*(0.28+0.92*t)+
-      Math.sin((flowT*3.6+wavePhase*1.35)*Math.PI*2)*(waveAmp*0.45+gustAmp*0.55)*(0.08+1.05*t)
-    );
+    const primaryWave=Math.sin((flowT*1.9+wavePhase)*Math.PI*2)*waveAmp*(0.28+0.92*t);
+    const gustWave=Math.sin((flowT*2.8+wavePhase*1.08)*Math.PI*2)*gustAmp*(0.04+0.75*t);
+    const wave=primaryWave+gustWave;
     const x=along*dirX + wave*normalX;
     const y=along*dirY + wave*normalY + sagCurve;
     pts.push({x,y,width});
@@ -688,7 +687,7 @@ function drawHomeCompass(){
     wavePhase,
     waveAmp:Number(flutterPx)*(0.55+1.2*(1-inflate)),
     sag:(1-inflate)*18,
-    gustAmp:Math.max(0,gustDelta)*0.95,
+    gustAmp:Math.max(0,gustDelta)*0.45,
     angleDeg:streamAngle
   });
 
