@@ -505,12 +505,28 @@ function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style='')
   group.appendChild(segment);
 }
 
+function parseSockStyle(style=''){
+  const vars={};
+  String(style).split(';').forEach(part=>{
+    const [rawKey,rawValue]=part.split(':');
+    if(!rawKey||!rawValue) return;
+    vars[rawKey.trim()]=rawValue.trim();
+  });
+  return vars;
+}
+
 function buildSockBand(group,startX,width,startHeight,endHeight,cls,style=''){
   const firstWidth=width/2;
   const secondWidth=width-firstWidth;
   const midHeight=startHeight+(endHeight-startHeight)*(firstWidth/width);
-  buildSockSegment(group,startX,firstWidth,startHeight,midHeight,cls,style);
-  buildSockSegment(group,startX+firstWidth,secondWidth,midHeight,endHeight,cls,style);
+  const vars=parseSockStyle(style);
+  const flutter=parseFloat((vars['--flutter']||'0').replace('px',''))||0;
+  const bend=parseFloat((vars['--bend']||'0').replace('deg',''))||0;
+  const clothMs=parseFloat((vars['--cloth-ms']||'0').replace('ms',''))||0;
+  const styleA=`--flutter:${flutter.toFixed(2)}px;--bend:${bend.toFixed(2)}deg;--cloth-ms:${Math.round(clothMs)}ms`;
+  const styleB=`--flutter:${(flutter+0.24).toFixed(2)}px;--bend:${(bend+0.45).toFixed(2)}deg;--cloth-ms:${Math.round(clothMs+55)}ms`;
+  buildSockSegment(group,startX,firstWidth,startHeight,midHeight,cls,styleA);
+  buildSockSegment(group,startX+firstWidth,secondWidth,midHeight,endHeight,cls,styleB);
 }
 
 function getSockSegmentCount(speed){
