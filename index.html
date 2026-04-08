@@ -24,6 +24,23 @@ body.alt-color svg{background:#2b0814}
 .clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
 .clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
+#missingStations{
+  position:absolute;
+  left:0;
+  top:0;
+  width:348px;
+  color:#cbd5e1;
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:1px;
+  line-height:1.35;
+  z-index:30;
+  display:none;
+}
+#missingStations.show{display:block}
+#missingStations .missing-title{color:#93c5fd;margin-bottom:4px}
+#missingStations .missing-list{color:#f8fafc;word-break:break-word}
 #windToggle{
   position:absolute;
   left:0;
@@ -142,6 +159,10 @@ body.hide-windsock #homePanel{display:none}
     <g id="clocks"></g>
   </svg>
   <div id="tooltip"></div>
+  <div id="missingStations" aria-live="polite">
+    <div class="missing-title">MISSING STATIONS</div>
+    <div class="missing-list">NONE</div>
+  </div>
   <button id="windToggle" type="button">WINDSOCK</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
@@ -202,6 +223,7 @@ const map=document.getElementById('map');
 const dots=document.getElementById('dots');
 const clocks=document.getElementById('clocks');
 const tooltip=document.getElementById('tooltip');
+const missingStations=document.getElementById('missingStations');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
@@ -222,6 +244,7 @@ let showMetarHud=false;
 let showWindsock=true;
 let kioskMode=false;
 let altColorMode=false;
+let missingAirportIds=[];
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
@@ -304,6 +327,15 @@ function updateHudButtons(){
   metarStatusBtn.textContent=lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
     : `METAR: ${liveMetarStatus}${updatedLabel}`;
+}
+
+function updateMissingStationsDisplay(){
+  const list=missingStations.querySelector('.missing-list');
+  missingStations.style.left=`${CLOCK_LAYOUT.x}px`;
+  missingStations.style.top=`${CLOCK_LAYOUT.box2Y + CLOCK_LAYOUT.boxHeight + 68}px`;
+  missingStations.style.width=`${CLOCK_LAYOUT.width}px`;
+  list.textContent=missingAirportIds.length?missingAirportIds.join(', '):'NONE';
+  missingStations.classList.toggle('show',missingAirportIds.length>0);
 }
 
 function toggleWindsock(){
@@ -398,11 +430,14 @@ function positionWindToggle(){
   const buttonWidth=248;
   const buttonHeight=38;
   const left=offsetX+CLOCK_LAYOUT.x*scale;
-  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+30)*scale;
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+20)*scale;
   windToggle.style.left=`${Math.round(left)}px`;
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
   windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
+  missingStations.style.left=`${Math.round(offsetX + CLOCK_LAYOUT.x*scale)}px`;
+  missingStations.style.top=`${Math.round(offsetY + (CLOCK_LAYOUT.box2Y + CLOCK_LAYOUT.boxHeight + 68)*scale)}px`;
+  missingStations.style.width=`${Math.round(CLOCK_LAYOUT.width*scale)}px`;
 }
 
 function getFallbackMetar(airport){
@@ -823,17 +858,21 @@ async function fetchMetars(){
         airport.obsDate=obs;
       }
     });
+    missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
 
     liveMetarStatus=metarById.size?`CACHE ${metarById.size}`:'NO RAW';
     lastMetarUpdatedAt=new Date().toISOString();
     drawDots();
     drawHomeCompass();
     drawClocks();
+    updateMissingStationsDisplay();
     updateHudButtons();
   }catch(error){
     liveMetarStatus='FALLBACK';
     lastMetarError=error.message||'UNKNOWN';
     lastMetarUpdatedAt=null;
+    missingAirportIds=airports.map(a=>a.id);
+    updateMissingStationsDisplay();
     updateHudButtons();
     console.error('Cached METAR load failed',error);
   }
@@ -844,6 +883,7 @@ function draw(){
   drawDots();
   drawClocks();
   drawHomeCompass();
+  updateMissingStationsDisplay();
 }
 
 function updateColorMode(){
