@@ -455,6 +455,17 @@ function extractRawMetar(item){
 function parseObsTime(record){
   const candidates=[record.obsTime,record.observation_time,record.reportTime,record.report_time,record.obsTimeUtc].filter(Boolean);
   for(const value of candidates){
+    if(typeof value==='number' && Number.isFinite(value)){
+      const epochMs=value<1e12 ? value*1000 : value;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
+    if(typeof value==='string' && /^\d+$/.test(value)){
+      const numeric=Number(value);
+      const epochMs=numeric<1e12 ? numeric*1000 : numeric;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
     const d=new Date(value);
     if(!Number.isNaN(d.getTime())) return d;
   }
