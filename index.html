@@ -62,6 +62,8 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 }
 #hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
 #hudMissing .missing-list{color:#f8fafc;word-break:break-word}
+#hudJsonUpdated{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudJsonUpdated .json-value{color:#f8fafc}
 #homePanel{
   position:absolute;
   left:22px;
@@ -164,6 +166,10 @@ body.hide-windsock #homePanel{display:none}
         <div class="missing-title">MISSING STATIONS</div>
         <div class="missing-list">NONE</div>
       </div>
+      <div id="hudJsonUpdated" aria-live="polite">
+        <div>JSON UPDATED</div>
+        <div class="json-value">WAITING</div>
+      </div>
     </div>
   </div>
   <div id="welcomeOverlay">
@@ -219,6 +225,7 @@ const dots=document.getElementById('dots');
 const clocks=document.getElementById('clocks');
 const tooltip=document.getElementById('tooltip');
 const hudMissing=document.getElementById('hudMissing');
+const hudJsonUpdated=document.getElementById('hudJsonUpdated');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
@@ -322,6 +329,17 @@ function updateHudButtons(){
   metarStatusBtn.textContent=lastMetarError
     ? `METAR: ${liveMetarStatus} (${lastMetarError})`
     : `METAR: ${liveMetarStatus}${updatedLabel}`;
+  const jsonValue=hudJsonUpdated.querySelector('.json-value');
+  jsonValue.textContent=lastMetarUpdatedAt
+    ? new Date(lastMetarUpdatedAt).toLocaleString('en-US',{
+        month:'2-digit',
+        day:'2-digit',
+        hour:'2-digit',
+        minute:'2-digit',
+        second:'2-digit',
+        hour12:true
+      })
+    : 'WAITING';
 }
 
 function updateMissingStationsDisplay(){
