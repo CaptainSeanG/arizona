@@ -717,9 +717,25 @@ function drawHomeCompass(){
   if(dir==='VRB'){
     const vrbAlert=(Number(speed)>=20)||(gust&&Number(gust)>=20);
     const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
+    const measureText=(text,cls)=>{
+      const probe=svgEl('text',{x:-9999,y:-9999,class:cls,style:'visibility:hidden;text-anchor:start;'});
+      probe.textContent=text;
+      homeCompass.appendChild(probe);
+      const width=probe.getComputedTextLength();
+      probe.remove();
+      return width;
+    };
+    const dirLabel='VRB';
+    const speedLabel=`${speed}KT${gust?` G${gust}`:''}`;
+    const gap=12;
+    const dirWidth=measureText(dirLabel,'windsock-copy');
+    const speedWidth=measureText(speedLabel,'windsock-copy');
+    const totalWidth=dirWidth+gap+speedWidth;
+    let cursorX=123-totalWidth/2;
     const vrbText=svgEl('g');
-    vrbText.appendChild(svgEl('text',{x:36,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},'VRB'));
-    vrbText.appendChild(svgEl('text',{x:96,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${vrbAlert?alertFill:'#e5eefc'};`},`${speed}KT${gust?` G${gust}`:''}`));
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},dirLabel));
+    cursorX+=dirWidth+gap;
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${vrbAlert?alertFill:'#e5eefc'};`},speedLabel));
     homeCompass.appendChild(vrbText);
     homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
     if(gust){
