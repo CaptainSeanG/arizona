@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,23 +24,6 @@ body.alt-color svg{background:#2b0814}
 .clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
 .clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
 .clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
-#missingStations{
-  position:absolute;
-  left:0;
-  top:0;
-  width:348px;
-  color:#cbd5e1;
-  font-family:'Orbitron',sans-serif;
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:1px;
-  line-height:1.35;
-  z-index:30;
-  display:none;
-}
-#missingStations.show{display:block}
-#missingStations .missing-title{color:#93c5fd;margin-bottom:4px}
-#missingStations .missing-list{color:#f8fafc;word-break:break-word}
 #windToggle{
   position:absolute;
   left:0;
@@ -69,6 +52,16 @@ body.alt-color svg{background:#2b0814}
 #hud{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s ease}
 body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 .hud-btn{appearance:none;border:1px solid rgba(148,163,184,.45);background:rgba(2,6,23,.72);color:#e5eefc;border-radius:12px;padding:10px 14px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px}
+#hudInfo{
+  min-width:260px;
+  max-width:360px;
+  background:rgba(2,6,23,.78);
+  border:1px solid rgba(148,163,184,.45);
+  border-radius:12px;
+  padding:10px 14px;
+}
+#hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudMissing .missing-list{color:#f8fafc;word-break:break-word}
 #homePanel{
   position:absolute;
   left:22px;
@@ -159,17 +152,19 @@ body.hide-windsock #homePanel{display:none}
     <g id="clocks"></g>
   </svg>
   <div id="tooltip"></div>
-  <div id="missingStations" aria-live="polite">
-    <div class="missing-title">MISSING STATIONS</div>
-    <div class="missing-list">NONE</div>
-  </div>
   <button id="windToggle" type="button">WINDSOCK</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
   </div>
   <div id="hud">
-    <button id="metarStatusBtn" class="hud-btn" type="button">METAR: STARTING</button>
+    <div id="hudInfo">
+      <button id="metarStatusBtn" class="hud-btn" type="button">METAR: STARTING</button>
+      <div id="hudMissing" aria-live="polite">
+        <div class="missing-title">MISSING STATIONS</div>
+        <div class="missing-list">NONE</div>
+      </div>
+    </div>
   </div>
   <div id="welcomeOverlay">
     <div id="welcomeCard">
@@ -223,7 +218,7 @@ const map=document.getElementById('map');
 const dots=document.getElementById('dots');
 const clocks=document.getElementById('clocks');
 const tooltip=document.getElementById('tooltip');
-const missingStations=document.getElementById('missingStations');
+const hudMissing=document.getElementById('hudMissing');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
@@ -330,12 +325,9 @@ function updateHudButtons(){
 }
 
 function updateMissingStationsDisplay(){
-  const list=missingStations.querySelector('.missing-list');
-  missingStations.style.left=`${CLOCK_LAYOUT.x}px`;
-  missingStations.style.top=`${CLOCK_LAYOUT.box2Y + CLOCK_LAYOUT.boxHeight + 68}px`;
-  missingStations.style.width=`${CLOCK_LAYOUT.width}px`;
+  const list=hudMissing.querySelector('.missing-list');
   list.textContent=missingAirportIds.length?missingAirportIds.join(', '):'NONE';
-  missingStations.classList.toggle('show',missingAirportIds.length>0);
+  hudMissing.style.display=missingAirportIds.length>0?'block':'none';
 }
 
 function toggleWindsock(){
@@ -435,9 +427,6 @@ function positionWindToggle(){
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
   windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
-  missingStations.style.left=`${Math.round(offsetX + CLOCK_LAYOUT.x*scale)}px`;
-  missingStations.style.top=`${Math.round(offsetY + (CLOCK_LAYOUT.box2Y + CLOCK_LAYOUT.boxHeight + 68)*scale)}px`;
-  missingStations.style.width=`${Math.round(CLOCK_LAYOUT.width*scale)}px`;
 }
 
 function getFallbackMetar(airport){
