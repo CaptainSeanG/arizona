@@ -26,14 +26,14 @@ svg{width:100%;height:100%;display:block;background:#000}
   position:absolute;
   left:0;
   top:0;
-  width:278px;
+  width:248px;
   height:38px;
   border:1px solid rgba(249,115,22,.55);
   background:rgba(0,0,0,.88);
   color:#f97316;
   border-radius:999px;
   font-family:'Orbitron',sans-serif;
-  font-size:13px;
+  font-size:12px;
   font-weight:600;
   letter-spacing:1px;
   z-index:30;
@@ -387,7 +387,7 @@ function positionWindToggle(){
   const scale=Math.min(wrapRect.width/viewWidth,wrapRect.height/viewHeight);
   const offsetX=(wrapRect.width-viewWidth*scale)/2;
   const offsetY=(wrapRect.height-viewHeight*scale)/2;
-  const buttonWidth=278;
+  const buttonWidth=248;
   const buttonHeight=38;
   const left=offsetX+CLOCK_LAYOUT.x*scale;
   const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+30)*scale;
