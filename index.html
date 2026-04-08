@@ -586,11 +586,29 @@ function showTooltip(airportId,clientX,clientY){
 
 function hideTooltip(){ tooltip.style.display='none'; }
 
+function setHomeAirport(airportId,{restart=false}={}){
+  if(!airports.some(a=>a.id===airportId)) return;
+  homeAirportId=airportId;
+  localStorage.setItem('homeAirportId',airportId);
+  welcomeError.textContent='';
+  if(restart){
+    startApp();
+    return;
+  }
+  drawHomeCompass();
+}
+
 function attachTooltipHandlers(){
   dots.querySelectorAll('g[data-airport-id]').forEach(node=>{
     node.addEventListener('mouseenter',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
     node.addEventListener('mousemove',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
     node.addEventListener('mouseleave',hideTooltip);
+    node.addEventListener('dblclick',e=>{
+      e.preventDefault();
+      const airportId=node.dataset.airportId;
+      setHomeAirport(airportId);
+      hideTooltip();
+    });
   });
 }
 
@@ -981,10 +999,7 @@ welcomeBtn.addEventListener('click',()=>{
     welcomeError.textContent='Enter a valid Arizona airport from this map';
     return;
   }
-  homeAirportId=val;
-  localStorage.setItem('homeAirportId',val);
-  welcomeError.textContent='';
-  startApp();
+  setHomeAirport(val,{restart:true});
 });
 
 welcomeInput.addEventListener('keydown',e=>{
