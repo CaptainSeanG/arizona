@@ -9,8 +9,10 @@
 html,body{width:100%;height:100%}
 body{margin:0;background:#0b1220;color:#fff;overflow:hidden;font-family:Inter,Arial,sans-serif}
 body.kiosk{cursor:none}
+body.alt-color{background:#4a1022}
 #wrap{width:100vw;height:100vh;position:relative}
 svg{width:100%;height:100%;display:block;background:#000}
+body.alt-color svg{background:#4a1022}
 .outline{fill:none;stroke:#64748b;stroke-width:3;vector-effect:non-scaling-stroke}
 .led-group{pointer-events:all}
 .led-core{stroke:#000;stroke-width:.6;transition:fill .45s ease,opacity .45s ease,r .45s ease}
@@ -129,6 +131,11 @@ body.hide-windsock #homePanel{display:none}
         <stop offset="42%" stop-color="#08111f" />
         <stop offset="100%" stop-color="#020617" />
       </radialGradient>
+      <radialGradient id="stateBgAlt" cx="50%" cy="12%" r="80%">
+        <stop offset="0%" stop-color="#2b5f9f" />
+        <stop offset="42%" stop-color="#173d6d" />
+        <stop offset="100%" stop-color="#0a1f3d" />
+      </radialGradient>
     </defs>
     <g id="map"></g>
     <g id="dots"></g>
@@ -214,6 +221,7 @@ let lastMetarUpdatedAt=null;
 let showMetarHud=false;
 let showWindsock=true;
 let kioskMode=false;
+let altColorMode=false;
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
@@ -308,7 +316,7 @@ function drawMap(){
   let path='';
   imageOutline.forEach(([x,y],i)=>{path+=`${i===0?'M':'L'} ${x} ${y} `;});
   path+='Z';
-  const fillShape=svgEl('path',{d:path,fill:'url(#stateBg)'});
+  const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
   const outline=svgEl('path',{d:path,class:'outline'});
   map.appendChild(fillShape);
   map.appendChild(outline);
@@ -838,6 +846,11 @@ function draw(){
   drawHomeCompass();
 }
 
+function updateColorMode(){
+  document.body.classList.toggle('alt-color',altColorMode);
+  drawMap();
+}
+
 function stopIntervals(){
   if(clockIntervalId) clearInterval(clockIntervalId);
   if(metarIntervalId) clearInterval(metarIntervalId);
@@ -904,6 +917,11 @@ document.addEventListener('keydown',async e=>{
   if(e.key==='k'||e.key==='K'){
     kioskMode=!kioskMode;
     document.body.classList.toggle('kiosk',kioskMode);
+  }
+
+  if(e.key==='c'||e.key==='C'){
+    altColorMode=!altColorMode;
+    updateColorMode();
   }
 
   if(e.key==='Escape'&&kioskMode){
