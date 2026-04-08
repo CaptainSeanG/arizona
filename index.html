@@ -102,8 +102,20 @@ body.hide-windsock #homePanel{display:none}
 .windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
 .stale .led-glow,.stale .led-core{animation:staleBlink 1.1s infinite steps(1)}
 .missing .led-glow,.missing .led-core{animation:missingPulse 1.8s ease-in-out infinite}
+.fresh-update .led-glow{animation:freshUpdateGlow 3s ease-out 1}
+.fresh-update .led-core{animation:freshUpdateCore 3s ease-out 1}
 @keyframes staleBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
 @keyframes missingPulse{0%,100%{opacity:.22}50%{opacity:1}}
+@keyframes freshUpdateGlow{
+  0%{r:14;opacity:.88}
+  18%{r:70;opacity:1}
+  100%{r:14;opacity:.88}
+}
+@keyframes freshUpdateCore{
+  0%{r:5;opacity:1}
+  18%{r:25;opacity:1}
+  100%{r:5;opacity:1}
+}
 @keyframes sockRigWave{
   0%,100%{transform:rotate(calc(var(--sway,4deg) * -1))}
   50%{transform:rotate(var(--sway,4deg))}
@@ -237,6 +249,8 @@ const welcomeError=document.getElementById('welcomeError');
 
 const metarById=new Map();
 const metarRecordById=new Map();
+const lastSeenMetarRawById=new Map();
+const freshUpdateUntilById=new Map();
 
 let homeAirportId=(localStorage.getItem('homeAirportId')||'').toUpperCase();
 let liveMetarStatus='STARTING';
@@ -376,8 +390,10 @@ function drawDots(){
     const p=project(a.lat,a.lon);
     const isMissing=!metarRecordById.has(a.id);
     const classes=['led-group'];
+    const freshUntil=freshUpdateUntilById.get(a.id)||0;
     if(a.stale) classes.push('stale');
     if(isMissing) classes.push('missing');
+    if(freshUntil>Date.now()&&!a.stale&&!isMissing) classes.push('fresh-update');
     const g=svgEl('g',{class:classes.join(' ')});
     g.dataset.airportId=a.id;
     const dotColor=getAirportDisplayColor(a);
@@ -494,7 +510,7 @@ function isStaleObs(obsDate){
   const ageMs=Date.now()-obsDate.getTime();
   if(ageMs<0) return false;
   if(ageMs>36*3600000) return false;
-  return ageMs>60*60*1000;
+  return ageMs>66*60*1000;
 }
 
 function extractWind(record){
@@ -864,6 +880,7 @@ async function fetchMetars(){
     const payload=await response.json();
     const data=Array.isArray(payload)?payload:(Array.isArray(payload.data)?payload.data:null);
     if(!data) throw new Error('BAD SHAPE');
+    const fetchStartedAt=Date.now();
 
     metarById.clear();
     metarRecordById.clear();
@@ -883,6 +900,13 @@ async function fetchMetars(){
       if(airport){
         const resolvedCategory=category&&colors[category]?category:inferFlightCategory(item);
         airport.cat=resolvedCategory;
+      }
+      if(raw){
+        const priorRaw=lastSeenMetarRawById.get(id);
+        if(priorRaw&&priorRaw!==raw){
+          freshUpdateUntilById.set(id,fetchStartedAt+3000);
+        }
+        lastSeenMetarRawById.set(id,raw);
       }
       if(raw) metarById.set(id,raw);
       metarRecordById.set(id,item);
