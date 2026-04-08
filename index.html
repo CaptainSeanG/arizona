@@ -62,6 +62,8 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 }
 #hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
 #hudMissing .missing-list{color:#f8fafc;word-break:break-word}
+#hudStale{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudStale .stale-list{color:#f8fafc;word-break:break-word}
 #hudJsonUpdated{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
 #hudJsonUpdated .json-value{color:#f8fafc}
 #homePanel{
@@ -178,6 +180,10 @@ body.hide-windsock #homePanel{display:none}
         <div class="missing-title">MISSING STATIONS</div>
         <div class="missing-list">NONE</div>
       </div>
+      <div id="hudStale" aria-live="polite">
+        <div class="stale-title">STALE STATIONS</div>
+        <div class="stale-list">NONE</div>
+      </div>
       <div id="hudJsonUpdated" aria-live="polite">
         <div>JSON UPDATED</div>
         <div class="json-value">WAITING</div>
@@ -237,6 +243,7 @@ const dots=document.getElementById('dots');
 const clocks=document.getElementById('clocks');
 const tooltip=document.getElementById('tooltip');
 const hudMissing=document.getElementById('hudMissing');
+const hudStale=document.getElementById('hudStale');
 const hudJsonUpdated=document.getElementById('hudJsonUpdated');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
@@ -262,6 +269,7 @@ let showHudWindsock=false;
 let kioskMode=false;
 let altColorMode=false;
 let missingAirportIds=[];
+let staleAirportIds=[];
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
@@ -363,6 +371,10 @@ function updateMissingStationsDisplay(){
   const list=hudMissing.querySelector('.missing-list');
   list.textContent=missingAirportIds.length?missingAirportIds.join(', '):'NONE';
   hudMissing.style.display=missingAirportIds.length>0?'block':'none';
+
+  const staleList=hudStale.querySelector('.stale-list');
+  staleList.textContent=staleAirportIds.length?staleAirportIds.join(', '):'NONE';
+  hudStale.style.display=staleAirportIds.length>0?'block':'none';
 }
 
 function toggleWindsock(){
@@ -973,6 +985,7 @@ async function fetchMetars(){
       }
     });
     missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
+    staleAirportIds=airports.filter(a=>a.stale).map(a=>a.id);
 
     liveMetarStatus=metarById.size?`CACHE ${metarById.size}`:'NO RAW';
     lastMetarUpdatedAt=new Date().toISOString();
@@ -986,6 +999,7 @@ async function fetchMetars(){
     lastMetarError=error.message||'UNKNOWN';
     lastMetarUpdatedAt=null;
     missingAirportIds=airports.map(a=>a.id);
+    staleAirportIds=[];
     updateMissingStationsDisplay();
     updateHudButtons();
     console.error('Cached METAR load failed',error);
