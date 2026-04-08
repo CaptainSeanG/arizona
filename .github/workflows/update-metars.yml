@@ -2,8 +2,6 @@ name: Update METAR Cache
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/6 * * * *"
 
 permissions:
   contents: write
