@@ -11,46 +11,64 @@ permissions:
 jobs:
   update-metars:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Fetch METAR JSON
+        shell: bash
         run: |
           set -euo pipefail
+
           URL="https://aviationweather.gov/api/data/metar?format=json&ids=KPHX,KDVT,KSDL,KFFZ,KIWA,KCHD,KGYR,KGEU,KLUF,KTUS,KDUG,KOLS,KPGA,KFLG,KINW,KPRC,KGCN,KSEZ,KSOW,KSAD,KSJN,KIGM,KHII,KIFP,KNYL,KRYN,KCGZ"
+
           HTTP_CODE=$(curl --silent --show-error --location \
             --user-agent "captainseang-arizona-metars/1.0" \
             --write-out "%{http_code}" \
             --output metars.json.tmp \
             "$URL")
-          echo "HTTP $HTTP_CODE"
+
+          echo "HTTP_CODE=$HTTP_CODE"
+
           if [ "$HTTP_CODE" = "204" ]; then
-            echo "No METAR data returned; keeping existing metars.json"
+            echo "No content returned; keeping existing metars.json"
             rm -f metars.json.tmp
             exit 0
           fi
+
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "Unexpected response from API"
+            echo "Fetch failed"
+            echo "First 500 bytes of response:"
             head -c 500 metars.json.tmp || true
             exit 1
           fi
+
           mv metars.json.tmp metars.json
 
       - name: Validate JSON
+        shell: bash
         run: |
           python - <<'PY'
           import json
-          with open("metars.json","r",encoding="utf-8") as f:
+
+          with open("metars.json", "r", encoding="utf-8") as f:
               data = json.load(f)
-          assert isinstance(data, list), "Expected JSON array"
-          print(f"metars.json valid; {len(data)} records")
+
+          assert isinstance(data, list), "Expected top-level JSON array"
+          print(f"metars.json valid with {len(data)} records")
           PY
 
       - name: Commit updated metars.json
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add metars.json
-          git diff --cached --quiet || git commit -m "Update metars.json"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update metars.json"
           git push
