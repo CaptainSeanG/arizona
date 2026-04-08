@@ -258,6 +258,7 @@ let lastMetarError='';
 let lastMetarUpdatedAt=null;
 let showMetarHud=false;
 let showWindsock=true;
+let showHudWindsock=false;
 let kioskMode=false;
 let altColorMode=false;
 let missingAirportIds=[];
@@ -336,6 +337,7 @@ function project(lat,lon){
 function updateHudButtons(){
   document.body.classList.toggle('show-metar-hud',showMetarHud);
   document.body.classList.toggle('hide-windsock',!showWindsock);
+  document.body.classList.toggle('show-hud-windsock',showHudWindsock);
   windToggle.classList.toggle('is-off',!showWindsock);
   const updatedLabel=lastMetarUpdatedAt
     ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
@@ -354,6 +356,7 @@ function updateHudButtons(){
         hour12:true
       })
     : 'WAITING';
+  positionHomePanel();
 }
 
 function updateMissingStationsDisplay(){
@@ -364,6 +367,16 @@ function updateMissingStationsDisplay(){
 
 function toggleWindsock(){
   showWindsock=!showWindsock;
+  if(!showWindsock) showHudWindsock=false;
+  updateHudButtons();
+}
+
+function toggleHudWindsock(){
+  showHudWindsock=!showHudWindsock;
+  if(showHudWindsock){
+    showMetarHud=true;
+    showWindsock=true;
+  }
   updateHudButtons();
 }
 
@@ -461,6 +474,31 @@ function positionWindToggle(){
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
   windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
+  positionHomePanel();
+}
+
+function positionHomePanel(){
+  const homePanel=document.getElementById('homePanel');
+  homePanel.style.left='';
+  homePanel.style.right='';
+  homePanel.style.bottom='';
+
+  if(showHudWindsock){
+    const hudRect=document.getElementById('hud').getBoundingClientRect();
+    const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+    const panelHeight=homePanel.offsetHeight||330;
+    const gap=12;
+    homePanel.style.left='auto';
+    homePanel.style.right=`${Math.max(22,Math.round(wrapRect.right-hudRect.right))}px`;
+    homePanel.style.bottom=`${Math.max(22,Math.round(wrapRect.bottom-hudRect.top+gap))}px`;
+    homePanel.style.zIndex='35';
+    return;
+  }
+
+  homePanel.style.left='22px';
+  homePanel.style.right='auto';
+  homePanel.style.bottom='22px';
+  homePanel.style.zIndex='30';
 }
 
 function getFallbackMetar(airport){
@@ -996,7 +1034,15 @@ function initWelcome(){
   else startApp();
 }
 
-windToggle.addEventListener('click',toggleWindsock);
+windToggle.addEventListener('click',e=>{
+  const rect=windToggle.getBoundingClientRect();
+  const clickedRightHalf=(e.clientX-rect.left)>(rect.width/2);
+  if(clickedRightHalf){
+    toggleHudWindsock();
+    return;
+  }
+  toggleWindsock();
+});
 
 welcomeBtn.addEventListener('click',()=>{
   const val=welcomeInput.value.trim().toUpperCase();
