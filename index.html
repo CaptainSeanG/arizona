@@ -967,6 +967,11 @@ function updateColorMode(){
   drawMap();
 }
 
+function toggleColorMode(){
+  altColorMode=!altColorMode;
+  updateColorMode();
+}
+
 function stopIntervals(){
   if(clockIntervalId) clearInterval(clockIntervalId);
   if(metarIntervalId) clearInterval(metarIntervalId);
@@ -1033,8 +1038,7 @@ document.addEventListener('keydown',async e=>{
   }
 
   if(e.key==='c'||e.key==='C'){
-    altColorMode=!altColorMode;
-    updateColorMode();
+    toggleColorMode();
   }
 
   if(e.key==='Escape'&&kioskMode){
@@ -1048,6 +1052,12 @@ document.getElementById('homePanel').addEventListener('click',()=>{
   welcomeOverlay.classList.add('show');
   welcomeInput.value=homeAirportId||'';
   setTimeout(()=>welcomeInput.focus(),50);
+});
+
+document.querySelector('svg').addEventListener('click',e=>{
+  if(e.target===e.currentTarget){
+    toggleColorMode();
+  }
 });
 
 window.addEventListener('resize',positionWindToggle);
