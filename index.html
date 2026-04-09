@@ -249,7 +249,11 @@ const runwayDataByAirport={
   KGYR:[{heading:30,length:8500,offset:0}],
   KGEU:[{heading:10,length:7150,offset:0}],
   KLUF:[{heading:30,length:10000,offset:-8},{heading:30,length:11400,offset:8}],
-  KTUS:[{heading:110,length:11000,offset:-10},{heading:110,length:8400,offset:10},{heading:30,length:7000,offset:0}],
+  KTUS:[
+    {heading:135,length:10996,offset:-6},
+    {heading:135,length:8408,offset:6},
+    {heading:45,length:7000,offset:0,xOffset:-10,yOffset:10}
+  ],
   KDUG:[{heading:170,length:5800,offset:0}],
   KOLS:[{heading:30,length:6600,offset:0},{heading:150,length:5100,offset:0}],
   KPGA:[{heading:150,length:5950,offset:0}],
@@ -265,7 +269,11 @@ const runwayDataByAirport={
   KHII:[{heading:140,length:8000,offset:0}],
   KIFP:[{heading:160,length:7500,offset:0}],
   KNYL:[{heading:30,length:13000,offset:0},{heading:170,length:6000,offset:0}],
-  KRYN:[{heading:60,length:8300,offset:0},{heading:150,length:6000,offset:0}],
+  KRYN:[
+    {heading:70,length:4900,offset:-6},
+    {heading:70,length:5500,offset:6},
+    {heading:168,length:4010,offset:0,xOffset:-12,yOffset:-9}
+  ],
   KCGZ:[{heading:50,length:5200,offset:0}]
 };
 
@@ -818,11 +826,13 @@ function drawRunwayOverlay(airportId,target=homeCompass){
     const normalizedLength=36+((runway.length||0)/maxLength)*42;
     const width=8;
     const offset=Number(runway.offset)||0;
+    const xOffset=Number(runway.xOffset)||0;
+    const yOffset=Number(runway.yOffset)||0;
     const headingRad=heading*Math.PI/180;
     const normalX=-Math.sin(headingRad);
     const normalY=Math.cos(headingRad);
-    const centerX=123+normalX*offset;
-    const centerY=114+normalY*offset;
+    const centerX=123+normalX*offset+xOffset;
+    const centerY=114+normalY*offset+yOffset;
     const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${heading})`});
     runwayGroup.appendChild(svgEl('rect',{
       x:-normalizedLength/2,
