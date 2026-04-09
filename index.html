@@ -992,7 +992,7 @@ function drawHomeCompass(){
     probe.remove();
     return width;
   };
-  const dirLabel=`${String(Math.round(magneticWindDir)).padStart(3,'0')} DEG`;
+  const dirLabel=`${String(windDir).padStart(3,'0')} DEG`;
   const speedLabel=`${windSpeed}KT`;
   const gustLabel=gust?`G${gust}`:'';
   const gap=12;
