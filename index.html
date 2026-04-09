@@ -987,7 +987,8 @@ function drawHomeCompass(){
   });
   const cloth=svgEl('g');
   const bandLengths=[18,16,15,14,13].slice(0,segmentCount);
-  const totalLength=bandLengths.reduce((sum,length)=>sum+length,0)+12;
+  const lowWindTrim=windSpeed<=4 ? (5-windSpeed)*8 : (windSpeed<7 ? (7-windSpeed)*3 : 0);
+  const totalLength=Math.max(34,bandLengths.reduce((sum,length)=>sum+length,0)+12-lowWindTrim);
   const inflate=Math.min(1,windSpeed/15);
   const stretch=Math.min(0.35,Math.max(0,gustDelta)*0.03 + windSpeed*0.006);
   const wavePhase=((Date.now()%2400)/2400);
