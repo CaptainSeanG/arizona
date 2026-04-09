@@ -240,7 +240,11 @@ const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6
 const ARIZONA_MAGNETIC_VARIATION_EAST=12.5;
 const COMPASS_FRAME_ROTATION=12.5;
 const runwayDataByAirport={
-  KPHX:[{heading:80,length:11489,offset:-12},{heading:80,length:10300,offset:0},{heading:80,length:7800,offset:12}],
+  KPHX:[
+    {heading:90,length:11489,offset:-15,xOffset:6,yOffset:-6},
+    {heading:90,length:10300,offset:0,xOffset:0,yOffset:0},
+    {heading:90,length:7800,offset:15,xOffset:-4,yOffset:6}
+  ],
   KDVT:[{heading:70,length:4577,offset:-6},{heading:70,length:8196,offset:6}],
   KSDL:[{heading:30,length:8250,offset:0}],
   KFFZ:[{heading:40,length:5100,offset:-6},{heading:40,length:3900,offset:6}],
@@ -272,7 +276,7 @@ const runwayDataByAirport={
   KRYN:[
     {heading:61,length:4900,offset:-9,xOffset:10,yOffset:-12},
     {heading:61,length:5500,offset:9,xOffset:16,yOffset:-4},
-    {heading:159,length:4010,offset:0,xOffset:-26,yOffset:18}
+    {heading:159,length:4010,offset:0,xOffset:-14,yOffset:8}
   ],
   KCGZ:[{heading:50,length:5200,offset:0}]
 };
