@@ -237,6 +237,7 @@ const airports=[
 ];
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
+const ARIZONA_MAGNETIC_VARIATION_EAST=12.5;
 const runwayDataByAirport={
   KPHX:[{heading:80,length:11489,offset:-12},{heading:80,length:10300,offset:0},{heading:80,length:7800,offset:12}],
   KDVT:[{heading:70,length:8196,offset:-6},{heading:70,length:4577,offset:6}],
@@ -795,6 +796,15 @@ function getSockSegmentCount(speed){
   return 5;
 }
 
+function normalizeHeading(deg){
+  const normalized=((deg%360)+360)%360;
+  return normalized===0?360:normalized;
+}
+
+function trueToMagnetic(deg){
+  return normalizeHeading(Number(deg)-ARIZONA_MAGNETIC_VARIATION_EAST);
+}
+
 function drawRunwayOverlay(airportId){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
@@ -920,6 +930,7 @@ function drawHomeCompass(){
   }
 
   const windDir=Number(dir);
+  const magneticWindDir=trueToMagnetic(windDir);
   const windSpeed=Math.max(0,Number(speed)||0);
   const gustSpeed=Math.max(windSpeed,Number(gust)||0);
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
@@ -933,7 +944,7 @@ function drawHomeCompass(){
   const segmentCount=getSockSegmentCount(windSpeed);
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
-  const streamAngle=(windDir+90)%360;
+  const streamAngle=(magneticWindDir+90)%360;
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
@@ -981,7 +992,7 @@ function drawHomeCompass(){
     probe.remove();
     return width;
   };
-  const dirLabel=`${String(windDir).padStart(3,'0')} DEG`;
+  const dirLabel=`${String(Math.round(magneticWindDir)).padStart(3,'0')} DEG`;
   const speedLabel=`${windSpeed}KT`;
   const gustLabel=gust?`G${gust}`:'';
   const gap=12;
