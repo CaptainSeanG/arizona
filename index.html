@@ -317,6 +317,7 @@ const metarById=new Map();
 const metarRecordById=new Map();
 const lastSeenMetarRawById=new Map();
 const freshUpdateUntilById=new Map();
+const vrbVisualStateByAirport=new Map();
 
 let homeAirportId=(localStorage.getItem('homeAirportId')||'').toUpperCase();
 let liveMetarStatus='STARTING';
@@ -831,6 +832,17 @@ function trueToMagnetic(deg){
   return normalizeHeading(Number(deg)-ARIZONA_MAGNETIC_VARIATION_EAST);
 }
 
+function getVariableWindVisualHeading(airportId){
+  const now=Date.now();
+  const current=vrbVisualStateByAirport.get(airportId);
+  if(current&&current.nextChangeAt>now) return current.heading;
+
+  const nextHeading=Math.round(Math.random()*359);
+  const nextChangeAt=now+2200+Math.random()*2200;
+  vrbVisualStateByAirport.set(airportId,{heading:nextHeading,nextChangeAt});
+  return nextHeading;
+}
+
 function drawRunwayOverlay(airportId,target=homeCompass){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
@@ -928,6 +940,33 @@ function drawHomeCompass(){
   }
 
   if(dir==='VRB'){
+    const variableHeading=getVariableWindVisualHeading(homeAirportId||'VRB');
+    const streamAngle=(variableHeading+90)%360;
+    const vrbSpeed=Math.max(0,Number(speed)||0);
+    const vrbGustDelta=Math.max(0,(Number(gust)||0)-vrbSpeed);
+    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
+    const vrbMotion=svgEl('g',{
+      class:'windsock-rig',
+      style:'--sway:2deg;--wave-ms:1600ms'
+    });
+    const vrbCloth=svgEl('g');
+    buildSockRibbon(vrbCloth,{
+      bandLengths:[18],
+      totalLength:34,
+      mouthRadius:13.5,
+      tailWidth:8.5,
+      inflate:Math.min(1,vrbSpeed/15),
+      stretch:0.01,
+      wavePhase:(Date.now()%2600)/2600,
+      waveAmp:0.24,
+      sag:1.8,
+      gustAmp:vrbGustDelta>0?0.04:0,
+      angleDeg:streamAngle
+    });
+    vrbMotion.appendChild(vrbCloth);
+    vrbAnchor.appendChild(vrbMotion);
+    homeCompass.appendChild(vrbAnchor);
+
     const vrbAlert=(Number(speed)>=20)||(gust&&Number(gust)>=20);
     const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
     const measureText=(text,cls)=>{
