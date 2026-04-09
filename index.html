@@ -20,6 +20,7 @@ body.alt-color svg{background:#2b0814}
 .label{fill:#e5eefc;font-size:20px;font-weight:700;paint-order:stroke;stroke:#020617;stroke-width:4px;stroke-linejoin:round;user-select:none}
 .label-small{font-size:16px}
 .clock-box{fill:rgba(2,6,23,.78);stroke:#64748b;stroke-width:2}
+.clock-box.is-clickable{cursor:pointer}
 .clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
 .clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
 .clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
@@ -136,6 +137,14 @@ body.hide-windsock #homePanel{display:none}
 #welcomeOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.86);z-index:50}
 #welcomeOverlay.show{display:flex}
 #welcomeCard{width:min(92vw,500px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.82);z-index:55;cursor:pointer}
+.infoOverlay.show{display:flex}
+.infoCard{width:min(92vw,560px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoTitle{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:10px}
+.infoSub{color:#cbd5e1;line-height:1.5;font-size:14px}
+.infoList{margin:14px 0 0;padding-left:18px;color:#e5eefc;line-height:1.55}
+.infoList li{margin-bottom:8px}
+.infoClose{margin-top:16px;color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center}
 .welcome-title{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:8px}
 .welcome-sub{color:#cbd5e1;line-height:1.45;margin-bottom:18px}
 .welcome-row{display:flex;gap:10px;align-items:center}
@@ -202,6 +211,25 @@ body.hide-windsock #homePanel{display:none}
         <button id="welcomeBtn" type="button">START</button>
       </div>
       <div id="welcomeError"></div>
+    </div>
+  </div>
+  <div id="infoOverlay" class="infoOverlay" aria-hidden="true">
+    <div id="infoCard" class="infoCard" role="dialog" aria-label="Map instructions">
+      <div class="infoTitle">HOW TO USE THE MAP</div>
+      <div class="infoSub">Tap anywhere on this card to close it.</div>
+      <ul class="infoList">
+        <li>Double-click or double-tap an airport LED to make it your home airport for the windsock card.</li>
+        <li>Click the map background to toggle between the black and maroon color themes.</li>
+        <li>Press <code>M</code> to show or hide the METAR status card, including missing, stale, and JSON update info.</li>
+        <li>Press <code>W</code> to show or hide the windsock card.</li>
+        <li>On the WINDSOCK button, click the left half to show or hide the windsock card in its normal spot.</li>
+        <li>On the WINDSOCK button, click the right half to dock the windsock card above the METAR card or hide that docked view.</li>
+        <li>Click the windsock card itself to reopen the home-airport selector.</li>
+        <li>Press <code>C</code> or click the map background to change colors, <code>F</code> for fullscreen, and <code>K</code> for kiosk cursor mode.</li>
+        <li>Hover over an airport LED to see the decoded weather and raw METAR.</li>
+        <li>Click the ZULU time card any time to reopen these instructions.</li>
+      </ul>
+      <div class="infoClose">TAP ANYWHERE TO CLOSE</div>
     </div>
   </div>
 </div>
@@ -316,6 +344,7 @@ const welcomeOverlay=document.getElementById('welcomeOverlay');
 const welcomeInput=document.getElementById('welcomeInput');
 const welcomeBtn=document.getElementById('welcomeBtn');
 const welcomeError=document.getElementById('welcomeError');
+const infoOverlay=document.getElementById('infoOverlay');
 
 const metarById=new Map();
 const metarRecordById=new Map();
@@ -521,18 +550,36 @@ function drawClocks(){
   const box1Y=CLOCK_LAYOUT.box1Y;
   const box2Y=CLOCK_LAYOUT.box2Y;
   const boxHeight=CLOCK_LAYOUT.boxHeight;
-  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box is-clickable'});
   const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
   panel.appendChild(box1);
-  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU'));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+72,class:'clock-time'},zulu));
-  panel.appendChild(svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`));
+  const zuluTitle=svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU');
+  const zuluTime=svgEl('text',{x:clockX+25,y:box1Y+72,class:'clock-time'},zulu);
+  const zuluUpdated=svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`);
+  panel.appendChild(zuluTitle);
+  panel.appendChild(zuluTime);
+  panel.appendChild(zuluUpdated);
   panel.appendChild(box2);
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},localTime));
   panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+67,class:'clock-meridiem'},localMeridiem));
+  const zuluHit=svgEl('rect',{
+    x:clockX,
+    y:box1Y,
+    rx:18,
+    ry:18,
+    width:boxWidth,
+    height:boxHeight,
+    fill:'transparent'
+  });
+  zuluHit.dataset.action='show-instructions';
+  panel.appendChild(zuluHit);
   clocks.appendChild(panel);
   positionWindToggle();
+  const zuluBox=clocks.querySelector('[data-action="show-instructions"]');
+  if(zuluBox){
+    zuluBox.addEventListener('click',showInstructions);
+  }
 }
 
 function positionWindToggle(){
@@ -1255,6 +1302,16 @@ function toggleColorMode(){
   updateColorMode();
 }
 
+function showInstructions(){
+  infoOverlay.classList.add('show');
+  infoOverlay.setAttribute('aria-hidden','false');
+}
+
+function hideInstructions(){
+  infoOverlay.classList.remove('show');
+  infoOverlay.setAttribute('aria-hidden','true');
+}
+
 function stopIntervals(){
   if(clockIntervalId) clearInterval(clockIntervalId);
   if(metarIntervalId) clearInterval(metarIntervalId);
@@ -1344,6 +1401,8 @@ document.getElementById('homePanel').addEventListener('click',()=>{
   welcomeInput.value=homeAirportId||'';
   setTimeout(()=>welcomeInput.focus(),50);
 });
+
+infoOverlay.addEventListener('click',hideInstructions);
 
 document.querySelector('svg').addEventListener('click',e=>{
   if(e.target===e.currentTarget){
