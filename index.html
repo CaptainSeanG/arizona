@@ -141,10 +141,10 @@ body.hide-windsock #homePanel{display:none}
 .infoOverlay.show{display:flex}
 .infoCard{width:min(92vw,560px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
 .infoTitle{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:10px}
-.infoSub{color:#cbd5e1;line-height:1.5;font-size:14px}
 .infoList{margin:14px 0 0;padding-left:18px;color:#e5eefc;line-height:1.55}
 .infoList li{margin-bottom:8px}
 .keycap{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border:1px solid rgba(148,163,184,.45);border-radius:6px;background:rgba(2,6,23,.92);color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
+.mini-wind-btn{display:inline-flex;align-items:center;justify-content:center;min-width:84px;height:24px;padding:0 12px;border:1px solid rgba(249,115,22,.55);border-radius:999px;background:rgba(0,0,0,.88);color:#f97316;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
 .infoClose{margin-top:16px;color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center}
 .welcome-title{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:8px}
 .welcome-sub{color:#cbd5e1;line-height:1.45;margin-bottom:18px}
@@ -217,20 +217,18 @@ body.hide-windsock #homePanel{display:none}
   <div id="infoOverlay" class="infoOverlay" aria-hidden="true">
     <div id="infoCard" class="infoCard" role="dialog" aria-label="Map instructions">
       <div class="infoTitle">HOW TO USE THE MAP</div>
-      <div class="infoSub">Tap anywhere on this card to close it.</div>
       <ul class="infoList">
         <li>Double tap an airport LED to make it your home airport.</li>
-        <li>Click the map background to toggle between the black and maroon color themes.</li>
+        <li>Tap the background to toggle colors.</li>
         <li>Press <span class="keycap">M</span> to show or hide the METAR card.</li>
         <li>Press <span class="keycap">W</span> to show or hide the windsock card.</li>
-        <li>On the WINDSOCK button, click the left half to show or hide the windsock card in its normal spot.</li>
-        <li>On the WINDSOCK button, click the right half to dock the windsock card above the METAR card or hide that docked view.</li>
+        <li>On the <span class="mini-wind-btn">WINDSOCK</span> button, tap the left half to show or hide the windsock card in its normal spot.</li>
+        <li>On the <span class="mini-wind-btn">WINDSOCK</span> button, tap the right half to dock the windsock card above the METAR card or hide that docked view.</li>
         <li>Tap the windsock card to reopen the home-airport selector.</li>
         <li>Press <span class="keycap">C</span> to change colors, <span class="keycap">F</span> for fullscreen, and <span class="keycap">K</span> for kiosk cursor mode.</li>
         <li>Hover over an airport LED to see the decoded weather and raw METAR.</li>
-        <li>Tap the ZULU time card any time to reopen these instructions.</li>
       </ul>
-      <div class="infoClose">TAP ANYWHERE TO CLOSE</div>
+      <div class="infoClose">TAP TO CLOSE</div>
     </div>
   </div>
 </div>
