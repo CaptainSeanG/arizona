@@ -975,6 +975,7 @@ function drawHomeCompass(){
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
   const streamAngle=(magneticWindDir+90)%360;
+  const lightWindFactor=Math.min(1,windSpeed/6);
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
@@ -990,7 +991,7 @@ function drawHomeCompass(){
   const lowWindTrim=windSpeed<5 ? 16-(windSpeed*1.5) : (windSpeed<7 ? (7-windSpeed)*3 : 0);
   const totalLength=Math.max(34,bandLengths.reduce((sum,length)=>sum+length,0)+12-lowWindTrim);
   const inflate=Math.min(1,windSpeed/15);
-  const stretch=Math.min(0.35,Math.max(0,gustDelta)*0.03 + windSpeed*0.006);
+  const stretch=Math.min(0.35,Math.max(0,gustDelta)*0.03 + windSpeed*0.006) * (0.35+0.65*lightWindFactor);
   const wavePhase=((Date.now()%2400)/2400);
   buildSockRibbon(cloth,{
     bandLengths,
@@ -1000,9 +1001,9 @@ function drawHomeCompass(){
     inflate,
     stretch,
     wavePhase,
-    waveAmp:Number(flutterPx)*(0.42+0.95*(1-inflate)),
-    sag:(1-inflate)*16,
-    gustAmp:Math.max(0,gustDelta)*0.14,
+    waveAmp:Number(flutterPx)*(0.2+0.55*lightWindFactor),
+    sag:(1-inflate)*(7+6*lightWindFactor),
+    gustAmp:Math.max(0,gustDelta)*0.14*(0.3+0.7*lightWindFactor),
     angleDeg:streamAngle
   });
 
