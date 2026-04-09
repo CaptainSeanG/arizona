@@ -343,7 +343,7 @@ function project(lat,lon){
 }
 
 function updateHudButtons(){
-  document.body.classList.toggle('show-metar-hud',showMetarHud||showHudWindsock);
+  document.body.classList.toggle('show-metar-hud',showMetarHud);
   document.body.classList.toggle('hide-windsock',!showWindsock&&!showHudWindsock);
   document.body.classList.toggle('show-hud-windsock',showHudWindsock);
   windToggle.classList.toggle('is-off',!showWindsock);
