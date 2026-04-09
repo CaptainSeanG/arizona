@@ -322,6 +322,7 @@ const metarRecordById=new Map();
 const lastSeenMetarRawById=new Map();
 const freshUpdateUntilById=new Map();
 const vrbVisualStateByAirport=new Map();
+const steadyWindVisualStateByAirport=new Map();
 
 let homeAirportId=(localStorage.getItem('homeAirportId')||'').toUpperCase();
 let liveMetarStatus='STARTING';
@@ -880,6 +881,42 @@ function getVariableWindVisualHeading(airportId){
   return initialHeading;
 }
 
+function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
+  const key=`${airportId}:${Math.round(baseHeading)}`;
+  const now=Date.now();
+  const current=steadyWindVisualStateByAirport.get(key);
+
+  if(current){
+    if(now<current.nextChangeAt){
+      const duration=Math.max(1,current.nextChangeAt-current.startAt);
+      const progress=Math.min(1,Math.max(0,(now-current.startAt)/duration));
+      const eased=easeInOutSine(progress);
+      return normalizeHeading(current.fromHeading + current.delta*eased);
+    }
+    const settledHeading=normalizeHeading(current.fromHeading + current.delta);
+    const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+    const nextDuration=1800+Math.random()*1800;
+    steadyWindVisualStateByAirport.set(key,{
+      fromHeading:settledHeading,
+      delta:shortestAngleDelta(settledHeading,nextTarget),
+      startAt:now,
+      nextChangeAt:now+nextDuration
+    });
+    return settledHeading;
+  }
+
+  const initialHeading=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg*0.5));
+  const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+  const nextDuration=1800+Math.random()*1800;
+  steadyWindVisualStateByAirport.set(key,{
+    fromHeading:initialHeading,
+    delta:shortestAngleDelta(initialHeading,nextTarget),
+    startAt:now,
+    nextChangeAt:now+nextDuration
+  });
+  return initialHeading;
+}
+
 function drawRunwayOverlay(airportId,target=homeCompass){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
@@ -1050,7 +1087,8 @@ function drawHomeCompass(){
   const segmentCount=getSockSegmentCount(windSpeed);
   const calmFactor=Math.min(1,windSpeed/12);
   const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
-  const streamAngle=(magneticWindDir+90)%360;
+  const visualHeading=getSmoothedHeadingAroundBase(homeAirportId||'HOME',magneticWindDir,5);
+  const streamAngle=(visualHeading+90)%360;
   const lightWindFactor=Math.min(1,windSpeed/6);
   const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
   const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
