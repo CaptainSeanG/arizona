@@ -238,9 +238,10 @@ const airports=[
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
 const ARIZONA_MAGNETIC_VARIATION_EAST=12.5;
+const COMPASS_FRAME_ROTATION=12.5;
 const runwayDataByAirport={
   KPHX:[{heading:80,length:11489,offset:-12},{heading:80,length:10300,offset:0},{heading:80,length:7800,offset:12}],
-  KDVT:[{heading:70,length:8196,offset:-6},{heading:70,length:4577,offset:6}],
+  KDVT:[{heading:70,length:4577,offset:-6},{heading:70,length:8196,offset:6}],
   KSDL:[{heading:30,length:8250,offset:0}],
   KFFZ:[{heading:40,length:5100,offset:-6},{heading:40,length:3900,offset:6}],
   KIWA:[{heading:120,length:10400,offset:-11},{heading:120,length:6100,offset:0},{heading:120,length:10300,offset:11}],
@@ -805,7 +806,7 @@ function trueToMagnetic(deg){
   return normalizeHeading(Number(deg)-ARIZONA_MAGNETIC_VARIATION_EAST);
 }
 
-function drawRunwayOverlay(airportId){
+function drawRunwayOverlay(airportId,target=homeCompass){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
 
@@ -841,7 +842,7 @@ function drawRunwayOverlay(airportId){
     }));
     group.appendChild(runwayGroup);
   });
-  homeCompass.appendChild(group);
+  target.appendChild(group);
 }
 
 function drawHomeCompass(){
@@ -855,15 +856,16 @@ function drawHomeCompass(){
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
-  if(airport) drawRunwayOverlay(airport.id);
-  homeCompass.appendChild(svgEl('circle',{cx:123,cy:114,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
+  const compassFrame=svgEl('g',{transform:`rotate(${COMPASS_FRAME_ROTATION} 123 114)`});
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
+  if(airport) drawRunwayOverlay(airport.id,compassFrame);
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
   [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
     const rad=(deg-90)*Math.PI/180;
     const tx=123+Math.cos(rad)*75;
     const ty=114+Math.sin(rad)*70+4;
-    homeCompass.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
+    compassFrame.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
   });
   for(let deg=0;deg<360;deg+=30){
     const rad=(deg-90)*Math.PI/180;
@@ -871,8 +873,9 @@ function drawHomeCompass(){
     const y1=114+Math.sin(rad)*78;
     const x2=123+Math.cos(rad)*88;
     const y2=114+Math.sin(rad)*88;
-    homeCompass.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
+    compassFrame.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
   }
+  homeCompass.appendChild(compassFrame);
   homeCompass.appendChild(svgEl('text',{x:123,y:-8,class:'windsock-airport'},homeAirportId||'----'));
 
   const statusBadge=svgEl('rect',{
@@ -950,7 +953,7 @@ function drawHomeCompass(){
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
   const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
 
-  const anchor=svgEl('g',{transform:'translate(123 114)'});
+  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
