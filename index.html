@@ -238,8 +238,8 @@ const airports=[
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
 const runwayDataByAirport={
-  KPHX:[{heading:80,length:11489,offset:0},{heading:75,length:10300,offset:-10},{heading:75,length:7800,offset:10}],
-  KDVT:[{heading:70,length:8000,offset:0},{heading:180,length:4500,offset:0}],
+  KPHX:[{heading:80,length:11489,offset:-12},{heading:80,length:10300,offset:0},{heading:80,length:7800,offset:12}],
+  KDVT:[{heading:70,length:8196,offset:-6},{heading:70,length:4577,offset:6}],
   KSDL:[{heading:30,length:8250,offset:0}],
   KFFZ:[{heading:40,length:5100,offset:-6},{heading:40,length:3900,offset:6}],
   KIWA:[{heading:120,length:10400,offset:-11},{heading:120,length:6100,offset:0},{heading:120,length:10300,offset:11}],
@@ -802,11 +802,17 @@ function drawRunwayOverlay(airportId){
   const group=svgEl('g',{class:'runway-group'});
   const maxLength=Math.max(...runways.map(runway=>runway.length||0),1);
   runways.forEach(runway=>{
-    const heading=(Number(runway.heading)||0)-90;
+    const headingValue=Number(runway.heading)||0;
+    const heading=headingValue-90;
     const normalizedLength=36+((runway.length||0)/maxLength)*42;
     const width=8;
     const offset=Number(runway.offset)||0;
-    const runwayGroup=svgEl('g',{transform:`translate(${123+offset} 114) rotate(${heading})`});
+    const headingRad=heading*Math.PI/180;
+    const normalX=-Math.sin(headingRad);
+    const normalY=Math.cos(headingRad);
+    const centerX=123+normalX*offset;
+    const centerY=114+normalY*offset;
+    const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${heading})`});
     runwayGroup.appendChild(svgEl('rect',{
       x:-normalizedLength/2,
       y:-width/2,
