@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>USA WX Map Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap');
+:root{
+  --bg:#050816;
+  --panel:rgba(8,15,31,.88);
+  --panel-border:rgba(148,163,184,.35);
+  --text:#e5eefc;
+  --muted:#cbd5e1;
+  --accent:#93c5fd;
+  --accent-warm:#f97316;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%}
+body{
+  margin:0;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top,#12213f 0%,#08111f 35%,#030712 70%),
+    linear-gradient(135deg,#12080b 0%,#050816 55%,#071224 100%);
+  font-family:Inter,Arial,sans-serif;
+}
+.wrap{
+  min-height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+}
+.panel{
+  width:min(980px,100%);
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:24px;
+  padding:28px;
+  box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+.eyebrow{
+  font-family:'Orbitron',sans-serif;
+  letter-spacing:2px;
+  color:var(--accent);
+  font-size:13px;
+  margin-bottom:8px;
+}
+.title{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(28px,4vw,48px);
+  font-weight:800;
+  letter-spacing:2px;
+  margin:0 0 10px;
+}
+.sub{
+  color:var(--muted);
+  max-width:760px;
+  line-height:1.5;
+  margin:0 0 24px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:18px;
+  margin-top:20px;
+}
+.card{
+  display:block;
+  text-decoration:none;
+  color:inherit;
+  background:rgba(2,6,23,.72);
+  border:1px solid rgba(148,163,184,.28);
+  border-radius:20px;
+  padding:20px;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(147,197,253,.5);
+  box-shadow:0 16px 34px rgba(0,0,0,.28);
+}
+.card-title{
+  font-family:'Orbitron',sans-serif;
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:1px;
+  margin-bottom:8px;
+}
+.card-sub{
+  color:var(--muted);
+  line-height:1.45;
+  min-height:62px;
+}
+.status{
+  display:inline-flex;
+  margin-top:14px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(249,115,22,.45);
+  color:#fdba74;
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;
+  letter-spacing:1px;
+}
+.roadmap{
+  margin-top:24px;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.18);
+  color:var(--muted);
+  line-height:1.55;
+}
+.roadmap strong{
+  color:var(--text);
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="panel">
+      <div class="eyebrow">WX MAP NETWORK</div>
+      <h1 class="title">USA WX MAP</h1>
+      <p class="sub">This page is the launch point for the multi-state version of the project. Arizona remains the flagship map, Nevada is now scaffolded in the same style, and this hub gives us a clean place to grow into all 50 states and an eventual national overview.</p>
+
+      <section class="grid">
+        <a class="card" href="./index.html">
+          <div class="card-title">Arizona</div>
+          <div class="card-sub">Current full-featured map with windsock card, runway overlays, HUD tools, and the live Arizona workflow you have already refined.</div>
+          <div class="status">LIVE STATE PAGE</div>
+        </a>
+
+        <a class="card" href="./nevada-led-map.html">
+          <div class="card-title">Nevada</div>
+          <div class="card-sub">New state page using the same interaction model as Arizona, ready for airport-by-airport tuning and its own Nevada METAR cache.</div>
+          <div class="status">NEW STATE PAGE</div>
+        </a>
+      </section>
+
+      <div class="roadmap">
+        <strong>Next build path:</strong> add a Nevada METAR updater, tune Nevada runway overlays the same way Arizona was refined, then promote shared state config so adding the rest of the states and a true national page becomes much faster.
+      </div>
+    </main>
+  </div>
+</body>
+</html>
