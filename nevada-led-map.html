@@ -350,13 +350,30 @@ function computeBounds(points){
   };
 }
 
-const projBounds=computeBounds(nvOutline);
+let stateOutline=nvOutline;
+let projBounds=computeBounds(stateOutline);
 const imageBounds={
   minX:180,
   maxX:900,
   minY:28,
   maxY:1168
 };
+
+async function loadOfficialStateOutline(){
+  try{
+    const response=await fetch(`./nevada-boundary.geojson?t=${Date.now()}`,{cache:'no-store'});
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    const geojson=await response.json();
+    const coords=geojson&&geojson.features&&geojson.features[0]&&geojson.features[0].geometry&&geojson.features[0].geometry.coordinates;
+    const outerRing=Array.isArray(coords)&&Array.isArray(coords[0])&&Array.isArray(coords[0][0]) ? coords[0] : null;
+    if(!outerRing||outerRing.length<10) throw new Error('BAD GEOJSON');
+    stateOutline=outerRing;
+    projBounds=computeBounds(stateOutline);
+    draw();
+  }catch(error){
+    console.warn('Nevada boundary fallback in use',error);
+  }
+}
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
@@ -446,7 +463,7 @@ function toggleHudWindsock(){
 function drawMap(){
   map.innerHTML='';
   let path='';
-  nvOutline.forEach(([lon,lat],i)=>{
+  stateOutline.forEach(([lon,lat],i)=>{
     const p=project(lat,lon);
     path+=`${i===0?'M':'L'} ${p.x} ${p.y} `;
   });
@@ -1373,6 +1390,7 @@ document.querySelector('svg').addEventListener('click',e=>{
 
 window.addEventListener('resize',positionWindToggle);
 
+loadOfficialStateOutline();
 initWelcome();
 </script>
 </body>
