@@ -1,6 +1,13 @@
 $ErrorActionPreference = 'Stop'
 
-$RepoPath = 'C:\Users\macgy\OneDrive\Hobbies\Projects'
+$RepoCandidates = @(
+  'D:\Github\arizona',
+  'C:\Users\macgy\OneDrive\Hobbies\Projects'
+)
+$RepoPath = $RepoCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $RepoPath) {
+  throw "Could not find a valid repo path. Checked: $($RepoCandidates -join ', ')"
+}
 $MetarPath = Join-Path $RepoPath 'metars.json'
 $TempPath = Join-Path $RepoPath 'metars.json.tmp'
 $AirportIds = @(
