@@ -17,6 +17,7 @@ $AirportIds = @(
   'KRNO','KCXP','KMEV','KRTS','KLOL','KTPH','KHTH','KEKO',
   'KELY','KENV','KLAS','KHND','KVGT','KBVU','KNFL',
   'KSFO','KOAK','KSJC','KHAF','KAPC','KSTS','KSMF','KMHR',
+  'KUKI','KRDD','KACV','KCEC',
   'KMOD','KFAT','KVIS','KBFL','KSBP','KSBA','KOXR','KCMA',
   'KBUR','KVNY','KLGB','KFUL','KSNA','KONT','KPSP','KTRM',
   'KCRQ','KMYF','KSAN'
