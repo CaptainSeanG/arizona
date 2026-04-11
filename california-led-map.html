@@ -720,7 +720,7 @@ function showTooltip(airportId,clientX,clientY){
   }
   if(airport.stale) decodedParts.push('STALE');
 
-  const decoded=record?decodedParts.join(' â€¢ '):(airport.stale?`${airport.cat} â€¢ STALE`:'');
+  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
   tooltip.innerHTML=
     `<div class="tip-id">${airportId}</div>`+
     `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
