@@ -22,15 +22,16 @@ svg{width:100%;height:100%;display:block;background:#000}
 .airport-badge{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:.7px;text-anchor:middle;pointer-events:none}
 .airport-stale .airport-core,.airport-stale .airport-glow,.airport-stale .airport-ring{animation:blinkFast .5s steps(1,end) infinite}
 .airport-nodata .airport-core,.airport-nodata .airport-glow,.airport-nodata .airport-ring{animation:fadePulse 1.9s ease-in-out infinite}
-.clock-panel{position:absolute;right:34px;top:28px;width:250px;display:flex;flex-direction:column;gap:12px}
+.top-control-row{position:absolute;right:34px;top:28px;width:250px;display:flex;gap:8px;justify-content:flex-end;z-index:31}
+.top-control-btn{display:flex;align-items:center;justify-content:center;min-width:64px;height:34px;padding:0 14px;border-radius:999px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#e5eefc;background:rgba(2,6,23,.86);border:1px solid rgba(148,163,184,.45);backdrop-filter:blur(6px)}
+.clock-panel{position:absolute;right:34px;top:74px;width:250px;display:flex;flex-direction:column;gap:12px}
 .clock-card{background:rgba(2,6,23,.84);border:2px solid #64748b;border-radius:18px;padding:14px 16px 12px}
-.clock-card.clickable{cursor:pointer}
 .clock-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px}
 .clock-time-row{margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
 .clock-time{color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:40px;font-weight:800;letter-spacing:2px}
 .clock-meridiem{color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px}
 .clock-sub{margin-top:4px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px}
-.legend{position:absolute;right:34px;top:298px;width:250px;background:rgba(2,6,23,.82);border:1px solid rgba(148,163,184,.4);border-radius:18px;padding:14px 16px;backdrop-filter:blur(8px)}
+.legend{position:absolute;right:34px;top:344px;width:250px;background:rgba(2,6,23,.82);border:1px solid rgba(148,163,184,.4);border-radius:18px;padding:14px 16px;backdrop-filter:blur(8px)}
 .legend-title,.status-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;margin:0 0 10px}
 .legend-row{display:flex;align-items:center;gap:10px;color:#e5eefc;font-size:14px;margin:7px 0}
 .legend-dot{width:12px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.6);display:inline-block;box-shadow:0 0 10px currentColor}
@@ -53,7 +54,7 @@ svg{width:100%;height:100%;display:block;background:#000}
 .overlay-close{margin-top:16px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-align:center}
 @keyframes blinkFast{0%,49%{opacity:1}50%,100%{opacity:.28}}
 @keyframes fadePulse{0%,100%{opacity:.24}50%{opacity:1}}
-@media (max-width:900px){.clock-panel{right:18px;top:16px;width:220px}.clock-time{font-size:34px}.legend{right:18px;top:268px;width:220px}.status-pill{right:18px;bottom:14px;width:220px}}
+@media (max-width:900px){.top-control-row{right:18px;top:16px;width:220px}.clock-panel{right:18px;top:62px;width:220px}.clock-time{font-size:34px}.legend{right:18px;top:314px;width:220px}.status-pill{right:18px;bottom:14px;width:220px}}
 </style>
 </head>
 <body>
@@ -75,8 +76,12 @@ svg{width:100%;height:100%;display:block;background:#000}
     <g id="airportLayer"></g>
   </svg>
 
+  <div class="top-control-row">
+    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
+  </div>
+
   <div class="clock-panel">
-    <div class="clock-card clickable" id="zuluCard">
+    <div class="clock-card" id="zuluCard">
       <div class="clock-title">ZULU</div>
       <div class="clock-time-row"><div class="clock-time" id="zuluTime">--:--</div></div>
       <div class="clock-sub" id="updatedLine">UPDATED --</div>
@@ -125,7 +130,7 @@ svg{width:100%;height:100%;display:block;background:#000}
       <div class="overlay-copy">Black states do not have a state page yet.</div>
       <div class="overlay-copy">Hover or tap airport LEDs to see live METAR details for Class Bravo and Charlie airports.</div>
       <div class="overlay-copy">Press <span class="chip">S</span> for the status panel.</div>
-      <div class="overlay-copy">Tap <span class="chip">ZULU</span> any time to reopen this card.</div>
+      <div class="overlay-copy">Tap <span class="chip">HELP</span> any time to reopen this card.</div>
       <div class="overlay-copy">The orange summary line shows category, visibility, ceiling or cover, temperature, and age.</div>
       <div class="overlay-close">TAP TO CLOSE</div>
     </div>
@@ -148,7 +153,7 @@ const localMeridiemEl=document.getElementById('localMeridiem');
 const updatedLineEl=document.getElementById('updatedLine');
 const instructionsOverlay=document.getElementById('instructionsOverlay');
 const instructionsCard=document.getElementById('instructionsCard');
-const zuluCard=document.getElementById('zuluCard');
+const topHelpBtn=document.getElementById('topHelpBtn');
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#ff00ff',NONE:'#9ca3af'};
 const implementedStatePages={AZ:'./arizona-led-map.html',NV:'./nevada-led-map.html',CA:'./california-led-map.html',CO:'./colorado-led-map.html',NM:'./new-mexico-led-map.html',UT:'./utah-led-map.html',TX:'./texas-led-map.html',ID:'./idaho-led-map.html',WY:'./wyoming-led-map.html',OK:'./oklahoma-led-map.html',OR:'./oregon-led-map.html',WA:'./washington-led-map.html'};
 const trackedAirports=[
@@ -162,6 +167,7 @@ let lastFetchTime=null;
 let showMetarHud=true;
 let missingAirportIds=[];
 let staleAirportIds=[];
+let kioskMode=false;
 function pad2(n){return String(n).padStart(2,'0')}
 function obsAgeMinutes(rec){const raw=rec?.obsTime??rec?.reportTime??rec?.receiptTime;if(raw==null)return null;let dt=null;if(typeof raw==='number'){dt=new Date(raw<1e12?raw*1000:raw);}else if(/^\d+$/.test(String(raw).trim())){const num=Number(raw);dt=new Date(num<1e12?num*1000:num);}else{dt=new Date(raw);}const ms=dt?.getTime?.();if(!Number.isFinite(ms))return null;return Math.max(0,Math.round((Date.now()-ms)/60000));}
 function isStale(rec){const age=obsAgeMinutes(rec);return age!=null&&age>66}
@@ -173,6 +179,34 @@ function buildSummary(rec){const bits=[];const cat=rec?.fltCat||'NONE';bits.push
 function showTooltip(x,y,html){tooltip.innerHTML=html;tooltip.style.display='block';const rect=tooltip.getBoundingClientRect();const pad=16;const left=Math.min(window.innerWidth-rect.width-pad,Math.max(pad,x+16));const top=Math.min(window.innerHeight-rect.height-pad,Math.max(pad,y+16));tooltip.style.left=`${left}px`;tooltip.style.top=`${top}px`;}
 function hideTooltip(){tooltip.style.display='none';}
 function updateHudVisibility(){document.body.classList.toggle('show-metar-hud',showMetarHud);}
+function showInstructions(){instructionsOverlay.style.display='flex';}
+function hideInstructions(){instructionsOverlay.style.display='none';}
+async function toggleFullscreen(){
+  try{
+    if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  }catch(err){
+    console.warn(err);
+  }
+}
+function toggleKioskMode(force){
+  kioskMode=typeof force==='boolean'?force:!kioskMode;
+  document.body.classList.toggle('kiosk',kioskMode);
+}
+async function restoreReturnMode(){
+  const wantsKiosk=sessionStorage.getItem('usaReturnKiosk')==='1';
+  const wantsFullscreen=sessionStorage.getItem('usaReturnFullscreen')==='1';
+  sessionStorage.removeItem('usaReturnKiosk');
+  sessionStorage.removeItem('usaReturnFullscreen');
+  if(wantsKiosk) toggleKioskMode(true);
+  if(wantsFullscreen&&!document.fullscreenElement){
+    try{
+      await document.documentElement.requestFullscreen();
+    }catch(err){
+      console.warn(err);
+    }
+  }
+}
 function updateStatusDetails(){
   const missingValue=statusMissing.querySelector('.status-value');
   const staleValue=statusStale.querySelector('.status-value');
@@ -185,7 +219,7 @@ function drawStates(us){const states=topojson.feature(us,us.objects.states).feat
 function drawAirports(){airportLayer.innerHTML='';trackedAirports.forEach(info=>{const rec=airportRecordsById[info.id];if(!rec||typeof rec.lat!=='number'||typeof rec.lon!=='number')return;const point=projection([rec.lon,rec.lat]);if(!point)return;const [x,y]=point;const category=(rec.fltCat&&colors[rec.fltCat])?rec.fltCat:'NONE';const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class',`airport-group ${isStale(rec)?'airport-stale':''} ${!rec.rawOb?'airport-nodata':''}`.trim());const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');glow.setAttribute('class','airport-glow');glow.setAttribute('cx',x);glow.setAttribute('cy',y);glow.setAttribute('r',12);glow.setAttribute('fill',colors[category]);const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('class','airport-ring');ring.setAttribute('cx',x);ring.setAttribute('cy',y);ring.setAttribute('r',10);const core=document.createElementNS('http://www.w3.org/2000/svg','circle');core.setAttribute('class','airport-core');core.setAttribute('cx',x);core.setAttribute('cy',y);core.setAttribute('r',7.5);core.setAttribute('fill',colors[category]);const badge=document.createElementNS('http://www.w3.org/2000/svg','text');badge.setAttribute('class','airport-badge');badge.setAttribute('x',x);badge.setAttribute('y',y+2.8);badge.textContent=info.class;g.appendChild(glow);g.appendChild(ring);g.appendChild(core);g.appendChild(badge);const summary=buildSummary(rec);const raw=rec.rawOb||'No current METAR';const airportClass=info.class==='B'?'Class Bravo':'Class Charlie';const tooltipHtml=`<div class="tooltip-title">${escapeHtml(info.id)}</div><div class="tooltip-sub">${escapeHtml(airportClass)} • ${escapeHtml(summary)}</div><div class="tooltip-raw">${escapeHtml(raw)}</div>`;g.addEventListener('mouseenter',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mousemove',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mouseleave',hideTooltip);airportLayer.appendChild(g);});}
 async function fetchMetars(){try{const res=await fetch(`./metars.json?t=${Date.now()}`,{cache:'no-store'});const data=await res.json();airportRecordsById={};data.forEach(rec=>{if(!rec?.icaoId)return;if(trackedAirportIds.has(rec.icaoId))airportRecordsById[rec.icaoId]=rec;});lastFetchTime=new Date();const lit=Object.keys(airportRecordsById).length;missingAirportIds=trackedAirports.filter(a=>!airportRecordsById[a.id]).map(a=>a.id);staleAirportIds=trackedAirports.filter(a=>airportRecordsById[a.id]&&isStale(airportRecordsById[a.id])).map(a=>a.id);statusLine.textContent=`${lit} of ${trackedAirports.length} airports updated`;updateStatusDetails();drawAirports();updateClocks();}catch(err){missingAirportIds=[...trackedAirportIds];staleAirportIds=[];statusLine.textContent=`0 of ${trackedAirports.length} airports updated`;updateStatusDetails();}}
 async function init(){updateClocks();setInterval(updateClocks,1000);projection=d3.geoAlbersUsa().fitExtent([[34,28],[1190,860]],{type:'Sphere'});const us=await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(r=>r.json());drawStates(us);await fetchMetars();setInterval(fetchMetars,5*60*1000);}
-zuluCard.addEventListener('click',()=>{instructionsOverlay.style.display='flex';});instructionsOverlay.addEventListener('click',()=>{instructionsOverlay.style.display='none';});instructionsCard.addEventListener('click',()=>{instructionsOverlay.style.display='none';});window.addEventListener('resize',()=>{hideTooltip();});document.addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M'||e.key==='s'||e.key==='S'){showMetarHud=!showMetarHud;updateHudVisibility();}});updateHudVisibility();init().catch(()=>{statusLine.textContent=`0 of ${trackedAirports.length} airports updated`;});
+topHelpBtn.addEventListener('click',showInstructions);instructionsOverlay.addEventListener('click',hideInstructions);instructionsCard.addEventListener('click',hideInstructions);window.addEventListener('resize',()=>{hideTooltip();});document.addEventListener('keydown',async e=>{if(e.key==='m'||e.key==='M'||e.key==='s'||e.key==='S'){showMetarHud=!showMetarHud;updateHudVisibility();}if(e.key==='f'||e.key==='F'){await toggleFullscreen();}if(e.key==='k'||e.key==='K'){toggleKioskMode();}if(e.key==='Escape'&&kioskMode){toggleKioskMode(false);}});updateHudVisibility();init().then(restoreReturnMode).catch(()=>{statusLine.textContent=`0 of ${trackedAirports.length} airports updated`;});
 </script>
 </body>
 </html>
