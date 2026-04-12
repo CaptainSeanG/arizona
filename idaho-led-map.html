@@ -387,8 +387,8 @@ function svgEl(name,attrs={},text=''){
 }
 
 function albersID(lat,lon){
-    const centerLat=44.5*Math.PI/180,centerLon=-114;
-    return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-44.5};
+    const centerLon=-114;
+    return{x:(lon-centerLon)*Math.cos(lat*Math.PI/180),y:lat-44.5};
   }
 
 function computeBounds(points){
