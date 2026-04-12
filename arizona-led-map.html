@@ -41,6 +41,50 @@ body.alt-color svg{background:#2b0814}
   letter-spacing:1px;
   z-index:30;
 }
+.top-control-row{
+  position:absolute;
+  left:0;
+  top:0;
+  display:flex;
+  gap:8px;
+  z-index:31;
+}
+.top-control-btn,
+#usaFloatingBtn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  cursor:pointer;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#e5eefc;
+  background:rgba(2,6,23,.86);
+  border:1px solid rgba(148,163,184,.45);
+  backdrop-filter:blur(6px);
+}
+.top-control-btn{
+  min-width:70px;
+  height:34px;
+  padding:0 14px;
+}
+#topHelpBtn{min-width:64px}
+#topUsaBtn,
+#usaFloatingBtn{
+  color:#bfdbfe;
+  border-color:rgba(147,197,253,.48);
+}
+#usaFloatingBtn{
+  position:absolute;
+  left:22px;
+  bottom:22px;
+  min-width:96px;
+  height:34px;
+  padding:0 16px;
+  z-index:31;
+}
 #windToggle.is-off{
   background:rgba(0,0,0,.58);
   color:rgba(249,115,22,.55);
@@ -181,7 +225,12 @@ body.hide-windsock #homePanel{display:none}
     <g id="clocks"></g>
   </svg>
   <div id="tooltip"></div>
+  <div id="topControlRow" class="top-control-row">
+    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
+    <button id="topUsaBtn" class="top-control-btn" type="button">USA</button>
+  </div>
   <button id="windToggle" type="button">WINDSOCK</button>
+  <button id="usaFloatingBtn" type="button">USA MAP</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
@@ -467,6 +516,10 @@ const tooltip=document.getElementById('tooltip');
 const hudMissing=document.getElementById('hudMissing');
 const hudStale=document.getElementById('hudStale');
 const hudJsonUpdated=document.getElementById('hudJsonUpdated');
+const topControlRow=document.getElementById('topControlRow');
+const topHelpBtn=document.getElementById('topHelpBtn');
+const topUsaBtn=document.getElementById('topUsaBtn');
+const usaFloatingBtn=document.getElementById('usaFloatingBtn');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
@@ -681,7 +734,7 @@ function drawClocks(){
   const box1Y=CLOCK_LAYOUT.box1Y;
   const box2Y=CLOCK_LAYOUT.box2Y;
   const boxHeight=CLOCK_LAYOUT.boxHeight;
-  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box is-clickable'});
+  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
   const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
   panel.appendChild(box1);
   const zuluTitle=svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU');
@@ -694,23 +747,8 @@ function drawClocks(){
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
   panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},localTime));
   panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+67,class:'clock-meridiem'},localMeridiem));
-  const zuluHit=svgEl('rect',{
-    x:clockX,
-    y:box1Y,
-    rx:18,
-    ry:18,
-    width:boxWidth,
-    height:boxHeight,
-    fill:'transparent'
-  });
-  zuluHit.dataset.action='show-instructions';
-  panel.appendChild(zuluHit);
   clocks.appendChild(panel);
   positionWindToggle();
-  const zuluBox=clocks.querySelector('[data-action="show-instructions"]');
-  if(zuluBox){
-    zuluBox.addEventListener('click',showInstructions);
-  }
 }
 
 function positionWindToggle(){
@@ -728,6 +766,15 @@ function positionWindToggle(){
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
   windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
+  const controlsTop=offsetY+(CLOCK_LAYOUT.box1Y-42)*scale;
+  topControlRow.style.left=`${Math.round(left)}px`;
+  topControlRow.style.top=`${Math.round(Math.max(offsetY+8,controlsTop))}px`;
+  topControlRow.style.transform=`scale(${scale})`;
+  topControlRow.style.transformOrigin='top left';
+  usaFloatingBtn.style.left=`${Math.max(22,Math.round(offsetX+22*scale))}px`;
+  usaFloatingBtn.style.bottom=`${Math.max(22,Math.round(offsetY+22*scale))}px`;
+  usaFloatingBtn.style.transform=`scale(${scale})`;
+  usaFloatingBtn.style.transformOrigin='bottom left';
   positionHomePanel();
 }
 
@@ -1512,6 +1559,10 @@ function hideInstructions(){
   infoOverlay.setAttribute('aria-hidden','true');
 }
 
+function goToUsaMap(){
+  window.location.href='./usa-led-map.html';
+}
+
 function stopIntervals(){
   if(clockIntervalId) clearInterval(clockIntervalId);
   if(metarIntervalId) clearInterval(metarIntervalId);
@@ -1602,6 +1653,9 @@ document.getElementById('homePanel').addEventListener('click',()=>{
   setTimeout(()=>welcomeInput.focus(),50);
 });
 
+topHelpBtn.addEventListener('click',showInstructions);
+topUsaBtn.addEventListener('click',goToUsaMap);
+usaFloatingBtn.addEventListener('click',goToUsaMap);
 infoOverlay.addEventListener('click',hideInstructions);
 
 document.querySelector('svg').addEventListener('click',e=>{
