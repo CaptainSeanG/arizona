@@ -31,7 +31,8 @@ $AirportIds = @(
   'KBUF','KROC','KSYR','KRDU','KCLE','KCMH','KCVG','KOKC',
   'KTUL','KPDX','KPHL','KPIT','KPVD','KCHS','KMYR','KBNA',
   'KMEM','KAUS','KDFW','KDAL','KHOU','KIAH','KSAT','KELP',
-  'KCRP','KMAF','KLBB','KSLC','KORF','KRIC','KSEA','KGEG',
+  'KCRP','KMAF','KLBB','KABI','KAMA','KBRO','KHRL','KMFE','KSPS','KACT','KCLL',
+  'KSLC','KORF','KRIC','KSEA','KGEG',
   'KMKE','KABQ'
 ) | Select-Object -Unique
 $Url = "https://aviationweather.gov/api/data/metar?format=json&ids=$($AirportIds -join ',')"
