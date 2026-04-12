@@ -87,6 +87,7 @@ body.alt-color svg{background:#2b0814}
 #hud{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s ease}
 body.show-metar-hud #hud{opacity:1;pointer-events:auto}
 .hud-btn{appearance:none;border:1px solid rgba(148,163,184,.45);background:rgba(2,6,23,.72);color:#e5eefc;border-radius:12px;padding:10px 14px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px}
+#metarStatusBtn{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px}
 #hudInfo{
   min-width:260px;
   max-width:360px;
@@ -95,6 +96,8 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   border-radius:12px;
   padding:10px 14px;
 }
+#hudSummary{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudSummary .summary-value{color:#f8fafc}
 #hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
 #hudMissing .missing-list{color:#f8fafc;word-break:break-word}
 #hudStale{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
@@ -226,7 +229,10 @@ body.hide-windsock #homePanel{display:none}
   </div>
   <div id="hud">
     <div id="hudInfo">
-      <button id="metarStatusBtn" class="hud-btn" type="button">STATUS: STARTING</button>
+      <div id="metarStatusBtn">STATUS</div>
+      <div id="hudSummary" aria-live="polite">
+        <div class="summary-value">0 of 15 Airports updated</div>
+      </div>
       <div id="hudMissing" aria-live="polite">
         <div class="missing-title">MISSING STATIONS</div>
         <div class="missing-list">NONE</div>
@@ -390,7 +396,7 @@ const vrbVisualStateByAirport=new Map();
 const steadyWindVisualStateByAirport=new Map();
 
 let homeAirportId=(localStorage.getItem('homeAirportId_newmexico')||'').toUpperCase();
-let liveMetarStatus=`0 of ${airports.length} airports updated`;
+let liveMetarStatus=`0 of ${airports.length} Airports updated`;
 let lastMetarError='';
 let lastMetarUpdatedAt=null;
 let showMetarHud=false;
@@ -477,7 +483,9 @@ function updateHudButtons(){
   document.body.classList.toggle('hide-windsock',!showWindsock&&!showHudWindsock);
   document.body.classList.toggle('show-hud-windsock',showHudWindsock);
   windToggle.classList.toggle('is-off',!showWindsock);
-  metarStatusBtn.textContent=lastMetarError
+  metarStatusBtn.textContent='STATUS';
+  const summaryValue=hudSummary.querySelector('.summary-value');
+  summaryValue.textContent=lastMetarError
     ? `${liveMetarStatus} (${lastMetarError})`
     : liveMetarStatus;
   const jsonValue=hudJsonUpdated.querySelector('.json-value');
@@ -521,7 +529,10 @@ function toggleHudWindsock(){
 function drawMap(){
   map.innerHTML='';
   let path='';
-  imageOutline.forEach(([x,y],i)=>{path+=`${i===0?'M':'L'} ${x} ${y} `;});
+  nmOutline.forEach(([lon,lat],i)=>{
+    const p=project(lat,lon);
+    path+=`${i===0?'M':'L'} ${p.x} ${p.y} `;
+  });
   path+='Z';
   const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
   const outline=svgEl('path',{d:path,class:'outline'});
@@ -1309,7 +1320,7 @@ function drawHomeCompass(){
 
 async function fetchMetars(){
   const url=`./metars.json?t=${Date.now()}`;
-  liveMetarStatus=`0 of ${airports.length} airports updated`;
+  liveMetarStatus=`0 of ${airports.length} Airports updated`;
   lastMetarError='';
   updateHudButtons();
 
@@ -1366,7 +1377,8 @@ async function fetchMetars(){
     missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
     staleAirportIds=airports.filter(a=>a.stale).map(a=>a.id);
 
-    liveMetarStatus=`${metarRecordById.size} of ${airports.length} airports updated`;
+    const updatedAirportCount=airports.length-missingAirportIds.length;
+    liveMetarStatus=`${updatedAirportCount} of ${airports.length} Airports updated`;
     lastMetarUpdatedAt=latestDataTimestampMs?new Date(latestDataTimestampMs).toISOString():null;
     drawDots();
     drawHomeCompass();
@@ -1374,7 +1386,7 @@ async function fetchMetars(){
     updateMissingStationsDisplay();
     updateHudButtons();
   }catch(error){
-    liveMetarStatus=`0 of ${airports.length} airports updated`;
+    liveMetarStatus=`0 of ${airports.length} Airports updated`;
     lastMetarError=error.message||'UNKNOWN';
     lastMetarUpdatedAt=null;
     missingAirportIds=airports.map(a=>a.id);
