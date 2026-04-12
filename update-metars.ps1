@@ -19,9 +19,18 @@ $AirportIds = @(
   'KSFO','KOAK','KSJC','KHAF','KAPC','KSTS','KSMF','KMHR',
   'KUKI','KRDD','KACV','KCEC',
   'KMOD','KFAT','KVIS','KBFL','KSBP','KSBA','KOXR','KCMA',
-  'KBUR','KVNY','KLGB','KFUL','KSNA','KONT','KPSP','KTRM',
-  'KCRQ','KMYF','KSAN'
-)
+  'KBUR','KVNY','KLAX','KLGB','KFUL','KSNA','KONT','KPSP','KTRM',
+  'KCRQ','KMYF','KSAN',
+  'PANC','KHNL','KATL','KBHM','KBOS','KBDL','KDEN','KDCA',
+  'KIAD','KBWI','KMIA','KMCO','KTPA','KJAX','KPBI','KCLT',
+  'KGSO','KGSP','KORD','KMDW','KIND','KDSM','KMCI','KSDF',
+  'KMSY','KBTV','KDTW','KMSP','KSTL','KJFK','KLGA','KEWR',
+  'KBUF','KROC','KSYR','KRDU','KCLE','KCMH','KCVG','KOKC',
+  'KTUL','KPDX','KPHL','KPIT','KPVD','KCHS','KMYR','KBNA',
+  'KMEM','KAUS','KDFW','KDAL','KHOU','KIAH','KSAT','KELP',
+  'KCRP','KMAF','KLBB','KSLC','KORF','KRIC','KSEA','KGEG',
+  'KMKE','KABQ'
+) | Select-Object -Unique
 $Url = "https://aviationweather.gov/api/data/metar?format=json&ids=$($AirportIds -join ',')"
 $UserAgent = 'captainseang-arizona-metars/1.0'
 

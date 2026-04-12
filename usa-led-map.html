@@ -1,152 +1,164 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>USA WX Map Hub</title>
+<title>USA LED Map</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap');
-:root{
-  --bg:#050816;
-  --panel:rgba(8,15,31,.88);
-  --panel-border:rgba(148,163,184,.35);
-  --text:#e5eefc;
-  --muted:#cbd5e1;
-  --accent:#93c5fd;
-  --accent-warm:#f97316;
-}
-*{box-sizing:border-box}
 html,body{width:100%;height:100%}
-body{
-  margin:0;
-  color:var(--text);
-  background:
-    radial-gradient(circle at top,#12213f 0%,#08111f 35%,#030712 70%),
-    linear-gradient(135deg,#12080b 0%,#050816 55%,#071224 100%);
-  font-family:Inter,Arial,sans-serif;
-}
-.wrap{
-  min-height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:28px;
-}
-.panel{
-  width:min(980px,100%);
-  background:var(--panel);
-  border:1px solid var(--panel-border);
-  border-radius:24px;
-  padding:28px;
-  box-shadow:0 24px 60px rgba(0,0,0,.45);
-}
-.eyebrow{
-  font-family:'Orbitron',sans-serif;
-  letter-spacing:2px;
-  color:var(--accent);
-  font-size:13px;
-  margin-bottom:8px;
-}
-.title{
-  font-family:'Orbitron',sans-serif;
-  font-size:clamp(28px,4vw,48px);
-  font-weight:800;
-  letter-spacing:2px;
-  margin:0 0 10px;
-}
-.sub{
-  color:var(--muted);
-  max-width:760px;
-  line-height:1.5;
-  margin:0 0 24px;
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:18px;
-  margin-top:20px;
-}
-.card{
-  display:block;
-  text-decoration:none;
-  color:inherit;
-  background:rgba(2,6,23,.72);
-  border:1px solid rgba(148,163,184,.28);
-  border-radius:20px;
-  padding:20px;
-  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
-}
-.card:hover{
-  transform:translateY(-3px);
-  border-color:rgba(147,197,253,.5);
-  box-shadow:0 16px 34px rgba(0,0,0,.28);
-}
-.card-title{
-  font-family:'Orbitron',sans-serif;
-  font-size:22px;
-  font-weight:800;
-  letter-spacing:1px;
-  margin-bottom:8px;
-}
-.card-sub{
-  color:var(--muted);
-  line-height:1.45;
-  min-height:62px;
-}
-.status{
-  display:inline-flex;
-  margin-top:14px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(249,115,22,.45);
-  color:#fdba74;
-  font-family:'Orbitron',sans-serif;
-  font-size:11px;
-  letter-spacing:1px;
-}
-.roadmap{
-  margin-top:24px;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.18);
-  color:var(--muted);
-  line-height:1.55;
-}
-.roadmap strong{
-  color:var(--text);
-}
+body{margin:0;background:#0b1220;color:#fff;overflow:hidden;font-family:Inter,Arial,sans-serif}
+#wrap{position:relative;width:100vw;height:100vh}
+svg{width:100%;height:100%;display:block;background:#000}
+.state{stroke:#5b6474;stroke-width:1.2;vector-effect:non-scaling-stroke;cursor:default;transition:filter .2s ease,opacity .2s ease}
+.state.has-page{cursor:pointer}
+.state.has-page:hover{filter:brightness(1.12)}
+.state.no-page{opacity:.96}
+.airport-group{pointer-events:all}
+.airport-core{stroke:#000;stroke-width:.5}
+.airport-glow{filter:url(#glow);opacity:.88}
+.airport-ring{fill:none;stroke:rgba(255,255,255,.88);stroke-width:.7}
+.airport-badge{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:.7px;text-anchor:middle;pointer-events:none}
+.airport-stale .airport-core,.airport-stale .airport-glow,.airport-stale .airport-ring{animation:blinkFast .5s steps(1,end) infinite}
+.airport-nodata .airport-core,.airport-nodata .airport-glow,.airport-nodata .airport-ring{animation:fadePulse 1.9s ease-in-out infinite}
+.clock-panel{position:absolute;right:34px;top:28px;width:250px;display:flex;flex-direction:column;gap:12px}
+.clock-card{background:rgba(2,6,23,.84);border:2px solid #64748b;border-radius:18px;padding:14px 16px 12px}
+.clock-card.clickable{cursor:pointer}
+.clock-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px}
+.clock-time-row{margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.clock-time{color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:40px;font-weight:800;letter-spacing:2px}
+.clock-meridiem{color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px}
+.clock-sub{margin-top:4px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px}
+.legend{position:absolute;left:24px;bottom:24px;min-width:245px;background:rgba(2,6,23,.82);border:1px solid rgba(148,163,184,.4);border-radius:18px;padding:14px 16px;backdrop-filter:blur(8px)}
+.legend-title,.status-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;margin:0 0 10px}
+.legend-row{display:flex;align-items:center;gap:10px;color:#e5eefc;font-size:14px;margin:7px 0}
+.legend-dot{width:12px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.6);display:inline-block;box-shadow:0 0 10px currentColor}
+.legend-swatch{width:24px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:linear-gradient(135deg,#a8d2ff 0%,#6cabf6 55%,#3b6ea6 100%)}
+.legend-state-dark{width:24px;height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:#030712}
+.status-pill{position:absolute;right:24px;bottom:24px;min-width:260px;background:rgba(2,6,23,.82);border:1px solid rgba(148,163,184,.4);border-radius:18px;padding:14px 16px;backdrop-filter:blur(8px)}
+.status-line{color:#e5eefc;font-size:14px;line-height:1.45}
+.tooltip{position:absolute;display:none;pointer-events:none;z-index:30;max-width:360px;background:rgba(2,6,23,.96);color:#f8fafc;border:1px solid rgba(148,163,184,.45);border-radius:16px;padding:12px 14px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.tooltip-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:800;letter-spacing:1px}
+.tooltip-sub{color:#f59e0b;font-size:16px;margin-top:4px}
+.tooltip-raw{margin-top:7px;font-size:16px;line-height:1.35;white-space:normal}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:40;background:rgba(2,6,23,.42);backdrop-filter:blur(3px)}
+.overlay-card{width:min(650px,calc(100vw - 36px));background:rgba(2,6,23,.96);border:2px solid rgba(148,163,184,.45);border-radius:26px;padding:22px 24px;box-shadow:0 26px 60px rgba(0,0,0,.55);cursor:pointer}
+.overlay-title{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:28px;font-weight:800;letter-spacing:2px;margin:0 0 14px}
+.overlay-copy{color:#e5eefc;font-size:16px;line-height:1.52;margin:8px 0}
+.keycap,.chip{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 8px;border-radius:8px;border:1px solid rgba(148,163,184,.45);background:rgba(15,23,42,.8);color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;vertical-align:middle}
+.overlay-close{margin-top:16px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-align:center}
+@keyframes blinkFast{0%,49%{opacity:1}50%,100%{opacity:.28}}
+@keyframes fadePulse{0%,100%{opacity:.24}50%{opacity:1}}
+@media (max-width:900px){.clock-panel{right:18px;top:16px;width:220px}.clock-time{font-size:34px}.legend{left:14px;bottom:14px;min-width:210px}.status-pill{right:14px;bottom:14px;min-width:220px}}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <main class="panel">
-      <div class="eyebrow">WX MAP NETWORK</div>
-      <h1 class="title">USA WX MAP</h1>
-      <p class="sub">This page is the launch point for the multi-state version of the project. Arizona remains the flagship map, Nevada is live on the shared cache model, and California now joins the same family so we can grow cleanly into all 50 states and an eventual national overview.</p>
+<div id="wrap">
+  <svg id="usSvg" viewBox="0 0 1400 900" aria-label="USA LED map">
+    <defs>
+      <filter id="glow" x="-200%" y="-200%" width="400%" height="400%">
+        <feGaussianBlur stdDeviation="5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <linearGradient id="implementedStateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#a8d2ff"/>
+        <stop offset="55%" stop-color="#6cabf6"/>
+        <stop offset="100%" stop-color="#355f8f"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="1400" height="900" fill="#000"></rect>
+    <g id="mapLayer"></g>
+    <g id="airportLayer"></g>
+  </svg>
 
-      <section class="grid">
-        <a class="card" href="./index.html">
-          <div class="card-title">Arizona</div>
-          <div class="card-sub">Current full-featured map with windsock card, runway overlays, HUD tools, and the live Arizona workflow you have already refined.</div>
-          <div class="status">LIVE STATE PAGE</div>
-        </a>
-
-        <a class="card" href="./nevada-led-map.html">
-          <div class="card-title">Nevada</div>
-          <div class="card-sub">State page using the same interaction model as Arizona, now simplified onto the shared METAR cache flow with its real state boundary inline.</div>
-          <div class="status">LIVE STATE PAGE</div>
-        </a>
-
-        <a class="card" href="./california-led-map.html">
-          <div class="card-title">California</div>
-          <div class="card-sub">New California page built from the same windsock, runway, HUD, and interaction system, using a faithful California boundary and shared live METAR cache.</div>
-          <div class="status">NEW STATE PAGE</div>
-        </a>
-      </section>
-
-      <div class="roadmap">
-        <strong>Next build path:</strong> refine California airport-by-airport the same way Arizona evolved, then keep extracting reusable state config so adding the rest of the states and a true national page becomes much faster.
+  <div class="clock-panel">
+    <div class="clock-card clickable" id="zuluCard">
+      <div class="clock-title">ZULU</div>
+      <div class="clock-time-row"><div class="clock-time" id="zuluTime">--:--</div></div>
+      <div class="clock-sub" id="updatedLine">UPDATED --</div>
+    </div>
+    <div class="clock-card">
+      <div class="clock-title">LOCAL</div>
+      <div class="clock-time-row">
+        <div class="clock-time" id="localTime">--:--</div>
+        <div class="clock-meridiem" id="localMeridiem">--</div>
       </div>
-    </main>
+    </div>
   </div>
+
+  <div class="legend">
+    <div class="legend-title">USA MAP</div>
+    <div class="legend-row"><span class="legend-swatch"></span><span>State page ready</span></div>
+    <div class="legend-row"><span class="legend-state-dark"></span><span>Coming soon</span></div>
+    <div class="legend-row"><span class="legend-dot" style="color:#22c55e;background:#22c55e"></span><span>VFR</span></div>
+    <div class="legend-row"><span class="legend-dot" style="color:#3b82f6;background:#3b82f6"></span><span>MVFR</span></div>
+    <div class="legend-row"><span class="legend-dot" style="color:#ef4444;background:#ef4444"></span><span>IFR</span></div>
+    <div class="legend-row"><span class="legend-dot" style="color:#ff00ff;background:#ff00ff"></span><span>LIFR</span></div>
+    <div class="legend-row"><span class="legend-dot" style="color:#9ca3af;background:#9ca3af"></span><span>No data / stale</span></div>
+    <div class="legend-row"><span class="chip">B</span><span>Class Bravo</span></div>
+    <div class="legend-row"><span class="chip">C</span><span>Class Charlie</span></div>
+  </div>
+
+  <div class="status-pill">
+    <div class="status-title">STATUS</div>
+    <div class="status-line" id="statusLine">Loading state boundaries and airport METARs...</div>
+  </div>
+
+  <div id="tooltip" class="tooltip"></div>
+
+  <div id="instructionsOverlay" class="overlay">
+    <div class="overlay-card" id="instructionsCard">
+      <div class="overlay-title">USA MAP HELP</div>
+      <div class="overlay-copy">Tap a highlighted state to open its state map page.</div>
+      <div class="overlay-copy">Black states do not have a state page yet.</div>
+      <div class="overlay-copy">Hover or tap airport LEDs to see live METAR details for Class Bravo and Charlie airports.</div>
+      <div class="overlay-copy">Tap <span class="chip">ZULU</span> any time to reopen this card.</div>
+      <div class="overlay-copy">The orange summary line shows category, visibility, ceiling or cover, temperature, and age.</div>
+      <div class="overlay-close">TAP TO CLOSE</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script>
+const svg=document.getElementById('usSvg');
+const mapLayer=document.getElementById('mapLayer');
+const airportLayer=document.getElementById('airportLayer');
+const tooltip=document.getElementById('tooltip');
+const statusLine=document.getElementById('statusLine');
+const zuluTimeEl=document.getElementById('zuluTime');
+const localTimeEl=document.getElementById('localTime');
+const localMeridiemEl=document.getElementById('localMeridiem');
+const updatedLineEl=document.getElementById('updatedLine');
+const instructionsOverlay=document.getElementById('instructionsOverlay');
+const instructionsCard=document.getElementById('instructionsCard');
+const zuluCard=document.getElementById('zuluCard');
+const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#ff00ff',NONE:'#9ca3af'};
+const implementedStatePages={AZ:'./arizona-led-map.html',NV:'./nevada-led-map.html',CA:'./california-led-map.html'};
+const trackedAirports=[
+{id:'PANC',class:'C'},{id:'KHNL',class:'B'},{id:'KATL',class:'B'},{id:'KBHM',class:'C'},{id:'KBOS',class:'B'},{id:'KBDL',class:'C'},{id:'KPHX',class:'B'},{id:'KTUS',class:'C'},{id:'KLAX',class:'B'},{id:'KSAN',class:'B'},{id:'KSFO',class:'B'},{id:'KOAK',class:'C'},{id:'KSJC',class:'C'},{id:'KSNA',class:'C'},{id:'KONT',class:'C'},{id:'KBUR',class:'C'},{id:'KSBA',class:'C'},{id:'KSMF',class:'C'},{id:'KDEN',class:'B'},{id:'KDCA',class:'B'},{id:'KIAD',class:'B'},{id:'KBWI',class:'B'},{id:'KMIA',class:'B'},{id:'KMCO',class:'B'},{id:'KTPA',class:'B'},{id:'KJAX',class:'C'},{id:'KPBI',class:'C'},{id:'KCLT',class:'B'},{id:'KGSO',class:'C'},{id:'KGSP',class:'C'},{id:'KORD',class:'B'},{id:'KMDW',class:'B'},{id:'KIND',class:'C'},{id:'KDSM',class:'C'},{id:'KMCI',class:'C'},{id:'KSDF',class:'C'},{id:'KMSY',class:'B'},{id:'KBTV',class:'C'},{id:'KDTW',class:'B'},{id:'KMSP',class:'B'},{id:'KSTL',class:'B'},{id:'KJFK',class:'B'},{id:'KLGA',class:'B'},{id:'KEWR',class:'B'},{id:'KBUF',class:'C'},{id:'KROC',class:'C'},{id:'KSYR',class:'C'},{id:'KRDU',class:'C'},{id:'KCLE',class:'C'},{id:'KCMH',class:'C'},{id:'KCVG',class:'C'},{id:'KOKC',class:'C'},{id:'KTUL',class:'C'},{id:'KPDX',class:'B'},{id:'KPHL',class:'B'},{id:'KPIT',class:'B'},{id:'KPVD',class:'C'},{id:'KCHS',class:'C'},{id:'KMYR',class:'C'},{id:'KBNA',class:'C'},{id:'KMEM',class:'B'},{id:'KAUS',class:'C'},{id:'KDFW',class:'B'},{id:'KDAL',class:'B'},{id:'KHOU',class:'B'},{id:'KIAH',class:'B'},{id:'KSAT',class:'C'},{id:'KELP',class:'C'},{id:'KCRP',class:'C'},{id:'KMAF',class:'C'},{id:'KLBB',class:'C'},{id:'KSLC',class:'B'},{id:'KORF',class:'C'},{id:'KRIC',class:'C'},{id:'KSEA',class:'B'},{id:'KGEG',class:'C'},{id:'KMKE',class:'C'},{id:'KABQ',class:'C'},{id:'KLAS',class:'B'},{id:'KRNO',class:'C'}
+];
+const trackedAirportIds=new Set(trackedAirports.map(a=>a.id));
+const stateMetaByFips={'01':{code:'AL',name:'Alabama'},'02':{code:'AK',name:'Alaska'},'04':{code:'AZ',name:'Arizona'},'05':{code:'AR',name:'Arkansas'},'06':{code:'CA',name:'California'},'08':{code:'CO',name:'Colorado'},'09':{code:'CT',name:'Connecticut'},'10':{code:'DE',name:'Delaware'},'11':{code:'DC',name:'District of Columbia'},'12':{code:'FL',name:'Florida'},'13':{code:'GA',name:'Georgia'},'15':{code:'HI',name:'Hawaii'},'16':{code:'ID',name:'Idaho'},'17':{code:'IL',name:'Illinois'},'18':{code:'IN',name:'Indiana'},'19':{code:'IA',name:'Iowa'},'20':{code:'KS',name:'Kansas'},'21':{code:'KY',name:'Kentucky'},'22':{code:'LA',name:'Louisiana'},'23':{code:'ME',name:'Maine'},'24':{code:'MD',name:'Maryland'},'25':{code:'MA',name:'Massachusetts'},'26':{code:'MI',name:'Michigan'},'27':{code:'MN',name:'Minnesota'},'28':{code:'MS',name:'Mississippi'},'29':{code:'MO',name:'Missouri'},'30':{code:'MT',name:'Montana'},'31':{code:'NE',name:'Nebraska'},'32':{code:'NV',name:'Nevada'},'33':{code:'NH',name:'New Hampshire'},'34':{code:'NJ',name:'New Jersey'},'35':{code:'NM',name:'New Mexico'},'36':{code:'NY',name:'New York'},'37':{code:'NC',name:'North Carolina'},'38':{code:'ND',name:'North Dakota'},'39':{code:'OH',name:'Ohio'},'40':{code:'OK',name:'Oklahoma'},'41':{code:'OR',name:'Oregon'},'42':{code:'PA',name:'Pennsylvania'},'44':{code:'RI',name:'Rhode Island'},'45':{code:'SC',name:'South Carolina'},'46':{code:'SD',name:'South Dakota'},'47':{code:'TN',name:'Tennessee'},'48':{code:'TX',name:'Texas'},'49':{code:'UT',name:'Utah'},'50':{code:'VT',name:'Vermont'},'51':{code:'VA',name:'Virginia'},'53':{code:'WA',name:'Washington'},'54':{code:'WV',name:'West Virginia'},'55':{code:'WI',name:'Wisconsin'},'56':{code:'WY',name:'Wyoming'}};
+let projection=null;
+let airportRecordsById={};
+let lastFetchTime=null;
+function pad2(n){return String(n).padStart(2,'0')}
+function obsAgeMinutes(rec){const raw=rec?.obsTime??rec?.reportTime??rec?.receiptTime;if(raw==null)return null;let dt=null;if(typeof raw==='number'){dt=new Date(raw<1e12?raw*1000:raw);}else if(/^\d+$/.test(String(raw).trim())){const num=Number(raw);dt=new Date(num<1e12?num*1000:num);}else{dt=new Date(raw);}const ms=dt?.getTime?.();if(!Number.isFinite(ms))return null;return Math.max(0,Math.round((Date.now()-ms)/60000));}
+function isStale(rec){const age=obsAgeMinutes(rec);return age!=null&&age>66}
+function formatZulu(dt){return `${pad2(dt.getUTCHours())}:${pad2(dt.getUTCMinutes())}`;}
+function formatLocal(dt){let h=dt.getHours();const m=pad2(dt.getMinutes());const ap=h>=12?'PM':'AM';h=h%12||12;return {time:`${pad2(h)}:${m}`,meridiem:ap};}
+function updateClocks(){const now=new Date();zuluTimeEl.textContent=formatZulu(now);const local=formatLocal(now);localTimeEl.textContent=local.time;localMeridiemEl.textContent=local.meridiem;if(lastFetchTime){updatedLineEl.textContent=`UPDATED ${formatZulu(lastFetchTime)}Z`;}}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function buildSummary(rec){const bits=[];const cat=rec?.fltCat||'NONE';bits.push(cat);if(rec?.visib)bits.push(`${rec.visib}SM`);const cloud=Array.isArray(rec?.clouds)&&rec.clouds.length?rec.clouds[0]:null;if(cloud?.cover&&cloud?.base)bits.push(`${cloud.cover}${cloud.base}`);else if(rec?.cover)bits.push(rec.cover);if(typeof rec?.temp==='number')bits.push(`${Math.round((rec.temp*9/5)+32)}°F`);const age=obsAgeMinutes(rec);if(age!=null)bits.push(`${age}m old`);return bits.join(' • ');}
+function showTooltip(x,y,html){tooltip.innerHTML=html;tooltip.style.display='block';const rect=tooltip.getBoundingClientRect();const pad=16;const left=Math.min(window.innerWidth-rect.width-pad,Math.max(pad,x+16));const top=Math.min(window.innerHeight-rect.height-pad,Math.max(pad,y+16));tooltip.style.left=`${left}px`;tooltip.style.top=`${top}px`;}
+function hideTooltip(){tooltip.style.display='none';}
+function drawStates(us){const states=topojson.feature(us,us.objects.states).features;const path=d3.geoPath(projection);mapLayer.innerHTML='';states.forEach(state=>{const fips=String(state.id).padStart(2,'0');const meta=stateMetaByFips[fips]||{code:fips,name:`State ${fips}`};const hasPage=Boolean(implementedStatePages[meta.code]);const pathEl=document.createElementNS('http://www.w3.org/2000/svg','path');pathEl.setAttribute('d',path(state));pathEl.setAttribute('class',`state ${hasPage?'has-page':'no-page'}`);pathEl.setAttribute('fill',hasPage?'url(#implementedStateGrad)':'#030712');pathEl.addEventListener('mouseenter',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mousemove',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mouseleave',hideTooltip);if(hasPage){pathEl.addEventListener('click',()=>{window.location.href=implementedStatePages[meta.code];});}mapLayer.appendChild(pathEl);});}
+function drawAirports(){airportLayer.innerHTML='';trackedAirports.forEach(info=>{const rec=airportRecordsById[info.id];if(!rec||typeof rec.lat!=='number'||typeof rec.lon!=='number')return;const point=projection([rec.lon,rec.lat]);if(!point)return;const [x,y]=point;const category=(rec.fltCat&&colors[rec.fltCat])?rec.fltCat:'NONE';const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class',`airport-group ${isStale(rec)?'airport-stale':''} ${!rec.rawOb?'airport-nodata':''}`.trim());const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');glow.setAttribute('class','airport-glow');glow.setAttribute('cx',x);glow.setAttribute('cy',y);glow.setAttribute('r',12);glow.setAttribute('fill',colors[category]);const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('class','airport-ring');ring.setAttribute('cx',x);ring.setAttribute('cy',y);ring.setAttribute('r',10);const core=document.createElementNS('http://www.w3.org/2000/svg','circle');core.setAttribute('class','airport-core');core.setAttribute('cx',x);core.setAttribute('cy',y);core.setAttribute('r',7.5);core.setAttribute('fill',colors[category]);const badge=document.createElementNS('http://www.w3.org/2000/svg','text');badge.setAttribute('class','airport-badge');badge.setAttribute('x',x);badge.setAttribute('y',y+2.8);badge.textContent=info.class;g.appendChild(glow);g.appendChild(ring);g.appendChild(core);g.appendChild(badge);const summary=buildSummary(rec);const raw=rec.rawOb||'No current METAR';const airportClass=info.class==='B'?'Class Bravo':'Class Charlie';const tooltipHtml=`<div class="tooltip-title">${escapeHtml(info.id)}</div><div class="tooltip-sub">${escapeHtml(airportClass)} • ${escapeHtml(summary)}</div><div class="tooltip-raw">${escapeHtml(raw)}</div>`;g.addEventListener('mouseenter',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mousemove',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mouseleave',hideTooltip);airportLayer.appendChild(g);});}
+async function fetchMetars(){try{const res=await fetch(`./metars.json?t=${Date.now()}`,{cache:'no-store'});const data=await res.json();airportRecordsById={};data.forEach(rec=>{if(!rec?.icaoId)return;if(trackedAirportIds.has(rec.icaoId))airportRecordsById[rec.icaoId]=rec;});lastFetchTime=new Date();const lit=Object.keys(airportRecordsById).length;statusLine.textContent=`${lit} Bravo and Charlie airports loaded from shared METAR cache. Highlighted states open their live state pages.`;drawAirports();updateClocks();}catch(err){statusLine.textContent='Unable to load metars.json right now.';}}
+async function init(){updateClocks();setInterval(updateClocks,1000);projection=d3.geoAlbersUsa().fitExtent([[34,28],[1190,860]],{type:'Sphere'});const us=await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(r=>r.json());drawStates(us);await fetchMetars();setInterval(fetchMetars,5*60*1000);}
+zuluCard.addEventListener('click',()=>{instructionsOverlay.style.display='flex';});instructionsOverlay.addEventListener('click',()=>{instructionsOverlay.style.display='none';});instructionsCard.addEventListener('click',()=>{instructionsOverlay.style.display='none';});window.addEventListener('resize',()=>{hideTooltip();});init().catch(()=>{statusLine.textContent='USA map failed to initialize.';});
+</script>
 </body>
 </html>
