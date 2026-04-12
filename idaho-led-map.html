@@ -404,13 +404,24 @@ function computeBounds(points){
   return{minX,maxX,minY,maxY};
 }
 
-const projBounds=computeBounds(idOutline);
-const imageBounds={
-  minX:Math.min(...imageOutline.map(p=>p[0])),
-  maxX:Math.max(...imageOutline.map(p=>p[0])),
-  minY:Math.min(...imageOutline.map(p=>p[1])),
-  maxY:Math.max(...imageOutline.map(p=>p[1]))
-};
+  const projBounds=computeBounds(idOutline);
+  const frameBounds={ minX:150, maxX:968, minY:90, maxY:1100 };
+  function fitProjectedBounds(proj,frame){
+    const projW=Math.max(0.000001,proj.maxX-proj.minX);
+    const projH=Math.max(0.000001,proj.maxY-proj.minY);
+    const frameW=frame.maxX-frame.minX;
+    const frameH=frame.maxY-frame.minY;
+    const scale=Math.min(frameW/projW,frameH/projH);
+    const drawW=projW*scale;
+    const drawH=projH*scale;
+    return{
+      minX:frame.minX+(frameW-drawW)/2,
+      maxX:frame.minX+(frameW-drawW)/2+drawW,
+      minY:frame.minY+(frameH-drawH)/2,
+      maxY:frame.minY+(frameH-drawH)/2+drawH
+    };
+  }
+  const imageBounds=fitProjectedBounds(projBounds,frameBounds);
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
