@@ -392,7 +392,7 @@ function svgEl(name,attrs={},text=''){
 }
 
 function albersWY(lat,lon){
-  const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=41*Math.PI/180,phi2=45*Math.PI/180,phi0=43*Math.PI/180,lambda0=-107.5*Math.PI/180;
+    const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=29.5*Math.PI/180,phi2=45.5*Math.PI/180,phi0=37.5*Math.PI/180,lambda0=-96*Math.PI/180;
   const n=.5*(Math.sin(phi1)+Math.sin(phi2)),c=Math.cos(phi1)**2+2*n*Math.sin(phi1),rho=Math.sqrt(c-2*n*Math.sin(phi))/n,rho0=Math.sqrt(c-2*n*Math.sin(phi0))/n,theta=n*(lambda-lambda0);
   return{x:rho*Math.sin(theta),y:rho0-rho*Math.cos(theta)};
 }
