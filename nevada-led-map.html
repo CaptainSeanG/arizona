@@ -428,7 +428,7 @@ const vrbVisualStateByAirport=new Map();
 const steadyWindVisualStateByAirport=new Map();
 
 let homeAirportId=(localStorage.getItem('homeAirportId_nevada')||'').toUpperCase();
-let liveMetarStatus='STARTING';
+let liveMetarStatus=`0 of ${airports.length} airports updated`;
 let lastMetarError='';
 let lastMetarUpdatedAt=null;
 let showMetarHud=false;
@@ -515,12 +515,9 @@ function updateHudButtons(){
   document.body.classList.toggle('hide-windsock',!showWindsock&&!showHudWindsock);
   document.body.classList.toggle('show-hud-windsock',showHudWindsock);
   windToggle.classList.toggle('is-off',!showWindsock);
-  const updatedLabel=lastMetarUpdatedAt
-    ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
-    : '';
   metarStatusBtn.textContent=lastMetarError
-    ? `STATUS: ${liveMetarStatus} (${lastMetarError})`
-    : `STATUS: ${liveMetarStatus}${updatedLabel}`;
+    ? `${liveMetarStatus} (${lastMetarError})`
+    : liveMetarStatus;
   const jsonValue=hudJsonUpdated.querySelector('.json-value');
   jsonValue.textContent=lastMetarUpdatedAt
     ? new Date(lastMetarUpdatedAt).toLocaleString('en-US',{
@@ -1356,7 +1353,7 @@ function drawHomeCompass(){
 
 async function fetchMetars(){
   const url=`./metars.json?t=${Date.now()}`;
-  liveMetarStatus='FETCHING';
+  liveMetarStatus=`0 of ${airports.length} airports updated`;
   lastMetarError='';
   updateHudButtons();
 
@@ -1413,7 +1410,7 @@ async function fetchMetars(){
     missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
     staleAirportIds=airports.filter(a=>a.stale).map(a=>a.id);
 
-    liveMetarStatus=metarById.size?`CACHE ${metarById.size}`:'NO RAW';
+    liveMetarStatus=`${metarRecordById.size} of ${airports.length} airports updated`;
     lastMetarUpdatedAt=latestDataTimestampMs?new Date(latestDataTimestampMs).toISOString():null;
     drawDots();
     drawHomeCompass();
@@ -1421,7 +1418,7 @@ async function fetchMetars(){
     updateMissingStationsDisplay();
     updateHudButtons();
   }catch(error){
-    liveMetarStatus='FALLBACK';
+    liveMetarStatus=`0 of ${airports.length} airports updated`;
     lastMetarError=error.message||'UNKNOWN';
     lastMetarUpdatedAt=null;
     missingAirportIds=airports.map(a=>a.id);
