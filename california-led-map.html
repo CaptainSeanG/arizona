@@ -959,11 +959,78 @@ function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
   return initialHeading;
 }
 
+function projectExactRunways(runways,airport){
+  if(!airport||!runways.every(runway=>Array.isArray(runway.ends)&&runway.ends.length===2)) return null;
+  const airportPoint=albersCA(airport.lat,airport.lon);
+  const projected=runways.map(runway=>{
+    const [[lon1,lat1],[lon2,lat2]]=runway.ends;
+    const p1=albersCA(lat1,lon1);
+    const p2=albersCA(lat2,lon2);
+    return{
+      p1:{x:p1.x-airportPoint.x,y:p1.y-airportPoint.y},
+      p2:{x:p2.x-airportPoint.x,y:p2.y-airportPoint.y},
+      widthFt:Number(runway.widthFt)||75
+    };
+  });
+
+  const xs=projected.flatMap(runway=>[runway.p1.x,runway.p2.x]);
+  const ys=projected.flatMap(runway=>[runway.p1.y,runway.p2.y]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const spanX=Math.max(0.000001,maxX-minX);
+  const spanY=Math.max(0.000001,maxY-minY);
+  const scale=Math.min(112/spanX,92/spanY);
+
+  return projected.map(runway=>{
+    const x1=123+runway.p1.x*scale;
+    const y1=114-runway.p1.y*scale;
+    const x2=123+runway.p2.x*scale;
+    const y2=114-runway.p2.y*scale;
+    return{
+      x1,y1,x2,y2,
+      width:Math.max(5.5,Math.min(9,(runway.widthFt/150)*9))
+    };
+  });
+}
+
 function drawRunwayOverlay(airportId,target=homeCompass){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
+  const airport=airports.find(a=>a.id===airportId);
 
   const group=svgEl('g',{class:'runway-group'});
+  const exactRunways=projectExactRunways(runways,airport);
+  if(exactRunways){
+    exactRunways.forEach(runway=>{
+      const dx=runway.x2-runway.x1;
+      const dy=runway.y2-runway.y1;
+      const length=Math.sqrt(dx*dx+dy*dy);
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const centerX=(runway.x1+runway.x2)/2;
+      const centerY=(runway.y1+runway.y2)/2;
+      const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${angle})`});
+      runwayGroup.appendChild(svgEl('rect',{
+        x:-length/2,
+        y:-runway.width/2,
+        width:length,
+        height:runway.width,
+        rx:1.5,
+        ry:1.5,
+        class:'runway-strip'
+      }));
+      runwayGroup.appendChild(svgEl('line',{
+        x1:-length/2+5,
+        y1:0,
+        x2:length/2-5,
+        y2:0,
+        class:'runway-centerline'
+      }));
+      group.appendChild(runwayGroup);
+    });
+    target.appendChild(group);
+    return;
+  }
+
   const maxLength=Math.max(...runways.map(runway=>runway.length||0),1);
   runways.forEach(runway=>{
     const headingValue=Number(runway.heading)||0;
