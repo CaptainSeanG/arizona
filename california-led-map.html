@@ -84,8 +84,7 @@ body.alt-color svg{background:#2b0814}
 #tooltip .tip-summary{white-space:normal;color:#f59e0b}
 #hud{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s ease}
 body.show-metar-hud #hud{opacity:1;pointer-events:auto}
-.hud-btn{appearance:none;border:1px solid rgba(148,163,184,.45);background:rgba(2,6,23,.72);color:#e5eefc;border-radius:12px;padding:10px 14px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px}
-#metarStatusBtn{color:#93c5fd;font-weight:700}
+#metarStatusBtn{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px}
 #hudInfo{
   min-width:260px;
   max-width:360px;
@@ -227,7 +226,7 @@ body.hide-windsock #homePanel{display:none}
   </div>
   <div id="hud">
     <div id="hudInfo">
-<button id="metarStatusBtn" class="hud-btn" type="button">STATUS</button>
+      <div id="metarStatusBtn">STATUS</div>
       <div id="hudSummary" aria-live="polite">
         <div class="summary-value">0 of 32 Airports updated</div>
       </div>
