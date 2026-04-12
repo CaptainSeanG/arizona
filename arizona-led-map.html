@@ -748,7 +748,7 @@ function positionWindToggle(){
   const offsetY=(wrapRect.height-viewHeight*scale)/2;
   const buttonWidth=248;
   const buttonHeight=38;
-  const left=offsetX+CLOCK_LAYOUT.x*scale;
+  const left=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(buttonWidth*scale);
   const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+20)*scale;
   const controlsWidth=(70+64+8);
   const controlsLeft=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(controlsWidth*scale);
