@@ -405,6 +405,16 @@ function albersWA(lat,lon){
   return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-47.5};
 }
 
+function computeBounds(points){
+  const projected=points.map(([lon,lat])=>albersWA(lat,lon));
+  return{
+    minX:Math.min(...projected.map(p=>p.x)),
+    maxX:Math.max(...projected.map(p=>p.x)),
+    minY:Math.min(...projected.map(p=>p.y)),
+    maxY:Math.max(...projected.map(p=>p.y))
+  };
+}
+
 const projBounds=computeBounds(waOutline);
 const imageBounds={
   minX:Math.min(...imageOutline.map(p=>p[0])),
