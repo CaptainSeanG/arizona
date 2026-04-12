@@ -467,10 +467,9 @@ function svgEl(name,attrs={},text=''){
 }
 
 function albersTX(lat,lon){
-  const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=27.5*Math.PI/180,phi2=34.5*Math.PI/180,phi0=31*Math.PI/180,lambda0=-100.5*Math.PI/180;
-  const n=.5*(Math.sin(phi1)+Math.sin(phi2)),c=Math.cos(phi1)**2+2*n*Math.sin(phi1),rho=Math.sqrt(c-2*n*Math.sin(phi))/n,rho0=Math.sqrt(c-2*n*Math.sin(phi0))/n,theta=n*(lambda-lambda0);
-  return{x:rho*Math.sin(theta),y:rho0-rho*Math.cos(theta)};
-}
+    const centerLat=31*Math.PI/180,centerLon=-100.5;
+    return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-31};
+  }
 
 function computeBounds(points){
   const projected=points.map(([lon,lat])=>albersTX(lat,lon));

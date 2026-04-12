@@ -410,10 +410,9 @@ function svgEl(name,attrs={},text=''){
 }
 
 function albersUT(lat,lon){
-  const phi=lat*Math.PI/180,lambda=lon*Math.PI/180,phi1=37*Math.PI/180,phi2=41*Math.PI/180,phi0=39.5*Math.PI/180,lambda0=-111.5*Math.PI/180;
-  const n=.5*(Math.sin(phi1)+Math.sin(phi2)),c=Math.cos(phi1)**2+2*n*Math.sin(phi1),rho=Math.sqrt(c-2*n*Math.sin(phi))/n,rho0=Math.sqrt(c-2*n*Math.sin(phi0))/n,theta=n*(lambda-lambda0);
-  return{x:rho*Math.sin(theta),y:rho0-rho*Math.cos(theta)};
-}
+    const centerLat=39.5*Math.PI/180,centerLon=-111.5;
+    return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-39.5};
+  }
 
 function computeBounds(points){
   const projected=points.map(([lon,lat])=>albersUT(lat,lon));
