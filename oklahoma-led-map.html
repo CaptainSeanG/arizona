@@ -395,25 +395,36 @@ function albersOK(lat,lon){
   return{x:rho*Math.sin(theta),y:rho0-rho*Math.cos(theta)};
 }
 
-function computeBounds(points){
-  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-  for(const [lon,lat] of points){
-    const p=albersOK(lat,lon);
-    if(p.x<minX) minX=p.x;
+  function computeBounds(points){
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    for(const [lon,lat] of points){
+      const p=albersOK(lat,lon);
+      if(p.x<minX) minX=p.x;
     if(p.x>maxX) maxX=p.x;
     if(p.y<minY) minY=p.y;
     if(p.y>maxY) maxY=p.y;
   }
   return{minX,maxX,minY,maxY};
-}
-
-const projBounds=computeBounds(okOutline);
-const imageBounds={
-  minX:Math.min(...imageOutline.map(p=>p[0])),
-  maxX:Math.max(...imageOutline.map(p=>p[0])),
-  minY:Math.min(...imageOutline.map(p=>p[1])),
-  maxY:Math.max(...imageOutline.map(p=>p[1]))
-};
+  }
+  
+  const projBounds=computeBounds(okOutline);
+  const frameBounds={ minX:150, maxX:968, minY:90, maxY:1100 };
+  function fitProjectedBounds(proj,frame){
+    const projW=Math.max(0.000001,proj.maxX-proj.minX);
+    const projH=Math.max(0.000001,proj.maxY-proj.minY);
+    const frameW=frame.maxX-frame.minX;
+    const frameH=frame.maxY-frame.minY;
+    const scale=Math.min(frameW/projW,frameH/projH);
+    const drawW=projW*scale;
+    const drawH=projH*scale;
+    return{
+      minX:frame.minX+(frameW-drawW)/2,
+      maxX:frame.minX+(frameW-drawW)/2+drawW,
+      minY:frame.minY+(frameH-drawH)/2,
+      maxY:frame.minY+(frameH-drawH)/2+drawH
+    };
+  }
+  const imageBounds=fitProjectedBounds(projBounds,frameBounds);
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
