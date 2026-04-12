@@ -224,7 +224,7 @@ body.hide-windsock #homePanel{display:none}
   </div>
   <div id="hud">
     <div id="hudInfo">
-      <button id="metarStatusBtn" class="hud-btn" type="button">METAR: STARTING</button>
+      <button id="metarStatusBtn" class="hud-btn" type="button">STATUS: STARTING</button>
       <div id="hudMissing" aria-live="polite">
         <div class="missing-title">MISSING STATIONS</div>
         <div class="missing-list">NONE</div>
@@ -234,7 +234,7 @@ body.hide-windsock #homePanel{display:none}
         <div class="stale-list">NONE</div>
       </div>
       <div id="hudJsonUpdated" aria-live="polite">
-        <div>JSON UPDATED</div>
+        <div>LAST UPDATED</div>
         <div class="json-value">WAITING</div>
       </div>
     </div>
@@ -258,6 +258,7 @@ body.hide-windsock #homePanel{display:none}
         <li>Tap the background to toggle colors.</li>
         <li>On the <span class="mini-wind-btn">WINDSOCK</span> button, tap the left or right half of the button to show on the left or right.</li>
         <li>Tap the windsock card to reopen the home-airport selector.</li>
+        <li>Press <span class="keycap">S</span> for the status panel.</li>
         <li>Press <span class="keycap">F</span> for fullscreen and <span class="keycap">K</span> for kiosk cursor mode.</li>
         <li>Hover over an airport LED to see the decoded weather and raw METAR.</li>
       </ul>
@@ -644,8 +645,8 @@ function updateHudButtons(){
     ? ` - ${new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})}Z`
     : '';
   metarStatusBtn.textContent=lastMetarError
-    ? `METAR: ${liveMetarStatus} (${lastMetarError})`
-    : `METAR: ${liveMetarStatus}${updatedLabel}`;
+    ? `STATUS: ${liveMetarStatus} (${lastMetarError})`
+    : `STATUS: ${liveMetarStatus}${updatedLabel}`;
   const jsonValue=hudJsonUpdated.querySelector('.json-value');
   jsonValue.textContent=lastMetarUpdatedAt
     ? new Date(lastMetarUpdatedAt).toLocaleString('en-US',{
@@ -1639,7 +1640,7 @@ welcomeInput.addEventListener('keydown',e=>{
 document.addEventListener('keydown',async e=>{
   if(e.target===welcomeInput) return;
 
-  if(e.key==='m'||e.key==='M'){
+  if(e.key==='m'||e.key==='M'||e.key==='s'||e.key==='S'){
     showMetarHud=!showMetarHud;
     updateHudButtons();
   }
