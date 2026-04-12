@@ -388,7 +388,7 @@ function svgEl(name,attrs={},text=''){
 
 function albersID(lat,lon){
     const centerLon=-114;
-    const silhouetteScaleX=0.64;
+    const silhouetteScaleX=0.7;
     return{x:(lon-centerLon)*silhouetteScaleX,y:lat-44.5};
   }
 
@@ -405,7 +405,7 @@ function computeBounds(points){
 }
 
   const projBounds=computeBounds(idOutline);
-  const frameBounds={ minX:125, maxX:993, minY:70, maxY:1125 };
+  const frameBounds={ minX:110, maxX:1006, minY:58, maxY:1138 };
   function fitProjectedBounds(proj,frame){
     const projW=Math.max(0.000001,proj.maxX-proj.minX);
     const projH=Math.max(0.000001,proj.maxY-proj.minY);
