@@ -249,8 +249,24 @@ const airports=[
 ];
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
-const NEVADA_MAGNETIC_VARIATION_EAST=11;
-const COMPASS_FRAME_ROTATION=9;
+const DEFAULT_NEVADA_MAGNETIC_VARIATION_EAST=11;
+const magneticVariationByAirport={
+  KRNO:12.3,
+  KCXP:12.3,
+  KMEV:12.2,
+  KRTS:12.1,
+  KLOL:11.7,
+  KTPH:11.3,
+  KHTH:11.8,
+  KEKO:10.6,
+  KELY:10.2,
+  KENV:9.8,
+  KLAS:11.0,
+  KHND:11.0,
+  KVGT:11.0,
+  KBVU:11.1,
+  KNFL:11.9
+};
 const legacyRunwayDataByAirport={
   KRNO:[{heading:170,length:11001,offset:0}],
   KCXP:[{heading:360,length:6100,offset:0}],
@@ -901,8 +917,12 @@ function normalizeHeading(deg){
   return normalized===0?360:normalized;
 }
 
-function trueToMagnetic(deg){
-  return normalizeHeading(Number(deg)-NEVADA_MAGNETIC_VARIATION_EAST);
+function getAirportMagneticVariationEast(airportId){
+  return magneticVariationByAirport[airportId]??DEFAULT_NEVADA_MAGNETIC_VARIATION_EAST;
+}
+
+function trueToMagnetic(deg,airportId){
+  return normalizeHeading(Number(deg)-getAirportMagneticVariationEast(airportId));
 }
 
 function shortestAngleDelta(fromDeg,toDeg){
@@ -1098,13 +1118,14 @@ function drawHomeCompass(){
   const airport=airports.find(a=>a.id===homeAirportId);
   const record=metarRecordById.get(homeAirportId);
   const ageMin=getDisplayAgeMinutes(record,airport);
+  const compassRotation=airport?getAirportMagneticVariationEast(airport.id):DEFAULT_NEVADA_MAGNETIC_VARIATION_EAST;
   const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
   const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
   const badgeTextColor=badgeColor===colors.VFR?'#020617':'#f8fafc';
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
-  const compassFrame=svgEl('g',{transform:`rotate(${COMPASS_FRAME_ROTATION} 123 114)`});
+  const compassFrame=svgEl('g',{transform:`rotate(${compassRotation} 123 114)`});
   compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
   compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
   if(airport) drawRunwayOverlay(airport.id,compassFrame);
@@ -1153,7 +1174,7 @@ function drawHomeCompass(){
     const streamAngle=(variableHeading+90)%360;
     const vrbSpeed=Math.max(0,Number(speed)||0);
     const vrbGustDelta=Math.max(0,(Number(gust)||0)-vrbSpeed);
-    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
+    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
     const vrbMotion=svgEl('g',{
       class:'windsock-rig',
       style:'--sway:2deg;--wave-ms:1600ms'
@@ -1208,7 +1229,7 @@ function drawHomeCompass(){
   }
 
   const windDir=Number(dir);
-  const magneticWindDir=trueToMagnetic(windDir);
+  const magneticWindDir=trueToMagnetic(windDir,airport?airport.id:homeAirportId);
   const windSpeed=Math.max(0,Number(speed)||0);
   const gustSpeed=Math.max(windSpeed,Number(gust)||0);
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
@@ -1230,7 +1251,7 @@ function drawHomeCompass(){
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
   const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
 
-  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
+  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
