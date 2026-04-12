@@ -261,9 +261,37 @@ const airports=[
 ];
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
-const ARIZONA_MAGNETIC_VARIATION_EAST=12.5;
-const COMPASS_FRAME_ROTATION=9;
-const runwayDataByAirport={
+const DEFAULT_ARIZONA_MAGNETIC_VARIATION_EAST=10.5;
+const magneticVariationByAirport={
+  KPHX:10.5,
+  KDVT:10.5,
+  KSDL:10.4,
+  KFFZ:10.3,
+  KIWA:10.2,
+  KCHD:10.2,
+  KGYR:10.8,
+  KGEU:10.8,
+  KLUF:10.8,
+  KTUS:10.0,
+  KDUG:9.8,
+  KOLS:9.8,
+  KPGA:10.6,
+  KFLG:10.4,
+  KINW:10.1,
+  KPRC:10.7,
+  KGCN:10.8,
+  KSEZ:10.5,
+  KSOW:9.9,
+  KSAD:9.8,
+  KSJN:9.7,
+  KIGM:11.1,
+  KHII:11.4,
+  KIFP:11.5,
+  KNYL:11.3,
+  KRYN:10.1,
+  KCGZ:10.2
+};
+const legacyRunwayDataByAirport={
   KPHX:[
     {heading:90,length:11489,offset:-15,xOffset:6,yOffset:-6},
     {heading:90,length:10300,offset:0,xOffset:0,yOffset:0},
@@ -321,6 +349,113 @@ const runwayDataByAirport={
   ],
   KCGZ:[{heading:50,length:5200,offset:0}]
 };
+const arizonaRunwayExactData={
+  KIFP:[
+    {ends:[[-114.56021022,35.16626813],[-114.55845438,35.14296058]],length:8501,widthFt:150}
+  ],
+  KCGZ:[
+    {ends:[[-111.774153,32.95131575],[-111.75948625,32.9584798]],length:5200,widthFt:100}
+  ],
+  KCHD:[
+    {ends:[[-111.81995238,33.26411308],[-111.80898594,33.27194836]],length:4401,widthFt:75},
+    {ends:[[-111.814163,33.26572486],[-111.80202622,33.27439244]],length:4870,widthFt:75}
+  ],
+  KDUG:[
+    {ends:[[-109.61077827,31.47406902],[-109.59485297,31.47402666]],length:4966,widthFt:60},
+    {ends:[[-109.60448663,31.47384308],[-109.60441519,31.45617166]],length:6430,widthFt:100}
+  ],
+  KFLG:[
+    {ends:[[-111.67892452,35.1312183],[-111.65955591,35.14941266]],length:8800,widthFt:150}
+  ],
+  KGEU:[
+    {ends:[[-112.30021538,33.51805983],[-112.29004005,33.53576322]],length:7150,widthFt:100}
+  ],
+  KLUF:[
+    {ends:[[-112.3985673,33.52297227],[-112.37637461,33.54321355]],length:10000,widthFt:150},
+    {ends:[[-112.38990266,33.52681369],[-112.36790088,33.54687552]],length:9912,widthFt:150}
+  ],
+  KGYR:[
+    {ends:[[-112.383954,33.4140893],[-112.36676875,33.43247316]],length:8500,widthFt:150}
+  ],
+  KGCN:[
+    {ends:[[-112.15686161,35.94298288],[-112.13706019,35.96172994]],length:8999,widthFt:150}
+  ],
+  KIGM:[
+    {ends:[[-113.94810511,35.25148633],[-113.93193377,35.26474325]],length:6827,widthFt:150},
+    {ends:[[-113.93604502,35.27009775],[-113.93605577,35.25162633]],length:6725,widthFt:75}
+  ],
+  KHII:[
+    {ends:[[-114.36499305,34.58060658],[-114.35156211,34.56164097]],length:8000,widthFt:100}
+  ],
+  KFFZ:[
+    {ends:[[-111.73418391,33.45830044],[-111.72448272,33.46484936]],length:3799,widthFt:75},
+    {ends:[[-111.73408694,33.45589997],[-111.72106077,33.46468611]],length:5100,widthFt:100}
+  ],
+  KOLS:[
+    {ends:[[-110.85623661,31.41088552],[-110.83955191,31.42455172]],length:7200,widthFt:100}
+  ],
+  KPGA:[
+    {ends:[[-111.45352183,36.92916002],[-111.44606713,36.92999358]],length:2201,widthFt:75},
+    {ends:[[-111.44956291,36.93281927],[-111.44607022,36.91672472]],length:5950,widthFt:150}
+  ],
+  KDVT:[
+    {ends:[[-112.08945172,33.68916],[-112.07469558,33.69002022]],length:4500,widthFt:75},
+    {ends:[[-112.09626891,33.68683422],[-112.06939336,33.68840083]],length:8196,widthFt:100}
+  ],
+  KIWA:[
+    {ends:[[-111.66592297,33.31761291],[-111.64255277,33.29759375]],length:10201,widthFt:150},
+    {ends:[[-111.66131275,33.31758975],[-111.64000711,33.29933747]],length:9300,widthFt:150},
+    {ends:[[-111.67286808,33.31767133],[-111.64903583,33.29726233]],length:10401,widthFt:150}
+  ],
+  KPHX:[
+    {ends:[[-112.02710163,33.4310578],[-111.99334525,33.43103566]],length:10300,widthFt:150},
+    {ends:[[-112.02710238,33.42885897],[-112.00153922,33.42884316]],length:7800,widthFt:150},
+    {ends:[[-112.02979361,33.44086091],[-111.99213566,33.44082341]],length:11489,widthFt:150}
+  ],
+  KPRC:[
+    {ends:[[-112.41945866,34.65742183],[-112.4098183,34.66649333]],length:4395,widthFt:60},
+    {ends:[[-112.42800427,34.64646269],[-112.41129627,34.66218991]],length:7619,widthFt:150},
+    {ends:[[-112.42796755,34.65273838],[-112.41788719,34.64395022]],length:4408,widthFt:75}
+  ],
+  KSAD:[
+    {ends:[[-109.64267425,32.85403],[-109.62704252,32.85394111]],length:4802,widthFt:60},
+    {ends:[[-109.64212941,32.85870072],[-109.62839283,32.84695072]],length:6007,widthFt:100}
+  ],
+  KSJN:[
+    {ends:[[-109.38319236,34.5126643],[-109.37640711,34.52012611]],length:3400,widthFt:60},
+    {ends:[[-109.38272125,34.52617441],[-109.37345169,34.51373308]],length:5322,widthFt:75}
+  ],
+  KSDL:[
+    {ends:[[-111.91994022,33.61472547],[-111.901122,33.63103283]],length:8249,widthFt:100}
+  ],
+  KSEZ:[
+    {ends:[[-111.79457188,34.84367252],[-111.78232211,34.85350572]],length:5132,widthFt:100}
+  ],
+  KSOW:[
+    {ends:[[-110.0074773,34.26055652],[-109.99782613,34.26782527]],length:3938,widthFt:60},
+    {ends:[[-110.01886722,34.26377458],[-109.99575041,34.26856794]],length:7202,widthFt:100}
+  ],
+  KTUS:[
+    {ends:[[-110.95904052,32.11716725],[-110.94304325,32.1307613]],length:7000,widthFt:150},
+    {ends:[[-110.94791316,32.12337041],[-110.92281841,32.10199011]],length:10996,widthFt:150}
+  ],
+  KRYN:[
+    {ends:[[-111.18249427,32.14122172],[-111.16759108,32.14575916]],length:4900,widthFt:75},
+    {ends:[[-111.17929927,32.14015141],[-111.16257022,32.14524211]],length:5500,widthFt:75},
+    {ends:[[-111.18035961,32.14536961],[-111.17766325,32.1345913]],length:4010,widthFt:75}
+  ],
+  KINW:[
+    {ends:[[-110.73787777,35.01426666],[-110.71650611,35.02499777]],length:7499,widthFt:150},
+    {ends:[[-110.72787747,35.02913997],[-110.70727847,35.01948886]],length:7100,widthFt:150}
+  ],
+  KNYL:[
+    {ends:[[-114.629395,32.6367825],[-114.59931888,32.66302666]],length:13300,widthFt:200},
+    {ends:[[-114.61252888,32.64873888],[-114.59162666,32.66696638]],length:9240,widthFt:150},
+    {ends:[[-114.60565611,32.66590055],[-114.58568777,32.66615694]],length:6146,widthFt:150},
+    {ends:[[-114.60406361,32.66770805],[-114.60377972,32.65201569]],length:5710,widthFt:150}
+  ]
+};
+const runwayDataByAirport=arizonaRunwayExactData;
 
 const imageOutline=[[1026.0,1170.5],[684.0,1170.5],[629.0,1152.5],[588.0,1133.5],[564.0,1128.5],[541.0,1116.5],[520.0,1112.5],[494.0,1099.5],[449.0,1086.5],[415.0,1070.5],[383.0,1062.5],[345.0,1044.5],[306.0,1034.5],[268.0,1016.5],[247.0,1012.5],[223.0,1000.5],[168.0,984.5],[143.0,970.5],[121.0,966.5],[86.0,948.5],[59.0,942.5],[55.5,939.0],[55.5,913.0],[64.5,906.0],[73.5,887.0],[101.0,885.5],[103.5,873.0],[109.5,863.0],[105.5,836.0],[82.0,830.5],[73.5,822.0],[72.5,813.0],[78.5,789.0],[69.5,777.0],[73.5,768.0],[70.5,755.0],[85.0,748.5],[93.5,735.0],[97.5,716.0],[106.5,696.0],[101.5,676.0],[101.5,656.0],[115.5,623.0],[122.0,613.5],[134.0,605.5],[141.0,605.5],[166.5,580.0],[166.5,571.0],[150.0,559.5],[123.5,531.0],[109.5,489.0],[81.5,451.0],[85.5,423.0],[84.5,408.0],[91.5,404.0],[91.5,377.0],[87.5,357.0],[75.5,333.0],[80.5,306.0],[71.5,286.0],[71.5,267.0],[77.5,248.0],[65.5,230.0],[63.5,214.0],[72.0,202.5],[81.0,197.5],[102.0,193.5],[126.0,193.5],[153.0,220.5],[159.0,221.5],[165.5,216.0],[183.5,187.0],[183.0,13.5],[1026.5,16.0],[1028.5,1168.0],[1026.0,1170.5]];
 const azOutline=[[-114.816,32.493],[-114.808,32.650],[-114.800,32.800],[-114.790,32.950],[-114.770,33.120],[-114.750,33.260],[-114.730,33.420],[-114.710,33.580],[-114.690,33.740],[-114.670,33.900],[-114.650,34.060],[-114.630,34.200],[-114.610,34.340],[-114.600,34.450],[-114.590,34.550],[-114.580,34.650],[-114.560,34.780],[-114.540,34.920],[-114.510,35.050],[-114.480,35.180],[-114.450,35.320],[-114.420,35.450],[-114.390,35.600],[-114.360,35.750],[-114.330,35.900],[-114.300,36.050],[-114.270,36.200],[-114.240,36.350],[-114.210,36.500],[-114.180,36.650],[-114.150,36.800],[-114.120,36.900],[-114.100,37.000],[-112.500,37.000],[-111.000,37.000],[-109.045,37.000],[-109.045,35.500],[-109.045,34.000],[-109.045,32.600],[-109.045,31.332],[-110.500,31.400],[-111.250,31.520],[-112.000,31.700],[-112.700,31.900],[-113.300,32.080],[-113.850,32.220],[-114.250,32.330],[-114.816,32.493]];
@@ -876,8 +1011,12 @@ function normalizeHeading(deg){
   return normalized===0?360:normalized;
 }
 
-function trueToMagnetic(deg){
-  return normalizeHeading(Number(deg)-ARIZONA_MAGNETIC_VARIATION_EAST);
+function getAirportMagneticVariationEast(airportId){
+  return magneticVariationByAirport[airportId]??DEFAULT_ARIZONA_MAGNETIC_VARIATION_EAST;
+}
+
+function trueToMagnetic(deg,airportId){
+  return normalizeHeading(Number(deg)-getAirportMagneticVariationEast(airportId));
 }
 
 function shortestAngleDelta(fromDeg,toDeg){
@@ -960,11 +1099,75 @@ function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
   return initialHeading;
 }
 
+function projectExactRunways(runways,airport){
+  if(!airport||!runways.every(runway=>Array.isArray(runway.ends)&&runway.ends.length===2)) return null;
+  const airportPoint=albersAZ(airport.lat,airport.lon);
+  const projected=runways.map(runway=>{
+    const [[lon1,lat1],[lon2,lat2]]=runway.ends;
+    const p1=albersAZ(lat1,lon1);
+    const p2=albersAZ(lat2,lon2);
+    return{
+      p1:{x:p1.x-airportPoint.x,y:p1.y-airportPoint.y},
+      p2:{x:p2.x-airportPoint.x,y:p2.y-airportPoint.y},
+      widthFt:Number(runway.widthFt)||75
+    };
+  });
+
+  const xs=projected.flatMap(runway=>[runway.p1.x,runway.p2.x]);
+  const ys=projected.flatMap(runway=>[runway.p1.y,runway.p2.y]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const spanX=Math.max(0.000001,maxX-minX);
+  const spanY=Math.max(0.000001,maxY-minY);
+  const scale=Math.min(112/spanX,92/spanY);
+
+  return projected.map(runway=>({
+    x1:123+runway.p1.x*scale,
+    y1:114-runway.p1.y*scale,
+    x2:123+runway.p2.x*scale,
+    y2:114-runway.p2.y*scale,
+    width:Math.max(5.5,Math.min(9,(runway.widthFt/150)*9))
+  }));
+}
+
 function drawRunwayOverlay(airportId,target=homeCompass){
   const runways=runwayDataByAirport[airportId];
   if(!runways||!runways.length) return;
+  const airport=airports.find(a=>a.id===airportId);
 
   const group=svgEl('g',{class:'runway-group'});
+  const exactRunways=projectExactRunways(runways,airport);
+  if(exactRunways){
+    exactRunways.forEach(runway=>{
+      const dx=runway.x2-runway.x1;
+      const dy=runway.y2-runway.y1;
+      const length=Math.sqrt(dx*dx+dy*dy);
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const centerX=(runway.x1+runway.x2)/2;
+      const centerY=(runway.y1+runway.y2)/2;
+      const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${angle})`});
+      runwayGroup.appendChild(svgEl('rect',{
+        x:-length/2,
+        y:-runway.width/2,
+        width:length,
+        height:runway.width,
+        rx:1.5,
+        ry:1.5,
+        class:'runway-strip'
+      }));
+      runwayGroup.appendChild(svgEl('line',{
+        x1:-length/2+5,
+        y1:0,
+        x2:length/2-5,
+        y2:0,
+        class:'runway-centerline'
+      }));
+      group.appendChild(runwayGroup);
+    });
+    target.appendChild(group);
+    return;
+  }
+
   const maxLength=Math.max(...runways.map(runway=>runway.length||0),1);
   runways.forEach(runway=>{
     const headingValue=Number(runway.heading)||0;
@@ -1006,13 +1209,14 @@ function drawHomeCompass(){
   const airport=airports.find(a=>a.id===homeAirportId);
   const record=metarRecordById.get(homeAirportId);
   const ageMin=getDisplayAgeMinutes(record,airport);
+  const compassRotation=airport?getAirportMagneticVariationEast(airport.id):DEFAULT_ARIZONA_MAGNETIC_VARIATION_EAST;
   const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
   const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
   const badgeTextColor=badgeColor===colors.VFR?'#020617':'#f8fafc';
 
   homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
 
-  const compassFrame=svgEl('g',{transform:`rotate(${COMPASS_FRAME_ROTATION} 123 114)`});
+  const compassFrame=svgEl('g',{transform:`rotate(${compassRotation} 123 114)`});
   compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
   compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
   if(airport) drawRunwayOverlay(airport.id,compassFrame);
@@ -1061,7 +1265,7 @@ function drawHomeCompass(){
     const streamAngle=(variableHeading+90)%360;
     const vrbSpeed=Math.max(0,Number(speed)||0);
     const vrbGustDelta=Math.max(0,(Number(gust)||0)-vrbSpeed);
-    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
+    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
     const vrbMotion=svgEl('g',{
       class:'windsock-rig',
       style:'--sway:2deg;--wave-ms:1600ms'
@@ -1116,7 +1320,7 @@ function drawHomeCompass(){
   }
 
   const windDir=Number(dir);
-  const magneticWindDir=trueToMagnetic(windDir);
+  const magneticWindDir=trueToMagnetic(windDir,airport?airport.id:homeAirportId);
   const windSpeed=Math.max(0,Number(speed)||0);
   const gustSpeed=Math.max(windSpeed,Number(gust)||0);
   const gustDelta=Math.max(0,gustSpeed-windSpeed);
@@ -1138,7 +1342,7 @@ function drawHomeCompass(){
   const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
   const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
 
-  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${COMPASS_FRAME_ROTATION})`});
+  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
   const motion=svgEl('g',{
     class:'windsock-rig',
     style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
