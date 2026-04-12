@@ -47,10 +47,10 @@ body.alt-color svg{background:#2b0814}
   top:0;
   display:flex;
   gap:8px;
+  justify-content:flex-end;
   z-index:31;
 }
-.top-control-btn,
-#usaFloatingBtn{
+.top-control-btn{
   display:flex;
   align-items:center;
   justify-content:center;
@@ -71,19 +71,9 @@ body.alt-color svg{background:#2b0814}
   padding:0 14px;
 }
 #topHelpBtn{min-width:64px}
-#topUsaBtn,
-#usaFloatingBtn{
+#topUsaBtn{
   color:#bfdbfe;
   border-color:rgba(147,197,253,.48);
-}
-#usaFloatingBtn{
-  position:absolute;
-  left:22px;
-  bottom:22px;
-  min-width:96px;
-  height:34px;
-  padding:0 16px;
-  z-index:31;
 }
 #windToggle.is-off{
   background:rgba(0,0,0,.58);
@@ -226,11 +216,10 @@ body.hide-windsock #homePanel{display:none}
   </svg>
   <div id="tooltip"></div>
   <div id="topControlRow" class="top-control-row">
-    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
     <button id="topUsaBtn" class="top-control-btn" type="button">USA</button>
+    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
   </div>
   <button id="windToggle" type="button">WINDSOCK</button>
-  <button id="usaFloatingBtn" type="button">USA MAP</button>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
@@ -519,7 +508,6 @@ const hudJsonUpdated=document.getElementById('hudJsonUpdated');
 const topControlRow=document.getElementById('topControlRow');
 const topHelpBtn=document.getElementById('topHelpBtn');
 const topUsaBtn=document.getElementById('topUsaBtn');
-const usaFloatingBtn=document.getElementById('usaFloatingBtn');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
 const homeTitle=document.getElementById('homeTitle');
@@ -762,19 +750,17 @@ function positionWindToggle(){
   const buttonHeight=38;
   const left=offsetX+CLOCK_LAYOUT.x*scale;
   const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+20)*scale;
+  const controlsWidth=(70+64+8);
+  const controlsLeft=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(controlsWidth*scale);
   windToggle.style.left=`${Math.round(left)}px`;
   windToggle.style.top=`${Math.round(top)}px`;
   windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
   windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
   const controlsTop=offsetY+(CLOCK_LAYOUT.box1Y-42)*scale;
-  topControlRow.style.left=`${Math.round(left)}px`;
+  topControlRow.style.left=`${Math.round(controlsLeft)}px`;
   topControlRow.style.top=`${Math.round(Math.max(offsetY+8,controlsTop))}px`;
   topControlRow.style.transform=`scale(${scale})`;
   topControlRow.style.transformOrigin='top left';
-  usaFloatingBtn.style.left=`${Math.max(22,Math.round(offsetX+22*scale))}px`;
-  usaFloatingBtn.style.bottom=`${Math.max(22,Math.round(offsetY+22*scale))}px`;
-  usaFloatingBtn.style.transform=`scale(${scale})`;
-  usaFloatingBtn.style.transformOrigin='bottom left';
   positionHomePanel();
 }
 
@@ -1655,7 +1641,6 @@ document.getElementById('homePanel').addEventListener('click',()=>{
 
 topHelpBtn.addEventListener('click',showInstructions);
 topUsaBtn.addEventListener('click',goToUsaMap);
-usaFloatingBtn.addEventListener('click',goToUsaMap);
 infoOverlay.addEventListener('click',hideInstructions);
 
 document.querySelector('svg').addEventListener('click',e=>{
