@@ -118,6 +118,9 @@ body.show-metar-hud #hud{opacity:1;pointer-events:auto}
   cursor:pointer;
 }
 body.hide-windsock #homePanel{display:none}
+#stateNamePanel{position:absolute;left:22px;bottom:370px;width:236px;background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));border:1px solid rgba(148,163,184,.45);border-radius:14px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:30;pointer-events:none}
+body.hide-windsock #stateNamePanel{display:none}
+#stateNameTitle{font-family:'Orbitron',sans-serif;font-size:16px;color:#93c5fd;letter-spacing:1.5px;text-align:center;font-weight:700}
 #homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:4px;text-align:center}
 #homeCompass{width:220px;height:300px;display:block;margin:0 auto;background:transparent}
 .windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
@@ -136,6 +139,7 @@ body.hide-windsock #homePanel{display:none}
 .windsock-segment-white{fill:#fffaf0}
 .windsock-outline{fill:none;stroke:rgba(15,23,42,.42);stroke-width:.9}
 .windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
+.windsock-airport-name{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:600;text-anchor:middle;letter-spacing:.8px}
 .windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
 .windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
 .windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
@@ -223,6 +227,7 @@ body.hide-windsock #homePanel{display:none}
     <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
   </div>
   <button id="windToggle" type="button">WINDSOCK</button>
+  <div id="stateNamePanel"><div id="stateNameTitle">OKLAHOMA</div></div>
   <div id="homePanel">
     <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
     <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
@@ -352,6 +357,8 @@ const topHelpBtn=document.getElementById('topHelpBtn');
 const topUsaBtn=document.getElementById('topUsaBtn');
 const windToggle=document.getElementById('windToggle');
 const metarStatusBtn=document.getElementById('metarStatusBtn');
+const stateNamePanel=document.getElementById('stateNamePanel');
+const stateNameTitle=document.getElementById('stateNameTitle');
 const homeTitle=document.getElementById('homeTitle');
 const homeCompass=document.getElementById('homeCompass');
 const welcomeOverlay=document.getElementById('welcomeOverlay');
@@ -381,6 +388,7 @@ let staleAirportIds=[];
 let clockIntervalId=null;
 let metarIntervalId=null;
 let compassIntervalId=null;
+stateNameTitle.textContent=document.title.replace(/\s+LED Map$/i,'').replace(/\s+WX Map$/i,'').toUpperCase();
 const CLOCK_LAYOUT={x:748,width:348,boxHeight:102,box1Y:40,box2Y:156};
 
 function svgEl(name,attrs={},text=''){
@@ -639,16 +647,24 @@ function positionHomePanel(){
   homePanel.style.left='';
   homePanel.style.right='';
   homePanel.style.bottom='';
+  stateNamePanel.style.left='';
+  stateNamePanel.style.right='';
+  stateNamePanel.style.bottom='';
+  const panelGap=10;
+  const homeHeight=homePanel.offsetHeight||330;
 
   if(showHudWindsock){
     const hudRect=document.getElementById('hud').getBoundingClientRect();
     const wrapRect=document.getElementById('wrap').getBoundingClientRect();
-    const panelHeight=homePanel.offsetHeight||330;
     const gap=12;
     homePanel.style.left='auto';
     homePanel.style.right=`${Math.max(22,Math.round(wrapRect.right-hudRect.right))}px`;
     homePanel.style.bottom=`${Math.max(22,Math.round(wrapRect.bottom-hudRect.top+gap))}px`;
     homePanel.style.zIndex='35';
+    stateNamePanel.style.left='auto';
+    stateNamePanel.style.right=homePanel.style.right;
+    stateNamePanel.style.bottom=`${parseInt(homePanel.style.bottom,10)+homeHeight+panelGap}px`;
+    stateNamePanel.style.zIndex='35';
     return;
   }
 
@@ -656,10 +672,20 @@ function positionHomePanel(){
   homePanel.style.right='auto';
   homePanel.style.bottom='22px';
   homePanel.style.zIndex='30';
+  stateNamePanel.style.left='22px';
+  stateNamePanel.style.right='auto';
+  stateNamePanel.style.bottom=`${22+homeHeight+panelGap}px`;
+  stateNamePanel.style.zIndex='30';
 }
 
 function getFallbackMetar(airport){
   return `${airport.id} NO CURRENT METAR`;
+}
+
+function getAirportCardName(airport,record){
+  const raw=String(record?.name||record?.stationName||record?.site||airport?.name||airport?.id||'').trim();
+  const cleaned=raw.replace(/,\s*[A-Z]{2}\s*,\s*US$/i,'').replace(/,\s*US$/i,'');
+  return cleaned.length>28?`${cleaned.slice(0,25).trim()}...`:cleaned;
 }
 
 function extractAirportId(item){
@@ -1140,6 +1166,7 @@ function drawHomeCompass(){
   }
   homeCompass.appendChild(compassFrame);
   homeCompass.appendChild(svgEl('text',{x:123,y:-8,class:'windsock-airport'},homeAirportId||'----'));
+  homeCompass.appendChild(svgEl('text',{x:123,y:8,class:'windsock-airport-name'},getAirportCardName(airport,record)));
 
   const statusBadge=svgEl('rect',{
     x:194,y:20,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
