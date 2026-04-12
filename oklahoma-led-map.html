@@ -395,8 +395,9 @@ function albersOK(lat,lon){
   return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-35.3};
 }
 
-function computeBounds(points){
-  const projected=points.map(([lon,lat])=>albersOK(lat,lon));
+const STATE_ROTATION_DEG=0;
+
+function computeProjectedBounds(projected){
   return{
     minX:Math.min(...projected.map(p=>p.x)),
     maxX:Math.max(...projected.map(p=>p.x)),
@@ -405,13 +406,41 @@ function computeBounds(points){
   };
 }
 
-const projBounds=computeBounds(okOutline);
-const imageBounds={
+const rawProjPoints=okOutline.map(([lon,lat])=>albersOK(lat,lon));
+const rawProjBounds=computeProjectedBounds(rawProjPoints);
+const projCenter={
+  x:(rawProjBounds.minX+rawProjBounds.maxX)/2,
+  y:(rawProjBounds.minY+rawProjBounds.maxY)/2
+};
+
+function rotateProjectedPoint(point){
+  if(!STATE_ROTATION_DEG) return point;
+  const rad=STATE_ROTATION_DEG*Math.PI/180;
+  const dx=point.x-projCenter.x;
+  const dy=point.y-projCenter.y;
+  return{
+    x:projCenter.x+(dx*Math.cos(rad)-dy*Math.sin(rad)),
+    y:projCenter.y+(dx*Math.sin(rad)+dy*Math.cos(rad))
+  };
+}
+
+const projPoints=rawProjPoints.map(rotateProjectedPoint);
+const projBounds=computeProjectedBounds(projPoints);
+const frameBounds={
   minX:Math.min(...imageOutline.map(p=>p[0])),
   maxX:Math.max(...imageOutline.map(p=>p[0])),
   minY:Math.min(...imageOutline.map(p=>p[1])),
   maxY:Math.max(...imageOutline.map(p=>p[1]))
 };
+const projWidth=projBounds.maxX-projBounds.minX;
+const projHeight=projBounds.maxY-projBounds.minY;
+const frameWidth=frameBounds.maxX-frameBounds.minX;
+const frameHeight=frameBounds.maxY-frameBounds.minY;
+const fitScale=Math.min(frameWidth/projWidth,frameHeight/projHeight);
+const fittedWidth=projWidth*fitScale;
+const fittedHeight=projHeight*fitScale;
+const frameOffsetX=frameBounds.minX+(frameWidth-fittedWidth)/2;
+const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2;
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
@@ -440,12 +469,10 @@ function getDisplayAgeMinutes(record,airport){
 }
 
 function project(lat,lon){
-  const p=albersOK(lat,lon);
-  const nx=(p.x-projBounds.minX)/(projBounds.maxX-projBounds.minX);
-  const ny=(p.y-projBounds.minY)/(projBounds.maxY-projBounds.minY);
+  const p=rotateProjectedPoint(albersOK(lat,lon));
   return{
-    x:imageBounds.minX+nx*(imageBounds.maxX-imageBounds.minX),
-    y:imageBounds.maxY-ny*(imageBounds.maxY-imageBounds.minY)
+    x:frameOffsetX+(p.x-projBounds.minX)*fitScale,
+    y:frameOffsetY+(projBounds.maxY-p.y)*fitScale
   };
 }
 
