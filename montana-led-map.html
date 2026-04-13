@@ -290,7 +290,7 @@ const airports=[
 {id:'KBTM',lat:45.95474637,lon:-112.497572655,cat:'VFR',dx:10,dy:-10},
 {id:'KDLN',lat:45.2546084425,lon:-112.55263567,cat:'VFR',dx:10,dy:-10},
 {id:'KMLS',lat:46.4269168375,lon:-105.88818230749999,cat:'VFR',dx:10,dy:-10},
-{id:'KSDY',lat:47.7072882425,lon:-104.19174307,cat:'VFR',dx:10,dy:-10}
+{id:'KSDY',lat:47.7072882425,lon:-104.19174307,cat:'VFR',dx:-10,dy:-10}
 ];
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
@@ -550,7 +550,6 @@ function getAirportDisplayColor(airport){
 
 function drawDots(){
   dots.innerHTML='';
-  const denseIds=new Set(['KBIL','KBZN','KMSO']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
     const isMissing=!metarRecordById.has(a.id);
@@ -568,9 +567,10 @@ function drawDots(){
     const label=svgEl('text',{
       x:p.x+(a.dx||10),
       y:p.y+(a.dy||-10),
-      class:denseIds.has(a.id)?'label label-small':'label'
+      class:'label'
     },a.id);
     if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
+    else if((a.dx||0)<0) label.setAttribute('text-anchor','end');
 
     g.appendChild(glow);
     g.appendChild(core);
