@@ -422,8 +422,10 @@ function computeLatLonBounds(points){
   return{minLon,maxLon,minLat,maxLat};
 }
 
-const usaShapeProjection=d3.geoAlbersUsa();
-const projectedStatePoints=waOutline.map(([lon,lat])=>usaShapeProjection([lon,lat])).filter(Boolean);
+const usaShapeProjection=(typeof d3!=='undefined'&&typeof d3.geoAlbersUsa==='function')?d3.geoAlbersUsa():null;
+const projectedStatePoints=usaShapeProjection
+  ? waOutline.map(([lon,lat])=>usaShapeProjection([lon,lat])).filter(Boolean)
+  : [];
 const stateBounds=computeLatLonBounds(waOutline);
 const frameBounds={
   minX:150,
@@ -431,15 +433,19 @@ const frameBounds={
   minY:90,
   maxY:1100
 };
-const projectedBounds=projectedStatePoints.reduce((acc,[x,y])=>{
-  if(x<acc.minX) acc.minX=x;
-  if(x>acc.maxX) acc.maxX=x;
-  if(y<acc.minY) acc.minY=y;
-  if(y>acc.maxY) acc.maxY=y;
-  return acc;
-},{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity});
-const projectedWidth=projectedBounds.maxX-projectedBounds.minX;
-const projectedHeight=projectedBounds.maxY-projectedBounds.minY;
+const projectedBounds=projectedStatePoints.length
+  ? projectedStatePoints.reduce((acc,[x,y])=>{
+      if(x<acc.minX) acc.minX=x;
+      if(x>acc.maxX) acc.maxX=x;
+      if(y<acc.minY) acc.minY=y;
+      if(y>acc.maxY) acc.maxY=y;
+      return acc;
+    },{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity})
+  : null;
+const lonSpan=stateBounds.maxLon-stateBounds.minLon;
+const latSpan=stateBounds.maxLat-stateBounds.minLat;
+const projectedWidth=projectedBounds ? (projectedBounds.maxX-projectedBounds.minX) : lonSpan;
+const projectedHeight=projectedBounds ? (projectedBounds.maxY-projectedBounds.minY) : latSpan;
 const frameWidth=frameBounds.maxX-frameBounds.minX;
 const frameHeight=frameBounds.maxY-frameBounds.minY;
 const fitScale=Math.min(frameWidth/projectedWidth,frameHeight/projectedHeight)*1.05;
@@ -475,6 +481,12 @@ function getDisplayAgeMinutes(record,airport){
 }
 
 function project(lat,lon){
+  if(!usaShapeProjection||!projectedBounds){
+    return {
+      x: frameOffsetX + (lon - stateBounds.minLon) * fitScale,
+      y: frameOffsetY + (stateBounds.maxLat - lat) * fitScale
+    };
+  }
   const projected=usaShapeProjection([lon,lat]);
   if(!projected){
     return {
