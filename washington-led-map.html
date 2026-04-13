@@ -14,6 +14,8 @@ body.alt-color{background:#2b0814}
 svg{width:100%;height:100%;display:block;background:#000}
 body.alt-color svg{background:#2b0814}
 .outline{fill:none;stroke:#64748b;stroke-width:3;vector-effect:non-scaling-stroke}
+.waterway{fill:none;stroke:#64748b;stroke-width:3;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+.waterway-thin{fill:none;stroke:#64748b;stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
 .led-group{pointer-events:all}
 .led-core{stroke:#000;stroke-width:.6;transition:fill .45s ease,opacity .45s ease,r .45s ease}
 .led-glow{filter:url(#glow);opacity:.88;transition:fill .6s ease,opacity .6s ease,r .6s ease}
@@ -420,6 +422,8 @@ function computeLatLonBounds(points){
   return{minLon,maxLon,minLat,maxLat};
 }
 
+const usaShapeProjection=d3.geoAlbersUsa();
+const projectedStatePoints=waOutline.map(([lon,lat])=>usaShapeProjection([lon,lat])).filter(Boolean);
 const stateBounds=computeLatLonBounds(waOutline);
 const frameBounds={
   minX:150,
@@ -427,13 +431,20 @@ const frameBounds={
   minY:90,
   maxY:1100
 };
-const lonSpan=stateBounds.maxLon-stateBounds.minLon;
-const latSpan=stateBounds.maxLat-stateBounds.minLat;
+const projectedBounds=projectedStatePoints.reduce((acc,[x,y])=>{
+  if(x<acc.minX) acc.minX=x;
+  if(x>acc.maxX) acc.maxX=x;
+  if(y<acc.minY) acc.minY=y;
+  if(y>acc.maxY) acc.maxY=y;
+  return acc;
+},{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity});
+const projectedWidth=projectedBounds.maxX-projectedBounds.minX;
+const projectedHeight=projectedBounds.maxY-projectedBounds.minY;
 const frameWidth=frameBounds.maxX-frameBounds.minX;
 const frameHeight=frameBounds.maxY-frameBounds.minY;
-const fitScale=Math.min(frameWidth/lonSpan,frameHeight/latSpan)*1.05;
-const fittedWidth=lonSpan*fitScale;
-const fittedHeight=latSpan*fitScale;
+const fitScale=Math.min(frameWidth/projectedWidth,frameHeight/projectedHeight)*1.05;
+const fittedWidth=projectedWidth*fitScale;
+const fittedHeight=projectedHeight*fitScale;
 const frameOffsetX=frameBounds.minX+(frameWidth-fittedWidth)/2;
 const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2+50;
 
@@ -464,9 +475,16 @@ function getDisplayAgeMinutes(record,airport){
 }
 
 function project(lat,lon){
+  const projected=usaShapeProjection([lon,lat]);
+  if(!projected){
+    return {
+      x:(frameBounds.minX+frameBounds.maxX)/2,
+      y:(frameBounds.minY+frameBounds.maxY)/2
+    };
+  }
   return {
-    x: frameOffsetX + (lon - stateBounds.minLon) * fitScale,
-    y: frameOffsetY + (stateBounds.maxLat - lat) * fitScale
+    x: frameOffsetX + (projected[0] - projectedBounds.minX) * fitScale,
+    y: frameOffsetY + (projected[1] - projectedBounds.minY) * fitScale
   };
 }
 
