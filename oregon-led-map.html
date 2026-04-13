@@ -281,13 +281,13 @@ body.hide-windsock #stateNamePanel{display:none}
 </div>
 <script>
 const airports=[
-{id:'KPDX',lat:45.5886831133333,lon:-122.598149778333,cat:'VFR',dx:16,dy:10,center:true},
+{id:'KPDX',lat:45.5886831133333,lon:-122.598149778333,cat:'VFR',dx:14,dy:18},
 {id:'KEUG',lat:44.12460494,lon:-123.2107945725,cat:'VFR',dx:10,dy:-10},
 {id:'KMFR',lat:42.374964425,lon:-122.873288415,cat:'VFR',dx:10,dy:16},
 {id:'KRDM',lat:44.25406783,lon:-121.1499711025,cat:'VFR',dx:10,dy:-10},
 {id:'KOTH',lat:43.41664897,lon:-124.2463868275,cat:'VFR',dx:10,dy:-10},
 {id:'KAST',lat:46.15781513,lon:-123.8786626625,cat:'VFR',dx:10,dy:-10},
-{id:'KHIO',lat:45.5421475466667,lon:-122.950477386667,cat:'VFR',dx:10,dy:-10},
+{id:'KHIO',lat:45.5421475466667,lon:-122.950477386667,cat:'VFR',dx:-10,dy:-10},
 {id:'KSLE',lat:44.90951049,lon:-123.0025493225,cat:'VFR',dx:10,dy:-10}
 ];
 
@@ -574,6 +574,7 @@ function drawDots(){
       class:denseIds.has(a.id)?'label label-small':'label'
     },a.id);
     if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
+    else if((a.dx||0)<0) label.setAttribute('text-anchor','end');
 
     g.appendChild(glow);
     g.appendChild(core);
