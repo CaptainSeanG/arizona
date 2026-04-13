@@ -448,11 +448,11 @@ const projectedWidth=projectedBounds ? (projectedBounds.maxX-projectedBounds.min
 const projectedHeight=projectedBounds ? (projectedBounds.maxY-projectedBounds.minY) : latSpan;
 const frameWidth=frameBounds.maxX-frameBounds.minX;
 const frameHeight=frameBounds.maxY-frameBounds.minY;
-const fitScale=Math.min(frameWidth/projectedWidth,frameHeight/projectedHeight)*1.05;
+const fitScale=Math.min(frameWidth/projectedWidth,frameHeight/projectedHeight);
 const fittedWidth=projectedWidth*fitScale;
 const fittedHeight=projectedHeight*fitScale;
 const frameOffsetX=frameBounds.minX+(frameWidth-fittedWidth)/2;
-const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2+50;
+const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2;
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
