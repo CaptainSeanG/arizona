@@ -281,7 +281,7 @@ body.hide-windsock #stateNamePanel{display:none}
 </div>
 <script>
 const airports=[
-{id:'KSLC',lat:40.7899,lon:-111.9791,cat:'VFR',dx:16,dy:10,center:true},
+{id:'KSLC',lat:40.7899,lon:-111.9791,cat:'VFR',dx:24,dy:10},
 {id:'KOGD',lat:41.1959,lon:-112.0122,cat:'VFR',dx:10,dy:-10},
 {id:'KPVU',lat:40.2192,lon:-111.7233,cat:'VFR',dx:10,dy:18},
 {id:'KSGU',lat:37.0364,lon:-113.5103,cat:'VFR',dx:10,dy:-10},
@@ -545,7 +545,6 @@ function getAirportDisplayColor(airport){
 
 function drawDots(){
   dots.innerHTML='';
-  const denseIds=new Set(['KSLC','KOGD','KPVU','KCDC']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
     const isMissing=!metarRecordById.has(a.id);
@@ -563,7 +562,7 @@ function drawDots(){
     const label=svgEl('text',{
       x:p.x+(a.dx||10),
       y:p.y+(a.dy||-10),
-      class:denseIds.has(a.id)?'label label-small':'label'
+      class:'label'
     },a.id);
     if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
 

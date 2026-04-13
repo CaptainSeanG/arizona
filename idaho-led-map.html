@@ -281,10 +281,10 @@ body.hide-windsock #stateNamePanel{display:none}
 </div>
 <script>
 const airports=[
-{id:'KBOI',lat:43.5643638225,lon:-116.2228922625,cat:'VFR',dx:16,dy:10,center:true},
+{id:'KBOI',lat:43.5643638225,lon:-116.2228922625,cat:'VFR',dx:0,dy:18},
 {id:'KSUN',lat:43.50378118,lon:-114.295559345,cat:'VFR',dx:10,dy:-10},
 {id:'KIDA',lat:43.51458237,lon:-112.0683103375,cat:'VFR',dx:10,dy:-10},
-{id:'KPIH',lat:42.90969756,lon:-112.596863965,cat:'VFR',dx:10,dy:16},
+{id:'KPIH',lat:42.90969756,lon:-112.596863965,cat:'VFR',dx:15,dy:16},
 {id:'KLWS',lat:46.37481533,lon:-117.0154818375,cat:'VFR',dx:10,dy:-10},
 {id:'KTWF',lat:42.48250462,lon:-114.48827894,cat:'VFR',dx:10,dy:-10},
 {id:'KMYL',lat:44.888744065,lon:-116.10175198,cat:'VFR',dx:10,dy:-10},
@@ -774,7 +774,7 @@ function showTooltip(airportId,clientX,clientY){
   const decodedParts=[category];
   if(visibility) decodedParts.push(`${visibility}SM`);
   if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
-  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}ï¿½F`);
   if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
     const ageMs=Date.now()-airport.obsDate.getTime();
     if(ageMs>=0&&ageMs<=24*60*60*1000){
@@ -783,7 +783,7 @@ function showTooltip(airportId,clientX,clientY){
   }
   if(airport.stale) decodedParts.push('STALE');
 
-  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
+  const decoded=record?decodedParts.join(' ï¿½ '):(airport.stale?`${airport.cat} ï¿½ STALE`:'');
   tooltip.innerHTML=
     `<div class="tip-id">${airportId}</div>`+
     `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
