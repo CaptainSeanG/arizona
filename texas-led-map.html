@@ -816,7 +816,8 @@ function showTooltip(airportId,clientX,clientY){
 
   const raw=metarById.get(airportId)||getFallbackMetar(airport);
   const record=metarRecordById.get(airportId);
-  const category=record?(record.fltCat||record.flightCategory||record.flight_category||airport.cat):airport.cat;
+  const inferredCategory=record?inferFlightCategory(record):airport.cat;
+  const category=inferredCategory&&colors[inferredCategory]?inferredCategory:(record?(record.fltCat||record.flightCategory||record.flight_category||airport.cat):airport.cat);
   const visibility=record&&(record.visib||record.visibility||record.vis||record.prevail_vis_sm);
   const tempC=record&&(record.temp!==undefined?record.temp:record.tempC);
   const tempF=(tempC!==undefined&&tempC!==null&&tempC!=='')?Math.round((Number(tempC)*9/5)+32):null;
@@ -1419,12 +1420,13 @@ async function fetchMetars(){
     data.forEach(item=>{
       const id=extractAirportId(item);
       const raw=extractRawMetar(item);
-      const category=item.fltCat||item.flightCategory||item.flight_category;
+      const upstreamCategory=item.fltCat||item.flightCategory||item.flight_category;
       if(!id) return;
 
       const airport=airports.find(a=>a.id===id);
       if(airport){
-        const resolvedCategory=category&&colors[category]?category:inferFlightCategory(item);
+        const inferredCategory=inferFlightCategory(item);
+        const resolvedCategory=inferredCategory&&colors[inferredCategory]?inferredCategory:(upstreamCategory&&colors[upstreamCategory]?upstreamCategory:'NONE');
         airport.cat=resolvedCategory;
       }
       if(raw){
@@ -1625,6 +1627,7 @@ restoreReturnMode();
 </script>
 </body>
 </html>
+
 
 
 
