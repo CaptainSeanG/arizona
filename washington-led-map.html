@@ -449,8 +449,21 @@ const projectedCenter=rawProjectedBounds
       y:(rawProjectedBounds.minY+rawProjectedBounds.maxY)/2
     }
   : null;
+const waRotationDeg=-15;
+function rotateProjectedPoint(point){
+  if(!projectedCenter) return point;
+  const angleRad=(waRotationDeg*Math.PI)/180;
+  const dx=point[0]-projectedCenter.x;
+  const dy=point[1]-projectedCenter.y;
+  const cos=Math.cos(angleRad);
+  const sin=Math.sin(angleRad);
+  return [
+    projectedCenter.x + dx*cos - dy*sin,
+    projectedCenter.y + dx*sin + dy*cos
+  ];
+}
 const projectedStatePoints=rawProjectedStatePoints.length
-  ? rawProjectedStatePoints
+  ? rawProjectedStatePoints.map(rotateProjectedPoint)
   : rawProjectedStatePoints;
 const projectedBounds=projectedStatePoints.length
   ? projectedStatePoints.reduce((acc,[x,y])=>{
@@ -513,9 +526,10 @@ function project(lat,lon){
       y:(frameBounds.minY+frameBounds.maxY)/2
     };
   }
+  const rotatedProjected=rotateProjectedPoint(projected);
   return {
-    x: frameOffsetX + (projected[0] - projectedBounds.minX) * fitScale,
-    y: frameOffsetY + (projected[1] - projectedBounds.minY) * fitScale
+    x: frameOffsetX + (rotatedProjected[0] - projectedBounds.minX) * fitScale,
+    y: frameOffsetY + (rotatedProjected[1] - projectedBounds.minY) * fitScale
   };
 }
 
