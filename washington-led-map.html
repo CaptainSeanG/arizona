@@ -197,7 +197,7 @@ body.hide-windsock #stateNamePanel{display:none}
 </head>
 <body>
 <div id="wrap">
-  <svg viewBox="0 0 1118 1196" aria-label="Washington LED Map">
+  <svg viewBox="0 0 1118 1196" aria-label="Washington LED map">
     <defs>
       <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
         <feGaussianBlur stdDeviation="6" result="blur" />
@@ -295,6 +295,7 @@ const airports=[
 
 const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
 const DEFAULT_WASHINGTON_MAGNETIC_VARIATION_EAST=15;
+
 const magneticVariationByAirport={
   KBFI:15.4,
   KBLI:15.8,
@@ -463,9 +464,9 @@ function getDisplayAgeMinutes(record,airport){
 }
 
 function project(lat,lon){
-  return{
-    x:frameOffsetX+(lon-stateBounds.minLon)*fitScale,
-    y:frameOffsetY+(stateBounds.maxLat-lat)*fitScale
+  return {
+    x: frameOffsetX + (lon - stateBounds.minLon) * fitScale,
+    y: frameOffsetY + (stateBounds.maxLat - lat) * fitScale
   };
 }
 
@@ -538,7 +539,7 @@ function getAirportDisplayColor(airport){
 
 function drawDots(){
   dots.innerHTML='';
-  const denseIds=new Set(['KSLC','KOGD','KPVU','KCDC']);
+  const denseIds=new Set(['KSEA','KBFI','KPAE']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
     const isMissing=!metarRecordById.has(a.id);
@@ -761,7 +762,7 @@ function showTooltip(airportId,clientX,clientY){
   const decodedParts=[category];
   if(visibility) decodedParts.push(`${visibility}SM`);
   if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
-  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}�F`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
   if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
     const ageMs=Date.now()-airport.obsDate.getTime();
     if(ageMs>=0&&ageMs<=24*60*60*1000){
@@ -770,7 +771,7 @@ function showTooltip(airportId,clientX,clientY){
   }
   if(airport.stale) decodedParts.push('STALE');
 
-  const decoded=record?decodedParts.join(' � '):(airport.stale?`${airport.cat} � STALE`:'');
+  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
   tooltip.innerHTML=
     `<div class="tip-id">${airportId}</div>`+
     `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
@@ -1015,11 +1016,11 @@ function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
 
 function projectExactRunways(runways,airport){
   if(!airport||!runways.every(runway=>Array.isArray(runway.ends)&&runway.ends.length===2)) return null;
-  const airportPoint=albersOR(airport.lat,airport.lon);
+  const airportPoint=project(airport.lat,airport.lon);
   const projected=runways.map(runway=>{
     const [[lon1,lat1],[lon2,lat2]]=runway.ends;
-      const p1=albersOR(lat1,lon1);
-      const p2=albersOR(lat2,lon2);
+      const p1=project(lat1,lon1);
+      const p2=project(lat2,lon2);
     return{
       p1:{x:p1.x-airportPoint.x,y:p1.y-airportPoint.y},
       p2:{x:p2.x-airportPoint.x,y:p2.y-airportPoint.y},
@@ -1546,7 +1547,6 @@ initWelcome();
 </script>
 </body>
 </html>
-
 
 
 
