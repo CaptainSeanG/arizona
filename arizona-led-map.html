@@ -923,9 +923,11 @@ function inferFlightCategory(record){
   const rawMetar=extractRawMetar(record);
   const rawVisibility=parseVisibilitySmFromRawMetar(rawMetar);
   const visibilityRaw=record.visib??record.visibility??record.vis??record.prevail_vis_sm;
-  const decodedVisibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
-    ? Number(visibilityRaw.replace('+',''))||10
-    : Number(visibilityRaw);
+  const decodedVisibility=(typeof visibilityRaw==='string'&&visibilityRaw.trim()==='')||visibilityRaw===null||visibilityRaw===undefined
+    ? NaN
+    : (typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
+      ? Number(visibilityRaw.replace('+',''))||10
+      : Number(visibilityRaw));
   const visibility=Number.isFinite(rawVisibility)?rawVisibility:decodedVisibility;
 
   const rawCeiling=parseCeilingFtFromRawMetar(rawMetar);
@@ -1763,6 +1765,7 @@ restoreReturnMode();
 </script>
 </body>
 </html>
+
 
 
 
