@@ -193,21 +193,11 @@ function toggleKioskMode(force){
   kioskMode=typeof force==='boolean'?force:!kioskMode;
   document.body.classList.toggle('kiosk',kioskMode);
 }
-async function restoreReturnMode(){
+function restoreReturnMode(){
   const wantsKiosk=(sessionStorage.getItem('navReturnKiosk')==='1')||(sessionStorage.getItem('usaReturnKiosk')==='1');
-  const wantsFullscreen=(sessionStorage.getItem('navReturnFullscreen')==='1')||(sessionStorage.getItem('usaReturnFullscreen')==='1');
   sessionStorage.removeItem('usaReturnKiosk');
   sessionStorage.removeItem('navReturnKiosk');
-  sessionStorage.removeItem('usaReturnFullscreen');
-  sessionStorage.removeItem('navReturnFullscreen');
   if(wantsKiosk) toggleKioskMode(true);
-  if(wantsFullscreen&&!document.fullscreenElement){
-    try{
-      await document.documentElement.requestFullscreen();
-    }catch(err){
-      console.warn(err);
-    }
-  }
 }
 function updateStatusDetails(){
   const missingValue=statusMissing.querySelector('.status-value');
@@ -217,7 +207,7 @@ function updateStatusDetails(){
   statusMissing.style.display=missingAirportIds.length?'block':'none';
   statusStale.style.display=staleAirportIds.length?'block':'none';
 }
-function drawStates(us){const states=topojson.feature(us,us.objects.states).features;const path=d3.geoPath(projection);mapLayer.innerHTML='';states.forEach(state=>{const fips=String(state.id).padStart(2,'0');const meta=stateMetaByFips[fips]||{code:fips,name:`State ${fips}`};const hasPage=Boolean(implementedStatePages[meta.code]);const pathEl=document.createElementNS('http://www.w3.org/2000/svg','path');pathEl.setAttribute('d',path(state));pathEl.setAttribute('class',`state ${hasPage?'has-page':'no-page'}`);pathEl.setAttribute('fill',hasPage?'url(#implementedStateGrad)':'#030712');pathEl.addEventListener('mouseenter',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mousemove',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mouseleave',hideTooltip);if(hasPage){pathEl.addEventListener('click',()=>{const wantsFullscreen=document.fullscreenElement?'1':'0';const wantsKiosk=kioskMode?'1':'0';sessionStorage.setItem('navReturnFullscreen',wantsFullscreen);sessionStorage.setItem('navReturnKiosk',wantsKiosk);window.location.href=implementedStatePages[meta.code];});}mapLayer.appendChild(pathEl);});}
+function drawStates(us){const states=topojson.feature(us,us.objects.states).features;const path=d3.geoPath(projection);mapLayer.innerHTML='';states.forEach(state=>{const fips=String(state.id).padStart(2,'0');const meta=stateMetaByFips[fips]||{code:fips,name:`State ${fips}`};const hasPage=Boolean(implementedStatePages[meta.code]);const pathEl=document.createElementNS('http://www.w3.org/2000/svg','path');pathEl.setAttribute('d',path(state));pathEl.setAttribute('class',`state ${hasPage?'has-page':'no-page'}`);pathEl.setAttribute('fill',hasPage?'url(#implementedStateGrad)':'#030712');pathEl.addEventListener('mouseenter',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mousemove',e=>{showTooltip(e.clientX,e.clientY,`<div class="tooltip-title">${escapeHtml(meta.code)}</div><div class="tooltip-sub">${escapeHtml(meta.name)}${hasPage?' • state page ready':' • coming soon'}</div>`);});pathEl.addEventListener('mouseleave',hideTooltip);if(hasPage){pathEl.addEventListener('click',()=>{const wantsKiosk=kioskMode?'1':'0';sessionStorage.setItem('navReturnKiosk',wantsKiosk);window.location.href=implementedStatePages[meta.code];});}mapLayer.appendChild(pathEl);});}
 function drawAirports(){airportLayer.innerHTML='';trackedAirports.forEach(info=>{const rec=airportRecordsById[info.id];if(!rec||typeof rec.lat!=='number'||typeof rec.lon!=='number')return;const point=projection([rec.lon,rec.lat]);if(!point)return;const [x,y]=point;const category=(rec.fltCat&&colors[rec.fltCat])?rec.fltCat:'NONE';const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class',`airport-group ${isStale(rec)?'airport-stale':''} ${!rec.rawOb?'airport-nodata':''}`.trim());const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');glow.setAttribute('class','airport-glow');glow.setAttribute('cx',x);glow.setAttribute('cy',y);glow.setAttribute('r',12);glow.setAttribute('fill',colors[category]);const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('class','airport-ring');ring.setAttribute('cx',x);ring.setAttribute('cy',y);ring.setAttribute('r',10);const core=document.createElementNS('http://www.w3.org/2000/svg','circle');core.setAttribute('class','airport-core');core.setAttribute('cx',x);core.setAttribute('cy',y);core.setAttribute('r',7.5);core.setAttribute('fill',colors[category]);const badge=document.createElementNS('http://www.w3.org/2000/svg','text');badge.setAttribute('class','airport-badge');badge.setAttribute('x',x);badge.setAttribute('y',y+2.8);badge.textContent=info.class;g.appendChild(glow);g.appendChild(ring);g.appendChild(core);g.appendChild(badge);const summary=buildSummary(rec);const raw=rec.rawOb||'No current METAR';const airportClass=info.class==='B'?'Class Bravo':'Class Charlie';const tooltipHtml=`<div class="tooltip-title">${escapeHtml(info.id)}</div><div class="tooltip-sub">${escapeHtml(airportClass)} • ${escapeHtml(summary)}</div><div class="tooltip-raw">${escapeHtml(raw)}</div>`;g.addEventListener('mouseenter',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mousemove',e=>showTooltip(e.clientX,e.clientY,tooltipHtml));g.addEventListener('mouseleave',hideTooltip);airportLayer.appendChild(g);});}
 async function fetchMetars(){try{const res=await fetch(`./metars.json?t=${Date.now()}`,{cache:'no-store'});const data=await res.json();airportRecordsById={};data.forEach(rec=>{if(!rec?.icaoId)return;if(trackedAirportIds.has(rec.icaoId))airportRecordsById[rec.icaoId]=rec;});lastFetchTime=new Date();const lit=Object.keys(airportRecordsById).length;missingAirportIds=trackedAirports.filter(a=>!airportRecordsById[a.id]).map(a=>a.id);staleAirportIds=trackedAirports.filter(a=>airportRecordsById[a.id]&&isStale(airportRecordsById[a.id])).map(a=>a.id);statusLine.textContent=`${lit} of ${trackedAirports.length} airports updated`;updateStatusDetails();drawAirports();updateClocks();}catch(err){missingAirportIds=[...trackedAirportIds];staleAirportIds=[];statusLine.textContent=`0 of ${trackedAirports.length} airports updated`;updateStatusDetails();}}
 async function init(){updateClocks();setInterval(updateClocks,1000);projection=d3.geoAlbersUsa().fitExtent([[34,28],[1190,860]],{type:'Sphere'});const us=await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(r=>r.json());drawStates(us);await fetchMetars();setInterval(fetchMetars,5*60*1000);}
@@ -225,4 +215,5 @@ topHelpBtn.addEventListener('click',showInstructions);instructionsOverlay.addEve
 </script>
 </body>
 </html>
+
 

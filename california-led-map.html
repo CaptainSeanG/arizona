@@ -1619,30 +1619,19 @@ function hideInstructions(){
 }
 
 function goToUsaMap(){
-  const wantsFullscreen=document.fullscreenElement?'1':'0';
   const wantsKiosk=kioskMode?'1':'0';
-  sessionStorage.setItem('usaReturnFullscreen',wantsFullscreen);
   sessionStorage.setItem('usaReturnKiosk',wantsKiosk);
-  sessionStorage.setItem('navReturnFullscreen',wantsFullscreen);
   sessionStorage.setItem('navReturnKiosk',wantsKiosk);
   window.location.href='./usa-led-map.html';
 }
 
-async function restoreReturnMode(){
-  const wantsKiosk=sessionStorage.getItem('navReturnKiosk')==='1';
-  const wantsFullscreen=sessionStorage.getItem('navReturnFullscreen')==='1';
+function restoreReturnMode(){
+  const wantsKiosk=(sessionStorage.getItem('navReturnKiosk')==='1')||(sessionStorage.getItem('usaReturnKiosk')==='1');
   sessionStorage.removeItem('navReturnKiosk');
-  sessionStorage.removeItem('navReturnFullscreen');
+  sessionStorage.removeItem('usaReturnKiosk');
   if(wantsKiosk){
     kioskMode=true;
     document.body.classList.add('kiosk');
-  }
-  if(wantsFullscreen&&!document.fullscreenElement){
-    try{
-      await document.documentElement.requestFullscreen();
-    }catch(err){
-      console.warn(err);
-    }
   }
 }
 
@@ -1755,6 +1744,9 @@ restoreReturnMode();
 </script>
 </body>
 </html>
+
+
+
 
 
 
