@@ -443,7 +443,7 @@ const fitScale=Math.min(frameWidth/projWidth,frameHeight/projHeight);
 const fittedWidth=projWidth*fitScale;
 const fittedHeight=projHeight*fitScale;
 const frameOffsetX=imageBounds.minX+((frameWidth-fittedWidth)/2);
-const frameOffsetY=imageBounds.minY+((frameHeight-fittedHeight)/2);
+const frameOffsetY=imageBounds.minY+((frameHeight-fittedHeight)/2)+50;
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
