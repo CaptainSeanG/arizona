@@ -1469,9 +1469,31 @@ function hideInstructions(){
 }
 
 function goToUsaMap(){
-  sessionStorage.setItem('usaReturnFullscreen',document.fullscreenElement?'1':'0');
-  sessionStorage.setItem('usaReturnKiosk',kioskMode?'1':'0');
+  const wantsFullscreen=document.fullscreenElement?'1':'0';
+  const wantsKiosk=kioskMode?'1':'0';
+  sessionStorage.setItem('usaReturnFullscreen',wantsFullscreen);
+  sessionStorage.setItem('usaReturnKiosk',wantsKiosk);
+  sessionStorage.setItem('navReturnFullscreen',wantsFullscreen);
+  sessionStorage.setItem('navReturnKiosk',wantsKiosk);
   window.location.href='./usa-led-map.html';
+}
+
+async function restoreReturnMode(){
+  const wantsKiosk=sessionStorage.getItem('navReturnKiosk')==='1';
+  const wantsFullscreen=sessionStorage.getItem('navReturnFullscreen')==='1';
+  sessionStorage.removeItem('navReturnKiosk');
+  sessionStorage.removeItem('navReturnFullscreen');
+  if(wantsKiosk){
+    kioskMode=true;
+    document.body.classList.add('kiosk');
+  }
+  if(wantsFullscreen&&!document.fullscreenElement){
+    try{
+      await document.documentElement.requestFullscreen();
+    }catch(err){
+      console.warn(err);
+    }
+  }
 }
 
 function stopIntervals(){
@@ -1494,8 +1516,10 @@ function startApp(){
 }
 
 function initWelcome(){
-  if(!homeAirportId) welcomeOverlay.classList.add('show');
-  else startApp();
+  if(!homeAirportId&&airports.length){
+    setHomeAirport(airports[0].id);
+  }
+  startApp();
 }
 
 windToggle.addEventListener('click',e=>{
@@ -1577,6 +1601,9 @@ document.querySelector('svg').addEventListener('click',e=>{
 window.addEventListener('resize',positionWindToggle);
 
 initWelcome();
+restoreReturnMode();
 </script>
 </body>
 </html>
+
+

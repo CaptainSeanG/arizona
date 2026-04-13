@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -252,7 +252,7 @@ body.hide-windsock #stateNamePanel{display:none}
   <div id="welcomeOverlay">
     <div id="welcomeCard">
       <div class="welcome-title">CALIFORNIA WX MAP</div>
-      <div class="welcome-sub">Enter your home airport once. Weâ€™ll save it and drop you straight into kiosk mode next time.</div>
+      <div class="welcome-sub">Enter your home airport once. We’ll save it and drop you straight into kiosk mode next time.</div>
       <div class="welcome-row">
         <input id="welcomeInput" maxlength="4" placeholder="KLAX" />
         <button id="welcomeBtn" type="button">START</button>
@@ -941,7 +941,7 @@ function showTooltip(airportId,clientX,clientY){
   const decodedParts=[category];
   if(visibility) decodedParts.push(`${visibility}SM`);
   if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
-  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}�F`);
   if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
     const ageMs=Date.now()-airport.obsDate.getTime();
     if(ageMs>=0&&ageMs<=24*60*60*1000){
@@ -950,7 +950,7 @@ function showTooltip(airportId,clientX,clientY){
   }
   if(airport.stale) decodedParts.push('STALE');
 
-  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
+  const decoded=record?decodedParts.join(' � '):(airport.stale?`${airport.cat} � STALE`:'');
   tooltip.innerHTML=
     `<div class="tip-id">${airportId}</div>`+
     `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
@@ -1619,9 +1619,31 @@ function hideInstructions(){
 }
 
 function goToUsaMap(){
-  sessionStorage.setItem('usaReturnFullscreen',document.fullscreenElement?'1':'0');
-  sessionStorage.setItem('usaReturnKiosk',kioskMode?'1':'0');
+  const wantsFullscreen=document.fullscreenElement?'1':'0';
+  const wantsKiosk=kioskMode?'1':'0';
+  sessionStorage.setItem('usaReturnFullscreen',wantsFullscreen);
+  sessionStorage.setItem('usaReturnKiosk',wantsKiosk);
+  sessionStorage.setItem('navReturnFullscreen',wantsFullscreen);
+  sessionStorage.setItem('navReturnKiosk',wantsKiosk);
   window.location.href='./usa-led-map.html';
+}
+
+async function restoreReturnMode(){
+  const wantsKiosk=sessionStorage.getItem('navReturnKiosk')==='1';
+  const wantsFullscreen=sessionStorage.getItem('navReturnFullscreen')==='1';
+  sessionStorage.removeItem('navReturnKiosk');
+  sessionStorage.removeItem('navReturnFullscreen');
+  if(wantsKiosk){
+    kioskMode=true;
+    document.body.classList.add('kiosk');
+  }
+  if(wantsFullscreen&&!document.fullscreenElement){
+    try{
+      await document.documentElement.requestFullscreen();
+    }catch(err){
+      console.warn(err);
+    }
+  }
 }
 
 function stopIntervals(){
@@ -1644,8 +1666,10 @@ function startApp(){
 }
 
 function initWelcome(){
-  if(!homeAirportId) welcomeOverlay.classList.add('show');
-  else startApp();
+  if(!homeAirportId&&airports.length){
+    setHomeAirport(airports[0].id);
+  }
+  startApp();
 }
 
 windToggle.addEventListener('click',e=>{
@@ -1727,9 +1751,12 @@ document.querySelector('svg').addEventListener('click',e=>{
 window.addEventListener('resize',positionWindToggle);
 
 initWelcome();
+restoreReturnMode();
 </script>
 </body>
 </html>
+
+
 
 
 
