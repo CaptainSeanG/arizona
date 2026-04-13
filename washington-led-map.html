@@ -410,8 +410,14 @@ function svgEl(name,attrs={},text=''){
 
 function albersWA(lat,lon){
   const centerLon=-120.5;
-  const silhouetteWidthScale=1.08;
-  return{x:(lon-centerLon)*silhouetteWidthScale,y:lat-47.5};
+  const dx=lon-centerLon;
+  let x=dx*0.92;
+  if(lon < -122.15){
+    x*=1.38;
+  }else if(lon < -121.65){
+    x*=1.18;
+  }
+  return{x,y:lat-47.5};
 }
 
 const STATE_ROTATION_DEG=0;
