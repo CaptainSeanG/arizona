@@ -409,8 +409,9 @@ function svgEl(name,attrs={},text=''){
 }
 
 function albersWA(lat,lon){
-  const centerLat=47.5*Math.PI/180,centerLon=-120.5;
-  return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-47.5};
+  const centerLon=-120.5;
+  const silhouetteWidthScale=0.82;
+  return{x:(lon-centerLon)*silhouetteWidthScale,y:lat-47.5};
 }
 
 const STATE_ROTATION_DEG=0;
