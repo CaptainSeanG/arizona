@@ -423,7 +423,7 @@ function computeLatLonBounds(points){
 }
 
 const usaShapeProjection=(typeof d3!=='undefined'&&typeof d3.geoAlbersUsa==='function')?d3.geoAlbersUsa():null;
-const projectedStatePoints=usaShapeProjection
+const rawProjectedStatePoints=usaShapeProjection
   ? waOutline.map(([lon,lat])=>usaShapeProjection([lon,lat])).filter(Boolean)
   : [];
 const stateBounds=computeLatLonBounds(waOutline);
@@ -433,6 +433,34 @@ const frameBounds={
   minY:90,
   maxY:1100
 };
+const rawProjectedBounds=rawProjectedStatePoints.length
+  ? rawProjectedStatePoints.reduce((acc,[x,y])=>{
+      if(x<acc.minX) acc.minX=x;
+      if(x>acc.maxX) acc.maxX=x;
+      if(y<acc.minY) acc.minY=y;
+      if(y>acc.maxY) acc.maxY=y;
+      return acc;
+    },{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity})
+  : null;
+const waTargetAspectRatio=1.54;
+const rawProjectedWidth=rawProjectedBounds ? (rawProjectedBounds.maxX-rawProjectedBounds.minX) : null;
+const rawProjectedHeight=rawProjectedBounds ? (rawProjectedBounds.maxY-rawProjectedBounds.minY) : null;
+const waStandaloneScaleX=1;
+const waStandaloneScaleY=(rawProjectedWidth&&rawProjectedHeight)
+  ? ((rawProjectedWidth/waTargetAspectRatio)/rawProjectedHeight)
+  : 1;
+const projectedCenter=rawProjectedBounds
+  ? {
+      x:(rawProjectedBounds.minX+rawProjectedBounds.maxX)/2,
+      y:(rawProjectedBounds.minY+rawProjectedBounds.maxY)/2
+    }
+  : null;
+const projectedStatePoints=rawProjectedStatePoints.length && projectedCenter
+  ? rawProjectedStatePoints.map(([x,y])=>[
+      projectedCenter.x + (x-projectedCenter.x)*waStandaloneScaleX,
+      projectedCenter.y + (y-projectedCenter.y)*waStandaloneScaleY
+    ])
+  : rawProjectedStatePoints;
 const projectedBounds=projectedStatePoints.length
   ? projectedStatePoints.reduce((acc,[x,y])=>{
       if(x<acc.minX) acc.minX=x;
@@ -494,9 +522,15 @@ function project(lat,lon){
       y:(frameBounds.minY+frameBounds.maxY)/2
     };
   }
+  const adjustedProjected=projectedCenter
+    ? [
+        projectedCenter.x + (projected[0]-projectedCenter.x)*waStandaloneScaleX,
+        projectedCenter.y + (projected[1]-projectedCenter.y)*waStandaloneScaleY
+      ]
+    : projected;
   return {
-    x: frameOffsetX + (projected[0] - projectedBounds.minX) * fitScale,
-    y: frameOffsetY + (projected[1] - projectedBounds.minY) * fitScale
+    x: frameOffsetX + (adjustedProjected[0] - projectedBounds.minX) * fitScale,
+    y: frameOffsetY + (adjustedProjected[1] - projectedBounds.minY) * fitScale
   };
 }
 
