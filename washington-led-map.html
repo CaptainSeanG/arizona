@@ -433,9 +433,24 @@ const frameBounds={
 const framePadX=24;
 const framePadY=24;
 const usaShapeProjection=d3.geoAlbersUsa();
-const rawShapePoints=waOutline
+const rawProjectedPoints=waOutline
   .map(([lon,lat])=>usaShapeProjection([lon,lat]))
   .filter(Boolean);
+const rawProjectedCenter={
+  x:(Math.min(...rawProjectedPoints.map(p=>p[0]))+Math.max(...rawProjectedPoints.map(p=>p[0])))/2,
+  y:(Math.min(...rawProjectedPoints.map(p=>p[1]))+Math.max(...rawProjectedPoints.map(p=>p[1])))/2
+};
+const shapeRotationDeg=-4;
+function rotateShapePoint(point){
+  const rad=shapeRotationDeg*Math.PI/180;
+  const dx=point[0]-rawProjectedCenter.x;
+  const dy=point[1]-rawProjectedCenter.y;
+  return [
+    rawProjectedCenter.x+(dx*Math.cos(rad)-dy*Math.sin(rad)),
+    rawProjectedCenter.y+(dx*Math.sin(rad)+dy*Math.cos(rad))
+  ];
+}
+const rawShapePoints=rawProjectedPoints.map(rotateShapePoint);
 const rawShapeBounds={
   minX:Math.min(...rawShapePoints.map(p=>p[0])),
   maxX:Math.max(...rawShapePoints.map(p=>p[0])),
@@ -446,7 +461,7 @@ const rawShapeWidth=rawShapeBounds.maxX-rawShapeBounds.minX;
 const rawShapeHeight=rawShapeBounds.maxY-rawShapeBounds.minY;
 const targetWidth=(frameBounds.maxX-frameBounds.minX)-(framePadX*2);
 const targetHeight=(frameBounds.maxY-frameBounds.minY)-(framePadY*2);
-const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight);
+const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight)*1.06;
 const fittedShapeWidth=rawShapeWidth*shapeScale;
 const fittedShapeHeight=rawShapeHeight*shapeScale;
 const shapeOffsetX=frameBounds.minX+framePadX+((targetWidth-fittedShapeWidth)/2);
@@ -455,9 +470,10 @@ const shapeOffsetY=frameBounds.minY+framePadY+((targetHeight-fittedShapeHeight)/
 function projectShapePoint(lon,lat){
   const p=usaShapeProjection([lon,lat]);
   if(!p) return null;
+  const rotated=rotateShapePoint(p);
   return [
-    shapeOffsetX+((p[0]-rawShapeBounds.minX)*shapeScale),
-    shapeOffsetY+((p[1]-rawShapeBounds.minY)*shapeScale)
+    shapeOffsetX+((rotated[0]-rawShapeBounds.minX)*shapeScale),
+    shapeOffsetY+((rotated[1]-rawShapeBounds.minY)*shapeScale)
   ];
 }
 
@@ -1187,16 +1203,41 @@ function drawHomeCompass(){
   homeCompass.appendChild(statusBadge);
   homeCompass.appendChild(statusText);
 
+  const drawFallbackSock=(line1,line2)=>{
+    const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
+    const motion=svgEl('g',{
+      class:'windsock-rig',
+      style:'--sway:1.2deg;--wave-ms:1900ms'
+    });
+    const cloth=svgEl('g');
+    buildSockRibbon(cloth,{
+      bandLengths:[18],
+      totalLength:30,
+      mouthRadius:13,
+      tailWidth:9,
+      inflate:0.18,
+      stretch:0.01,
+      wavePhase:(Date.now()%2400)/2400,
+      waveAmp:0.16,
+      sag:1.4,
+      gustAmp:0,
+      angleDeg:90
+    });
+    motion.appendChild(cloth);
+    anchor.appendChild(motion);
+    homeCompass.appendChild(anchor);
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},line1));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},line2));
+  };
+
   if(!airport||!record){
-    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
-    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},'WAITING FOR METAR'));
+    drawFallbackSock('NO WIND DATA','WAITING FOR METAR');
     return;
   }
 
   const {dir,speed,gust}=extractWind(record);
   if(dir===undefined||dir===null||speed===undefined||speed===null){
-    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
-    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},airport.stale?'STALE METAR':'NO WIND FIELD'));
+    drawFallbackSock('NO WIND DATA',airport.stale?'STALE METAR':'NO WIND FIELD');
     return;
   }
 
