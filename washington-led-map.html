@@ -284,14 +284,14 @@ body.hide-windsock #stateNamePanel{display:none}
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
 const airports=[
-{id:'KSEA',lat:47.4501864633333,lon:-122.312316155,cat:'VFR',dx:16,dy:10,center:true},
-{id:'KGEG',lat:47.61875728,lon:-117.53541064,cat:'VFR',dx:10,dy:-10},
+{id:'KSEA',lat:47.4501864633333,lon:-122.312316155,cat:'VFR',dx:14,dy:18},
+{id:'KGEG',lat:47.61875728,lon:-117.53541064,cat:'VFR',dx:-10,dy:-10},
 {id:'KBFI',lat:47.5311228075,lon:-122.3025106975,cat:'VFR',dx:10,dy:-10},
 {id:'KOLM',lat:46.96947416,lon:-122.9022209675,cat:'VFR',dx:10,dy:-10},
 {id:'KYKM',lat:46.5677628625,lon:-120.543437765,cat:'VFR',dx:10,dy:-10},
-{id:'KPWT',lat:47.49024233,lon:-122.764813315,cat:'VFR',dx:10,dy:-10},
+{id:'KPWT',lat:47.49024233,lon:-122.764813315,cat:'VFR',dx:-10,dy:-10},
 {id:'KPSC',lat:46.2649392866667,lon:-119.118882283333,cat:'VFR',dx:10,dy:-10},
-{id:'KPUW',lat:46.74169094,lon:-117.111619495,cat:'VFR',dx:10,dy:-10},
+{id:'KPUW',lat:46.74169094,lon:-117.111619495,cat:'VFR',dx:-10,dy:-10},
 {id:'KBLI',lat:48.792691215,lon:-122.5375184,cat:'VFR',dx:10,dy:-10},
 {id:'KPAE',lat:47.905648025,lon:-122.278612015,cat:'VFR',dx:10,dy:-10}
 ];
@@ -602,7 +602,6 @@ function getAirportDisplayColor(airport){
 
 function drawDots(){
   dots.innerHTML='';
-  const denseIds=new Set(['KSEA','KBFI','KPAE']);
   airports.forEach(a=>{
     const p=project(a.lat,a.lon);
     const isMissing=!metarRecordById.has(a.id);
@@ -620,9 +619,10 @@ function drawDots(){
     const label=svgEl('text',{
       x:p.x+(a.dx||10),
       y:p.y+(a.dy||-10),
-      class:denseIds.has(a.id)?'label label-small':'label'
+      class:'label'
     },a.id);
     if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
+    else if((a.dx||0)<0) label.setAttribute('text-anchor','end');
 
     g.appendChild(glow);
     g.appendChild(core);
