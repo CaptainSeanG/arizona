@@ -430,16 +430,35 @@ const frameBounds={
   minY:Math.min(...frameOutline.map(p=>p[1])),
   maxY:Math.max(...frameOutline.map(p=>p[1]))
 };
-const framePadX=8;
-const framePadY=8;
-const standaloneProjection=d3.geoAlbersUsa().fitExtent(
-  [
-    [frameBounds.minX+framePadX,frameBounds.minY+framePadY],
-    [frameBounds.maxX-framePadX,frameBounds.maxY-framePadY]
-  ],
-  waFeature
-);
-const standalonePath=d3.geoPath(standaloneProjection);
+const framePadX=24;
+const framePadY=24;
+const usaShapeProjection=d3.geoAlbersUsa();
+const rawShapePoints=waOutline
+  .map(([lon,lat])=>usaShapeProjection([lon,lat]))
+  .filter(Boolean);
+const rawShapeBounds={
+  minX:Math.min(...rawShapePoints.map(p=>p[0])),
+  maxX:Math.max(...rawShapePoints.map(p=>p[0])),
+  minY:Math.min(...rawShapePoints.map(p=>p[1])),
+  maxY:Math.max(...rawShapePoints.map(p=>p[1]))
+};
+const rawShapeWidth=rawShapeBounds.maxX-rawShapeBounds.minX;
+const rawShapeHeight=rawShapeBounds.maxY-rawShapeBounds.minY;
+const targetWidth=(frameBounds.maxX-frameBounds.minX)-(framePadX*2);
+const targetHeight=(frameBounds.maxY-frameBounds.minY)-(framePadY*2);
+const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight);
+const fittedShapeWidth=rawShapeWidth*shapeScale;
+const fittedShapeHeight=rawShapeHeight*shapeScale;
+const shapeOffsetX=frameBounds.minX+framePadX+((targetWidth-fittedShapeWidth)/2);
+const shapeOffsetY=frameBounds.minY+framePadY+((targetHeight-fittedShapeHeight)/2);
+function projectShapePoint(lon,lat){
+  const p=usaShapeProjection([lon,lat]);
+  if(!p) return null;
+  return [
+    shapeOffsetX+((p[0]-rawShapeBounds.minX)*shapeScale),
+    shapeOffsetY+((p[1]-rawShapeBounds.minY)*shapeScale)
+  ];
+}
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
@@ -468,7 +487,7 @@ function getDisplayAgeMinutes(record,airport){
 }
 
 function project(lat,lon){
-  const p=standaloneProjection([lon,lat]);
+  const p=projectShapePoint(lon,lat);
   if(!p) return {x:-9999,y:-9999};
   return{x:p[0],y:p[1]};
 }
@@ -523,7 +542,13 @@ function toggleHudWindsock(){
 
 function drawMap(){
   map.innerHTML='';
-  const path=standalonePath(waFeature);
+  let path='';
+  waOutline.forEach(([lon,lat],i)=>{
+    const p=projectShapePoint(lon,lat);
+    if(!p) return;
+    path+=`${i===0?'M':'L'} ${p[0]} ${p[1]} `;
+  });
+  path+='Z';
   const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
   const outline=svgEl('path',{d:path,class:'outline'});
   map.appendChild(fillShape);
