@@ -460,8 +460,8 @@ function albersCO(lat,lon){
     return{
       minX:frame.minX+(frameW-drawW)/2,
       maxX:frame.minX+(frameW-drawW)/2+drawW,
-      minY:frame.minY+(frameH-drawH)/2,
-      maxY:frame.minY+(frameH-drawH)/2+drawH
+      minY:frame.minY+(frameH-drawH)/2+50,
+      maxY:frame.minY+(frameH-drawH)/2+50+drawH
     };
   }
   const imageBounds=fitProjectedBounds(projBounds,frameBounds);

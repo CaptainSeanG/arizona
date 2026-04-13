@@ -484,7 +484,7 @@ const fitScale=Math.min(frameWidth/projectedWidth,frameHeight/projectedHeight);
 const fittedWidth=projectedWidth*fitScale;
 const fittedHeight=projectedHeight*fitScale;
 const frameOffsetX=frameBounds.minX+(frameWidth-fittedWidth)/2;
-const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2;
+const frameOffsetY=frameBounds.minY+(frameHeight-fittedHeight)/2+50;
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
