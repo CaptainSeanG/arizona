@@ -440,7 +440,7 @@ const rawProjectedCenter={
   x:(Math.min(...rawProjectedPoints.map(p=>p[0]))+Math.max(...rawProjectedPoints.map(p=>p[0])))/2,
   y:(Math.min(...rawProjectedPoints.map(p=>p[1]))+Math.max(...rawProjectedPoints.map(p=>p[1])))/2
 };
-const shapeRotationDeg=-4;
+const shapeRotationDeg=-9;
 function rotateShapePoint(point){
   const rad=shapeRotationDeg*Math.PI/180;
   const dx=point[0]-rawProjectedCenter.x;
@@ -461,7 +461,7 @@ const rawShapeWidth=rawShapeBounds.maxX-rawShapeBounds.minX;
 const rawShapeHeight=rawShapeBounds.maxY-rawShapeBounds.minY;
 const targetWidth=(frameBounds.maxX-frameBounds.minX)-(framePadX*2);
 const targetHeight=(frameBounds.maxY-frameBounds.minY)-(framePadY*2);
-const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight)*1.06;
+const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight)*1.1;
 const fittedShapeWidth=rawShapeWidth*shapeScale;
 const fittedShapeHeight=rawShapeHeight*shapeScale;
 const shapeOffsetX=frameBounds.minX+framePadX+((targetWidth-fittedShapeWidth)/2);
@@ -1205,26 +1205,24 @@ function drawHomeCompass(){
 
   const drawFallbackSock=(line1,line2)=>{
     const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
-    const motion=svgEl('g',{
-      class:'windsock-rig',
-      style:'--sway:1.2deg;--wave-ms:1900ms'
-    });
-    const cloth=svgEl('g');
-    buildSockRibbon(cloth,{
-      bandLengths:[18],
-      totalLength:30,
-      mouthRadius:13,
-      tailWidth:9,
-      inflate:0.18,
-      stretch:0.01,
-      wavePhase:(Date.now()%2400)/2400,
-      waveAmp:0.16,
-      sag:1.4,
-      gustAmp:0,
-      angleDeg:90
-    });
-    motion.appendChild(cloth);
-    anchor.appendChild(motion);
+    anchor.appendChild(svgEl('line',{x1:0,y1:0,x2:0,y2:-52,class:'windsock-mast'}));
+    anchor.appendChild(svgEl('line',{x1:0,y1:-44,x2:34,y2:-44,class:'windsock-boom'}));
+    anchor.appendChild(svgEl('polygon',{
+      points:'34,-49 62,-46 62,-42 34,-39',
+      class:'windsock-segment-orange'
+    }));
+    anchor.appendChild(svgEl('polygon',{
+      points:'62,-46 78,-45 78,-43 62,-42',
+      class:'windsock-segment-white'
+    }));
+    anchor.appendChild(svgEl('polygon',{
+      points:'34,-49 62,-46 62,-42 34,-39',
+      class:'windsock-outline'
+    }));
+    anchor.appendChild(svgEl('polygon',{
+      points:'62,-46 78,-45 78,-43 62,-42',
+      class:'windsock-outline'
+    }));
     homeCompass.appendChild(anchor);
     homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},line1));
     homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},line2));
