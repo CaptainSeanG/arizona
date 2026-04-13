@@ -450,7 +450,8 @@ const shapeScale=Math.min(targetWidth/rawShapeWidth,targetHeight/rawShapeHeight)
 const fittedShapeWidth=rawShapeWidth*shapeScale;
 const fittedShapeHeight=rawShapeHeight*shapeScale;
 const shapeOffsetX=frameBounds.minX+framePadX+((targetWidth-fittedShapeWidth)/2);
-const shapeOffsetY=frameBounds.minY+framePadY+((targetHeight-fittedShapeHeight)/2);
+const shapeVerticalNudge=50;
+const shapeOffsetY=frameBounds.minY+framePadY+((targetHeight-fittedShapeHeight)/2)+shapeVerticalNudge;
 function projectShapePoint(lon,lat){
   const p=usaShapeProjection([lon,lat]);
   if(!p) return null;
