@@ -877,19 +877,68 @@ function extractWind(record){
   return{dir,speed,gust};
 }
 
+function parseVisibilitySmFromRawMetar(raw){
+  const text=String(raw||'').toUpperCase();
+  if(!text) return NaN;
+
+  if(/\bP6SM\b/.test(text)) return 6;
+
+  const mixed=text.match(/\b(\d+)\s+(\d)\/(\d)SM\b/);
+  if(mixed){
+    return Number(mixed[1])+(Number(mixed[2])/Number(mixed[3]));
+  }
+
+  const fraction=text.match(/\b(\d)\/(\d)SM\b/);
+  if(fraction){
+    return Number(fraction[1])/Number(fraction[2]);
+  }
+
+  const whole=text.match(/\b(\d+(?:\.\d+)?)SM\b/);
+  if(whole){
+    return Number(whole[1]);
+  }
+
+  return NaN;
+}
+
+function parseCeilingFtFromRawMetar(raw){
+  const text=String(raw||'').toUpperCase();
+  if(!text) return Infinity;
+
+  if(/\b(CLR|SKC|NSC|NCD)\b/.test(text) && !/\b(BKN|OVC|VV)\d{3}\b/.test(text)){
+    return Infinity;
+  }
+
+  const matches=[...text.matchAll(/\b(BKN|OVC|VV)(\d{3})\b/g)];
+  if(!matches.length) return Infinity;
+
+  const bases=matches
+    .map(([, , base])=>Number(base)*100)
+    .filter(base=>Number.isFinite(base));
+
+  return bases.length?Math.min(...bases):Infinity;
+}
+
 function inferFlightCategory(record){
+  const rawMetar=extractRawMetar(record);
+  const rawVisibility=parseVisibilitySmFromRawMetar(rawMetar);
   const visibilityRaw=record.visib??record.visibility??record.vis??record.prevail_vis_sm;
-  const visibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
+  const decodedVisibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
     ? Number(visibilityRaw.replace('+',''))||10
     : Number(visibilityRaw);
+  const visibility=Number.isFinite(rawVisibility)?rawVisibility:decodedVisibility;
+
+  const rawCeiling=parseCeilingFtFromRawMetar(rawMetar);
   const cloudLayers=Array.isArray(record.clouds)&&record.clouds.length
     ? record.clouds
     : (record.cover||record.base ? [{cover:record.cover,base:record.base}] : []);
   const ceilingBases=cloudLayers
-    .filter(layer=>['BKN','OVC','OVX'].includes(String(layer.cover||'').toUpperCase()))
+    .filter(layer=>['BKN','OVC','OVX','VV'].includes(String(layer.cover||'').toUpperCase()))
     .map(layer=>Number(layer.base))
-    .filter(base=>Number.isFinite(base));
-  const ceiling=ceilingBases.length?Math.min(...ceilingBases):Infinity;
+    .filter(base=>Number.isFinite(base))
+    .map(base=>base<100 ? base*100 : base);
+  const decodedCeiling=ceilingBases.length?Math.min(...ceilingBases):Infinity;
+  const ceiling=Number.isFinite(rawCeiling)?rawCeiling:decodedCeiling;
 
   if((Number.isFinite(visibility)&&visibility<1)||ceiling<500) return 'LIFR';
   if((Number.isFinite(visibility)&&visibility<3)||ceiling<1000) return 'IFR';
