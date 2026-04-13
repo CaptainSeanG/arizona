@@ -374,7 +374,7 @@ const coloradoRunwayExactData={
 };
 const runwayDataByAirport=coloradoRunwayExactData;
 
-const imageOutline=[[110,1100],[110,90],[1008,90],[1008,1100],[110,1100]];
+const imageOutline=[[35,900],[35,135],[1083,135],[1083,900],[35,900]];
 const coOutline=[[-109.06,36.99],[-109.06,41.0],[-102.04,41.0],[-102.04,36.99],[-109.06,36.99]];
 
 const map=document.getElementById('map');
@@ -448,7 +448,7 @@ function albersCO(lat,lon){
   }
   
   const projBounds=computeBounds(coOutline);
-  const frameBounds={ minX:110, maxX:1008, minY:90, maxY:1100 };
+  const frameBounds={ minX:35, maxX:1083, minY:135, maxY:900 };
   function fitProjectedBounds(proj,frame){
     const projW=Math.max(0.000001,proj.maxX-proj.minX);
     const projH=Math.max(0.000001,proj.maxY-proj.minY);
