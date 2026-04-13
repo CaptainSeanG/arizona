@@ -424,6 +424,25 @@ function svgEl(name,attrs={},text=''){
 }
 
 const waFeature={type:'Feature',properties:{name:'Washington'},geometry:{type:'Polygon',coordinates:[waOutline]}};
+const washingtonWaterwayLines=[
+  [
+    [-123.10,48.98],[-122.93,48.86],[-122.87,48.72],[-122.87,48.55],[-122.92,48.40],[-122.95,48.23],[-122.96,48.05],
+    [-122.92,47.88],[-122.88,47.70],[-122.83,47.54],[-122.78,47.40],[-122.75,47.25],[-122.74,47.10]
+  ],
+  [
+    [-122.83,48.86],[-122.73,48.74],[-122.65,48.58],[-122.60,48.44],[-122.55,48.28],[-122.50,48.10],[-122.47,47.94],
+    [-122.45,47.78],[-122.46,47.62],[-122.49,47.44],[-122.54,47.28],[-122.58,47.12]
+  ],
+  [
+    [-122.69,48.56],[-122.78,48.40],[-122.84,48.25],[-122.88,48.06],[-122.87,47.90],[-122.81,47.73],[-122.74,47.58]
+  ],
+  [
+    [-122.55,48.35],[-122.47,48.22],[-122.43,48.08],[-122.43,47.92],[-122.47,47.76],[-122.53,47.61],[-122.60,47.47]
+  ],
+  [
+    [-123.26,47.76],[-123.20,47.62],[-123.17,47.47],[-123.16,47.32],[-123.15,47.16],[-123.12,47.00]
+  ]
+];
 const frameBounds={
   minX:Math.min(...frameOutline.map(p=>p[0])),
   maxX:Math.max(...frameOutline.map(p=>p[0])),
@@ -552,6 +571,25 @@ function drawMap(){
   const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
   const outline=svgEl('path',{d:path,class:'outline'});
   map.appendChild(fillShape);
+  washingtonWaterwayLines.forEach(line=>{
+    let waterPath='';
+    line.forEach(([lon,lat],i)=>{
+      const p=projectShapePoint(lon,lat);
+      if(!p) return;
+      waterPath+=`${i===0?'M':'L'} ${p[0]} ${p[1]} `;
+    });
+    if(waterPath){
+      map.appendChild(svgEl('path',{
+        d:waterPath.trim(),
+        fill:'none',
+        stroke:'#64748b',
+        'stroke-width':'3',
+        'stroke-linecap':'round',
+        'stroke-linejoin':'round',
+        'vector-effect':'non-scaling-stroke'
+      }));
+    }
+  });
   map.appendChild(outline);
 }
 
