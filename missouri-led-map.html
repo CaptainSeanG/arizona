@@ -1,0 +1,3095 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Missouri LED Map</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap');
+html,body{width:100%;height:100%}
+body{margin:0;background:#0b1220;color:#fff;overflow:hidden;font-family:Inter,Arial,sans-serif}
+body.kiosk{cursor:none}
+body.alt-color{background:#2b0814}
+#wrap{width:100vw;height:100vh;position:relative}
+svg{width:100%;height:100%;display:block;background:#000}
+body.alt-color svg{background:#2b0814}
+.outline{fill:none;stroke:#64748b;stroke-width:3;vector-effect:non-scaling-stroke}
+.led-group{pointer-events:all}
+.led-core{stroke:#000;stroke-width:.6;transition:fill .45s ease,opacity .45s ease,r .45s ease}
+.led-glow{filter:url(#glow);opacity:.88;transition:fill .6s ease,opacity .6s ease,r .6s ease}
+.label{fill:#e5eefc;font-size:20px;font-weight:700;paint-order:stroke;stroke:#020617;stroke-width:4px;stroke-linejoin:round;user-select:none}
+.label-small{font-size:16px}
+.clock-box{fill:rgba(2,6,23,.78);stroke:#64748b;stroke-width:2}
+.clock-box.is-clickable{cursor:pointer}
+.clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
+.clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
+.clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
+.clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
+#windToggle{
+  position:absolute;
+  left:0;
+  top:0;
+  width:248px;
+  height:38px;
+  border:1px solid rgba(249,115,22,.55);
+  background:rgba(0,0,0,.88);
+  color:#f97316;
+  border-radius:999px;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:1px;
+  z-index:30;
+}
+.top-control-row{
+  position:absolute;
+  left:0;
+  top:0;
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  z-index:31;
+}
+.top-control-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  cursor:pointer;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#e5eefc;
+  background:rgba(2,6,23,.86);
+  border:1px solid rgba(148,163,184,.45);
+  backdrop-filter:blur(6px);
+}
+.top-control-btn{
+  min-width:70px;
+  height:34px;
+  padding:0 14px;
+}
+#topHelpBtn{min-width:64px}
+#topUsaBtn{
+  color:#bfdbfe;
+  border-color:rgba(147,197,253,.48);
+}
+#windToggle.is-off{
+  background:rgba(0,0,0,.58);
+  color:rgba(249,115,22,.55);
+  border-color:rgba(249,115,22,.32);
+}
+#tooltip{position:absolute;display:none;pointer-events:none;max-width:360px;background:rgba(2,6,23,.96);color:#e5eefc;border:1px solid #64748b;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35;z-index:60}
+#tooltip .tip-id{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:4px}
+#tooltip .tip-raw{white-space:normal}
+#tooltip .tip-summary{white-space:normal;color:#f59e0b}
+#hud{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s ease}
+body.show-metar-hud #hud{opacity:1;pointer-events:auto}
+.hud-btn{appearance:none;border:1px solid rgba(148,163,184,.45);background:rgba(2,6,23,.72);color:#e5eefc;border-radius:12px;padding:10px 14px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px}
+#metarStatusBtn{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px}
+#hudInfo{
+  min-width:260px;
+  max-width:360px;
+  background:rgba(2,6,23,.78);
+  border:1px solid rgba(148,163,184,.45);
+  border-radius:12px;
+  padding:10px 14px;
+}
+#hudSummary{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudSummary .summary-value{color:#f8fafc}
+#hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudMissing .missing-list{color:#f8fafc;word-break:break-word}
+#hudStale{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudStale .stale-list{color:#f8fafc;word-break:break-word}
+#hudJsonUpdated{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudJsonUpdated .json-value{color:#f8fafc}
+#homePanel{
+  position:absolute;
+  left:22px;
+  bottom:22px;
+  width:236px;
+  background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));
+  border:1px solid rgba(148,163,184,.45);
+  border-radius:14px;
+  padding:8px 8px 10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  z-index:30;
+  cursor:pointer;
+}
+body.hide-windsock #homePanel{display:none}
+#stateNamePanel{position:absolute;left:22px;bottom:370px;width:236px;background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));border:1px solid rgba(148,163,184,.45);border-radius:14px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:30;pointer-events:none}
+body.hide-windsock #stateNamePanel{display:none}
+#stateNameTitle{font-family:'Orbitron',sans-serif;font-size:16px;color:#93c5fd;letter-spacing:1.5px;text-align:center;font-weight:700}
+#homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:4px;text-align:center}
+#homeCompass{width:220px;height:300px;display:block;margin:0 auto;background:transparent}
+.windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
+.windsock-boom{stroke:#e2e8f0;stroke-width:4;stroke-linecap:round}
+.windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
+.windsock-hinge{fill:#f8fafc;stroke:#64748b;stroke-width:2}
+.windsock-ground{stroke:rgba(51,65,85,.9);stroke-width:3;stroke-linecap:round}
+.windsock-ring{fill:rgba(15,23,42,.35);stroke:rgba(148,163,184,.35);stroke-width:2}
+.windsock-ring-inner{fill:none;stroke:rgba(148,163,184,.18);stroke-width:1.5}
+.windsock-tick{stroke:rgba(148,163,184,.55);stroke-width:2}
+.windsock-card{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle}
+.runway-group{opacity:.9}
+.runway-strip{fill:rgba(226,232,240,.2);stroke:rgba(226,232,240,.45);stroke-width:1.2}
+.runway-centerline{stroke:rgba(248,250,252,.35);stroke-width:1.1;stroke-dasharray:5 5;stroke-linecap:round}
+.windsock-segment-orange{fill:#ff7a1a}
+.windsock-segment-white{fill:#fffaf0}
+.windsock-outline{fill:none;stroke:rgba(15,23,42,.42);stroke-width:.9}
+.windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
+.windsock-airport-name{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:600;text-anchor:middle;letter-spacing:.8px}
+.windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
+.windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
+.windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.windsock-badge{stroke-width:1.5}
+.windsock-rig{animation:sockRigWave var(--wave-ms,1400ms) ease-in-out infinite;transform-origin:0 0}
+.windsock-segment{animation:sockCloth var(--cloth-ms,720ms) ease-in-out infinite alternate;transform-origin:0 0}
+.windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
+.stale .led-glow,.stale .led-core{animation:staleBlink 1.1s infinite steps(1)}
+.missing .led-glow,.missing .led-core{animation:missingPulse 1.8s ease-in-out infinite}
+.fresh-update .led-glow{animation:freshUpdateGlow 3s ease-out 1}
+.fresh-update .led-core{animation:freshUpdateCore 3s ease-out 1}
+@keyframes staleBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+@keyframes missingPulse{0%,100%{opacity:.22}50%{opacity:1}}
+@keyframes freshUpdateGlow{
+  0%{r:14;opacity:.88}
+  18%{r:70;opacity:1}
+  100%{r:14;opacity:.88}
+}
+@keyframes freshUpdateCore{
+  0%{r:5;opacity:1}
+  18%{r:25;opacity:1}
+  100%{r:5;opacity:1}
+}
+@keyframes sockRigWave{
+  0%,100%{transform:rotate(calc(var(--sway,4deg) * -1))}
+  50%{transform:rotate(var(--sway,4deg))}
+}
+@keyframes sockCloth{
+  0%{transform:translateY(calc(var(--flutter,2px) * -1)) rotate(calc(var(--bend,3deg) * -1))}
+  100%{transform:translateY(var(--flutter,2px)) rotate(var(--bend,3deg))}
+}
+@keyframes sockTail{
+  0%{transform:translateY(calc(var(--tail-drop,3px) * -1)) rotate(calc(var(--tail-bend,7deg) * -1))}
+  100%{transform:translateY(var(--tail-drop,3px)) rotate(var(--tail-bend,7deg))}
+}
+#welcomeOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.86);z-index:50}
+#welcomeOverlay.show{display:flex}
+#welcomeCard{width:min(92vw,500px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.82);z-index:55;cursor:pointer}
+.infoOverlay.show{display:flex}
+.infoCard{width:min(92vw,560px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoTitle{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:10px}
+.infoList{margin:14px 0 0;padding-left:18px;color:#e5eefc;line-height:1.55}
+.infoList li{margin-bottom:8px}
+.keycap{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border:1px solid rgba(148,163,184,.45);border-radius:6px;background:rgba(2,6,23,.92);color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
+.mini-wind-btn{display:inline-flex;align-items:center;justify-content:center;min-width:84px;height:24px;padding:0 12px;border:1px solid rgba(249,115,22,.55);border-radius:999px;background:rgba(0,0,0,.88);color:#f97316;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
+.infoClose{margin-top:16px;color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center}
+.welcome-title{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:8px}
+.welcome-sub{color:#cbd5e1;line-height:1.45;margin-bottom:18px}
+.welcome-row{display:flex;gap:10px;align-items:center}
+#welcomeInput{flex:1;background:rgba(2,6,23,.95);color:#e5eefc;border:1px solid rgba(148,163,184,.45);border-radius:10px;padding:12px 14px;font-family:'Orbitron',sans-serif;font-size:16px;text-transform:uppercase}
+#welcomeBtn{border:1px solid rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:#dcfce7;border-radius:10px;padding:12px 16px;font-family:'Orbitron',sans-serif;font-size:14px;cursor:pointer}
+#welcomeError{min-height:18px;color:#fca5a5;margin-top:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <svg viewBox="0 0 1118 1196" aria-label="Missouri LED map">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <radialGradient id="stateBg" cx="50%" cy="12%" r="80%">
+        <stop offset="0%" stop-color="#0f1b31" />
+        <stop offset="42%" stop-color="#08111f" />
+        <stop offset="100%" stop-color="#020617" />
+      </radialGradient>
+      <radialGradient id="stateBgAlt" cx="50%" cy="12%" r="80%">
+        <stop offset="0%" stop-color="#214d82" />
+        <stop offset="42%" stop-color="#12345c" />
+        <stop offset="100%" stop-color="#08182f" />
+      </radialGradient>
+    </defs>
+    <g id="map"></g>
+    <g id="dots"></g>
+    <g id="clocks"></g>
+  </svg>
+  <div id="tooltip"></div>
+  <div id="topControlRow" class="top-control-row">
+    <button id="topUsaBtn" class="top-control-btn" type="button">USA</button>
+    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
+  </div>
+  <button id="windToggle" type="button">WINDSOCK</button>
+  <div id="stateNamePanel"><div id="stateNameTitle">MISSOURI</div></div>
+  <div id="homePanel">
+    <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
+    <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
+  </div>
+  <div id="hud">
+    <div id="hudInfo">
+      <div id="metarStatusBtn">STATUS</div>
+      <div id="hudSummary" aria-live="polite">
+        <div class="summary-value">0 of 10 Airports updated</div>
+      </div>
+      <div id="hudMissing" aria-live="polite">
+        <div class="missing-title">MISSING STATIONS</div>
+        <div class="missing-list">NONE</div>
+      </div>
+      <div id="hudStale" aria-live="polite">
+        <div class="stale-title">STALE STATIONS</div>
+        <div class="stale-list">NONE</div>
+      </div>
+      <div id="hudJsonUpdated" aria-live="polite">
+        <div>LAST UPDATED</div>
+        <div class="json-value">WAITING</div>
+      </div>
+    </div>
+  </div>
+  <div id="welcomeOverlay">
+    <div id="welcomeCard">
+      <div class="welcome-title">MISSOURI WX MAP</div>
+      <div class="welcome-sub">Enter your home airport any time. We&apos;ll save it and use it for the windsock card.</div>
+      <div class="welcome-row">
+        <input id="welcomeInput" maxlength="4" placeholder="KSTL" />
+        <button id="welcomeBtn" type="button">START</button>
+      </div>
+      <div id="welcomeError"></div>
+    </div>
+  </div>
+  <div id="infoOverlay" class="infoOverlay" aria-hidden="true">
+    <div id="infoCard" class="infoCard" role="dialog" aria-label="Map instructions">
+      <div class="infoTitle">HOW TO USE THE MAP</div>
+      <ul class="infoList">
+        <li>Double tap an airport LED to make it your home airport.</li>
+        <li>Tap the background to toggle colors.</li>
+        <li>On the <span class="mini-wind-btn">WINDSOCK</span> button, tap the left or right half of the button to show on the left or right.</li>
+        <li>Tap the windsock card to reopen the home-airport selector.</li>
+        <li>Press <span class="keycap">S</span> for the status panel.</li>
+        <li>Press <span class="keycap">F</span> for fullscreen and <span class="keycap">K</span> for kiosk cursor mode.</li>
+        <li>Hover over an airport LED to see the decoded weather and raw METAR.</li>
+      </ul>
+      <div class="infoClose">TAP TO CLOSE</div>
+    </div>
+  </div>
+</div>
+<script>
+const airports=[
+{id:'KSTL',lat:38.74896650625,lon:-90.37041086125,cat:'VFR',dx:18,dy:10},
+{id:'KMCI',lat:39.2971381483333,lon:-94.7133971166667,cat:'VFR',dx:14,dy:12},
+{id:'KSGF',lat:37.24559369,lon:-93.38838648,cat:'VFR',dx:10,dy:-10},
+{id:'KCOU',lat:38.8182646475,lon:-92.2175863575,cat:'VFR',dx:10,dy:-10},
+{id:'KJLN',lat:37.1531669475,lon:-94.4988078225,cat:'VFR',dx:10,dy:-10},
+{id:'KCGI',lat:37.22543123,lon:-89.570681525,cat:'VFR',dx:10,dy:-10},
+{id:'KIRK',lat:40.0951365775,lon:-92.5459621825,cat:'VFR',dx:10,dy:-10},
+{id:'KVIH',lat:38.1274293725,lon:-91.769513925,cat:'VFR',dx:10,dy:-10},
+{id:'KSUS',lat:38.6626876625,lon:-90.653320045,cat:'VFR',dx:10,dy:-10},
+{id:'KSTJ',lat:39.7714071625,lon:-94.91065231,cat:'VFR',dx:10,dy:-10}
+];
+
+const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
+const DEFAULT_MISSOURI_MAGNETIC_VARIATION_EAST=2.8;
+const magneticVariationByAirport={
+  KCGI:1.4,
+  KCOU:2.6,
+  KIRK:2.3,
+  KJLN:3.6,
+  KMCI:3.1,
+  KSGF:3,
+  KSTJ:3,
+  KSTL:1.8,
+  KSUS:1.8,
+  KVIH:2.2
+};
+const legacyRunwayDataByAirport={};
+const missouriRunwayExactData={
+  K02MO:[
+    {ends:[[-91.0319,39.04598611],[-91.02453888,39.04653888]],length:2100,widthFt:25}
+  ],
+  K03B:[
+    {ends:[[-92.62663611,37.12593333],[-92.61656666,37.12764444]],length:3000,widthFt:50}
+  ],
+  K03D:[
+    {ends:[[-92.23198608,40.44965497],[-92.22192758,40.44485911]],length:3300,widthFt:60}
+  ],
+  K03MO:[
+    {ends:[[-93.99613611,39.28876944],[-93.98871388,39.28888888]],length:2100,widthFt:100}
+  ],
+  K05LA:[
+    {ends:[[-91.69794444,32.26844444],[-91.69789722,32.26239722]],length:2200,widthFt:70}
+  ],
+  K05MO:[
+    {ends:[[-92.21698055,40.17203333],[-92.20803611,40.17200833]],length:2500,widthFt:50}
+  ],
+  K06MO:[
+    {ends:[[-94.80343055,39.23472222],[-94.79964166,39.22703055]],length:3000,widthFt:30}
+  ],
+  K07LA:[
+    {ends:[[-92.63644444,31.05394444],[-92.62930555,31.05205555]],length:2339,widthFt:125}
+  ],
+  K0AR3:[
+    {ends:[[-93.261775,34.32741944],[-93.25680277,34.32863888]],length:1565,widthFt:80}
+  ],
+  K0C1:[
+    {ends:[[-94.78248538,39.48466133],[-94.77976636,39.4908335]],length:2375,widthFt:35}
+  ],
+  K0H7:[
+    {ends:[[-91.71140833,40.42233055],[-91.70191388,40.42110555]],length:2680,widthFt:115}
+  ],
+  K0M0:[
+    {ends:[[-91.53395302,33.8913948],[-91.53462116,33.87765858]],length:5003,widthFt:75}
+  ],
+  K0M8:[
+    {ends:[[-91.18814194,32.83025611],[-91.18721444,32.82150694]],length:3196,widthFt:75}
+  ],
+  K0M9:[
+    {ends:[[-91.49859577,32.41485802],[-91.49845983,32.406611]],length:3000,widthFt:75}
+  ],
+  K0MO3:[
+    {ends:[[-94.52254444,38.6279],[-94.52077222,38.62195]],length:2225,widthFt:55}
+  ],
+  K0MO6:[
+    {ends:[[-92.32153611,40.07447777],[-92.31705833,40.07875833]],length:2000,widthFt:100}
+  ],
+  K0MU9:[
+    {ends:[[-93.16575,37.33779722],[-93.16241111,37.33779166]],length:970,widthFt:50}
+  ],
+  K0N0:[
+    {ends:[[-94.44188888,39.29362222],[-94.44300833,39.28603888]],length:2780,widthFt:20}
+  ],
+  K0R2:[
+    {ends:[[-93.33205277,38.406375],[-93.33246111,38.39830555]],length:2940,widthFt:125}
+  ],
+  K0R4:[
+    {ends:[[-91.509985,31.56609536],[-91.50295113,31.55789663]],length:3701,widthFt:75}
+  ],
+  K0R5:[
+    {ends:[[-92.66510694,31.96363138],[-92.65542638,31.96371722]],length:3002,widthFt:100}
+  ],
+  K0R6:[
+    {ends:[[-92.462725,33.51702222],[-92.45784166,33.52818333]],length:4326,widthFt:50}
+  ],
+  K0R7:[
+    {ends:[[-93.30759694,31.99714902],[-93.30762491,31.98340019]],length:5002,widthFt:74}
+  ],
+  K10LS:[
+    {ends:[[-92.57286111,30.49565555],[-92.57283055,30.48801388]],length:2779,widthFt:100}
+  ],
+  K10MO:[
+    {ends:[[-91.68297777,38.92012777],[-91.68322222,38.91622222]],length:1425,widthFt:100}
+  ],
+  K11LA:[
+    {ends:[[-89.35648333,29.25372777],[-89.35279722,29.25817777]],length:2000,widthFt:100},
+    {ends:[[-89.35121388,29.26545833],[-89.35132222,29.25995833]],length:2000,widthFt:100}
+  ],
+  K12A:[
+    {ends:[[-92.33496027,35.1818333],[-92.33517336,35.17322591]],length:3133,widthFt:40}
+  ],
+  K14LA:[
+    {ends:[[-90.53593055,30.62045555],[-90.53617222,30.61056388]],length:3600,widthFt:40}
+  ],
+  K14MO:[
+    {ends:[[-93.37958055,37.83326666],[-93.3711,37.83566944]],length:2600,widthFt:40}
+  ],
+  K15MO:[
+    {ends:[[-92.12936388,38.59511111],[-92.12552222,38.59176666]],length:1640,widthFt:60}
+  ],
+  K17A:[
+    {ends:[[-93.62712777,36.32932777],[-93.61729722,36.32717222]],length:3000,widthFt:75}
+  ],
+  K17LS:[
+    {ends:[[-91.97875,30.60452777],[-91.97180555,30.61133333]],length:3300,widthFt:100}
+  ],
+  K18MO:[
+    {ends:[[-93.17193333,36.96768055],[-93.17237222,36.95943333]],length:3005,widthFt:40}
+  ],
+  K19MO:[
+    {ends:[[-91.81902222,37.80598888],[-91.80934166,37.80628888]],length:2800,widthFt:75}
+  ],
+  K1BT:[
+    {ends:[[-90.57825555,37.92196944],[-90.57214722,37.91599444]],length:2800,widthFt:49}
+  ],
+  K1H0:[
+    {ends:[[-90.51036288,38.72788605],[-90.50032422,38.73099236]],length:3079,widthFt:220},
+    {ends:[[-90.5134178,38.73161755],[-90.50762163,38.72012583]],length:4500,widthFt:75}
+  ],
+  K1H3:[
+    {ends:[[-91.8231645,38.47159877],[-91.81128994,38.47160472]],length:3400,widthFt:60}
+  ],
+  K1H5:[
+    {ends:[[-91.95463888,36.99440555],[-91.95351388,36.98483055]],length:3502,widthFt:60}
+  ],
+  K1LA5:[
+    {ends:[[-92.06569444,30.80102777],[-92.06063888,30.80155555]],length:1600,widthFt:70}
+  ],
+  K1LA9:[
+    {ends:[[-91.985897,29.969075],[-91.982642,29.965947]],length:1535,widthFt:60}
+  ],
+  K1MO:[
+    {ends:[[-92.3150585,37.12024813],[-92.3051548,37.12147466]],length:2922,widthFt:60}
+  ],
+  K1MU2:[
+    {ends:[[-94.66648444,39.44603666],[-94.66228055,39.444]],length:1400,widthFt:60}
+  ],
+  K1R1:[
+    {ends:[[-92.15765547,31.67555061],[-92.15753575,31.66207875]],length:4901,widthFt:75}
+  ],
+  K1R4:[
+    {ends:[[-92.50275833,31.12228333],[-92.49981944,31.13042222]],length:3100,widthFt:75}
+  ],
+  K21MO:[
+    {ends:[[-91.78453055,37.58466388],[-91.78214722,37.59068888]],length:2300,widthFt:40}
+  ],
+  K21MU:[
+    {ends:[[-93.50907691,36.56895294],[-93.51032458,36.56132822]],length:2800,widthFt:40}
+  ],
+  K23MO:[
+    {ends:[[-93.09083611,39.47220555],[-93.08902777,39.46877222]],length:1350,widthFt:60}
+  ],
+  K23MU:[
+    {ends:[[-93.69300555,38.02192777],[-93.69341388,38.01526111]],length:2430,widthFt:74}
+  ],
+  K24LA:[
+    {ends:[[-90.955618,30.320173],[-90.95568377,30.31604919]],length:1500,widthFt:100}
+  ],
+  K24MO:[
+    {ends:[[-92.83537,38.13243],[-92.82555416,38.13297]],length:2830,widthFt:36}
+  ],
+  K26AS:[
+    {ends:[[-90.936786,34.560556],[-90.92835,34.559843]],length:2553,widthFt:100}
+  ],
+  K26MO:[
+    {ends:[[-94.248026,39.458416],[-94.247152,39.45712]],length:533,widthFt:40}
+  ],
+  K2A2:[
+    {ends:[[-92.41056827,35.6471153],[-92.397057,35.65432238]],length:4795,widthFt:50}
+  ],
+  K2A6:[
+    {ends:[[-91.16920277,34.58764444],[-91.16129166,34.57725277]],length:4469,widthFt:50}
+  ],
+  K2AR4:[
+    {ends:[[-91.09309166,35.23171944],[-91.09323888,35.225125]],length:2400,widthFt:20}
+  ],
+  K2H2:[
+    {ends:[[-93.69520791,36.96641694],[-93.69543141,36.95817677]],length:3001,widthFt:60}
+  ],
+  K2L0:[
+    {ends:[[-92.44353055,31.34631666],[-92.44362222,31.33806666]],length:3000,widthFt:75}
+  ],
+  K2LA7:[
+    {ends:[[-91.42683055,32.96140277],[-91.42489444,32.97030555]],length:3293,widthFt:25}
+  ],
+  K2M1:[
+    {ends:[[-94.09037777,39.01441388],[-94.08263611,39.02488055]],length:4400,widthFt:70}
+  ],
+  K2MO:[
+    {ends:[[-93.88408055,37.07210833],[-93.88429994,37.06332111]],length:3195,widthFt:60}
+  ],
+  K2MO8:[
+    {ends:[[-93.993289,37.872651],[-93.988697,37.872558]],length:1326,widthFt:75}
+  ],
+  K2MU9:[
+    {ends:[[-91.119225,38.96825277],[-91.11705277,38.96216944]],length:2300,widthFt:50}
+  ],
+  K2R1:[
+    {ends:[[-91.66886111,29.89577777],[-91.66313888,29.90236111]],length:3000,widthFt:75}
+  ],
+  K2R6:[
+    {ends:[[-92.23409638,30.96087166],[-92.23407638,30.95261055]],length:3005,widthFt:75}
+  ],
+  K2R7:[
+    {ends:[[-90.11612311,30.82214977],[-90.10890477,30.81674147]],length:3000,widthFt:75}
+  ],
+  K32A:[
+    {ends:[[-93.43611361,35.088915],[-93.42173527,35.08560944]],length:4466,widthFt:75}
+  ],
+  K34M:[
+    {ends:[[-90.01563055,36.49018055],[-90.01576111,36.48193888]],length:3000,widthFt:50}
+  ],
+  K35AR:[
+    {ends:[[-91.87897777,35.31208055],[-91.87229444,35.31153055]],length:2005,widthFt:60}
+  ],
+  K37M:[
+    {ends:[[-90.15008611,36.04232777],[-90.14389722,36.04454722]],length:2000,widthFt:60},
+    {ends:[[-90.15074722,36.04454722],[-90.15075833,36.03727222]],length:2648,widthFt:47}
+  ],
+  K37MO:[
+    {ends:[[-94.18469166,39.56923055],[-94.18469166,39.563025]],length:2260,widthFt:60}
+  ],
+  K37T:[
+    {ends:[[-92.147815,36.16931916],[-92.14280777,36.16214138]],length:3002,widthFt:60}
+  ],
+  K39AR:[
+    {ends:[[-91.837,34.91530555],[-91.83716666,34.90788888]],length:2700,widthFt:100}
+  ],
+  K3DW:[
+    {ends:[[-93.25490277,37.22451388],[-93.24179444,37.22089722]],length:4037,widthFt:50}
+  ],
+  K3EX:[
+    {ends:[[-94.19842477,39.33464275],[-94.19642413,39.33991961]],length:2004,widthFt:50}
+  ],
+  K3F3:[
+    {ends:[[-93.76479336,32.0796093],[-93.76641333,32.06592169]],length:5005,widthFt:100}
+  ],
+  K3F4:[
+    {ends:[[-94.01503444,32.86130472],[-94.00527111,32.86135861]],length:2998,widthFt:75}
+  ],
+  K3GV:[
+    {ends:[[-94.21644444,39.01407222],[-94.20991388,39.01734722]],length:2206,widthFt:20},
+    {ends:[[-94.22360833,39.01425555],[-94.20775277,39.01398055]],length:4507,widthFt:44}
+  ],
+  K3LA4:[
+    {ends:[[-92.80886133,29.80262991],[-92.7982095,29.79673305]],length:4002,widthFt:60}
+  ],
+  K3LA8:[
+    {ends:[[-93.14349722,30.13995277],[-93.14154722,30.13400277]],length:2250,widthFt:75}
+  ],
+  K3M0:[
+    {ends:[[-92.56084538,36.34742713],[-92.55075066,36.35068522]],length:3200,widthFt:55}
+  ],
+  K3M9:[
+    {ends:[[-92.08891666,33.55607305],[-92.08187527,33.5647875]],length:3829,widthFt:75}
+  ],
+  K3MO5:[
+    {ends:[[-94.21640277,37.13191388],[-94.21661388,37.124775]],length:2600,widthFt:65}
+  ],
+  K3MO7:[
+    {ends:[[-90.62841388,37.95465],[-90.62688888,37.9628]],length:3000,widthFt:75}
+  ],
+  K3R2:[
+    {ends:[[-92.48857752,30.15571038],[-92.47899869,30.16412258]],length:4304,widthFt:150},
+    {ends:[[-92.48864763,30.16763044],[-92.47964341,30.15988883]],length:4003,widthFt:150}
+  ],
+  K3R4:[
+    {ends:[[-93.4898623,31.54736361],[-93.47775133,31.54113277]],length:4402,widthFt:75}
+  ],
+  K3R7:[
+    {ends:[[-92.68568361,30.24240072],[-92.67011836,30.24494561]],length:5002,widthFt:75},
+    {ends:[[-92.67452491,30.24491883],[-92.6664615,30.23791638]],length:3601,widthFt:75},
+    {ends:[[-92.66782005,30.24528563],[-92.66785566,30.23985105]],length:1977,widthFt:150}
+  ],
+  K3VS:[
+    {ends:[[-92.87993888,38.427125],[-92.87058888,38.42941944]],length:2805,widthFt:39}
+  ],
+  K40MO:[
+    {ends:[[-92.60184444,38.85584444],[-92.60089166,38.86253611]],length:2452,widthFt:120}
+  ],
+  K41MO:[
+    {ends:[[-93.09666666,37.1875],[-93.09166666,37.18638888]],length:1512,widthFt:50}
+  ],
+  K42A:[
+    {ends:[[-91.83369861,36.06630594],[-91.82657197,36.07565469]],length:4003,widthFt:75}
+  ],
+  K42M:[
+    {ends:[[-91.57909944,36.5228475],[-91.56487444,36.52172138]],length:4200,widthFt:50}
+  ],
+  K43AS:[
+    {ends:[[-90.6625,34.45222222],[-90.66111111,34.445]],length:2662,widthFt:80}
+  ],
+  K43MO:[
+    {ends:[[-94.37435277,38.78327777],[-94.36582777,38.78340833]],length:2430,widthFt:30}
+  ],
+  K44AR:[
+    {ends:[[-92.57722222,34.46027777],[-92.57638888,34.46222222]],length:751,widthFt:20}
+  ],
+  K44MO:[
+    {ends:[[-91.71326666,38.48768333],[-91.708779,38.486784]],length:1326,widthFt:65}
+  ],
+  K47AR:[
+    {ends:[[-92.23305555,34.50348611],[-92.22646666,34.50190277]],length:2067,widthFt:100}
+  ],
+  K48LA:[
+    {ends:[[-92.58248888,30.27548333],[-92.57878333,30.27426666]],length:1251,widthFt:100}
+  ],
+  K4A5:[
+    {ends:[[-92.66159841,35.89524997],[-92.65107697,35.9021435]],length:4003,widthFt:75}
+  ],
+  K4AR2:[
+    {ends:[[-92.01314861,34.91055138],[-92.00080277,34.91035416]],length:3700,widthFt:100}
+  ],
+  K4AR4:[
+    {ends:[[-90.57195555,36.46051388],[-90.572175,36.45350833]],length:2551,widthFt:50}
+  ],
+  K4AR9:[
+    {ends:[[-92.90261944,35.91236944],[-92.89680555,35.917325]],length:2494,widthFt:100}
+  ],
+  K4F7:[
+    {ends:[[-93.36203055,33.80863333],[-93.36231666,33.79911666]],length:3464,widthFt:50}
+  ],
+  K4F8:[
+    {ends:[[-93.05575313,33.43926516],[-93.05283536,33.44714047]],length:3000,widthFt:50}
+  ],
+  K4M1:[
+    {ends:[[-93.63032638,36.37994838],[-93.61875377,36.38273541]],length:3555,widthFt:75}
+  ],
+  K4M2:[
+    {ends:[[-93.86882936,35.1496035],[-93.85794972,35.14944913]],length:3254,widthFt:50}
+  ],
+  K4M3:[
+    {ends:[[-91.72250061,34.80604925],[-91.70751097,34.80581172]],length:4501,widthFt:75},
+    {ends:[[-91.70909855,34.81669141],[-91.70937797,34.80434647]],length:4494,widthFt:75}
+  ],
+  K4M5:[
+    {ends:[[-91.44415388,33.48406805],[-91.44106861,33.49184111]],length:2980,widthFt:50}
+  ],
+  K4M8:[
+    {ends:[[-91.39460108,34.6511408],[-91.39483991,34.64219702]],length:3256,widthFt:60}
+  ],
+  K4M9:[
+    {ends:[[-90.64785611,36.410135],[-90.64799666,36.39832805]],length:4299,widthFt:60}
+  ],
+  K4MO1:[
+    {ends:[[-91.4214458,39.00976969],[-91.41752319,39.01548286]],length:2360,widthFt:75}
+  ],
+  K4MO5:[
+    {ends:[[-91.347625,38.379465],[-91.343736,38.380697]],length:1200,widthFt:25}
+  ],
+  K4R7:[
+    {ends:[[-92.42574333,30.47295972],[-92.42187888,30.4596225]],length:5001,widthFt:75}
+  ],
+  K51AS:[
+    {ends:[[-90.720264,34.485433],[-90.711764,34.481529]],length:2929,widthFt:100}
+  ],
+  K51MO:[
+    {ends:[[-94.46129811,39.59745686],[-94.46151444,39.59169272]],length:2100,widthFt:20}
+  ],
+  K52LA:[
+    {ends:[[-93.11338888,30.04836111],[-93.10511111,30.04838888]],length:2620,widthFt:90}
+  ],
+  K52MO:[
+    {ends:[[-94.04350277,38.73686388],[-94.04390555,38.73361111]],length:1190,widthFt:75}
+  ],
+  K54LA:[
+    {ends:[[-93.0077933,31.64276388],[-92.99783794,31.64305555]],length:3100,widthFt:100}
+  ],
+  K54MU:[
+    {ends:[[-95.11271111,40.30384166],[-95.11164722,40.297025]],length:2500,widthFt:80}
+  ],
+  K55LA:[
+    {ends:[[-91.95255555,30.61827777],[-91.93920833,30.61833333]],length:4200,widthFt:125}
+  ],
+  K55M:[
+    {ends:[[-91.86099855,33.93054669],[-91.86124291,33.92230338]],length:3000,widthFt:60}
+  ],
+  K55MO:[
+    {ends:[[-91.26024722,38.87435],[-91.26016388,38.86886111]],length:2000,widthFt:80}
+  ],
+  K56MO:[
+    {ends:[[-92.034181,38.784381],[-92.034295,38.778731]],length:2058,widthFt:100}
+  ],
+  K57MO:[
+    {ends:[[-92.146375,38.12875555],[-92.13898333,38.128225]],length:2135,widthFt:50}
+  ],
+  K58AR:[
+    {ends:[[-94.17881111,36.40675833],[-94.16827222,36.40460277]],length:3200,widthFt:60}
+  ],
+  K58MU:[
+    {ends:[[-94.29156666,36.49798888],[-94.29005,36.50320277]],length:1950,widthFt:60}
+  ],
+  K59AR:[
+    {ends:[[-90.61621666,35.88224166],[-90.60879722,35.88192777]],length:2200,widthFt:75}
+  ],
+  K5AR4:[
+    {ends:[[-91.09472222,34.64611111],[-91.09472222,34.63888888]],length:2628,widthFt:80}
+  ],
+  K5AR8:[
+    {ends:[[-93.46833333,36.40694444],[-93.46,36.4075]],length:2460,widthFt:100}
+  ],
+  K5F0:[
+    {ends:[[-92.95525836,32.53563344],[-92.95029536,32.5285378]],length:3000,widthFt:75}
+  ],
+  K5F4:[
+    {ends:[[-93.0080348,32.79086308],[-92.99925383,32.78613683]],length:3200,widthFt:60}
+  ],
+  K5F5:[
+    {ends:[[-93.79989722,32.34871666],[-93.79989722,32.34048333]],length:3000,widthFt:40}
+  ],
+  K5LA0:[
+    {ends:[[-93.82780555,32.59169444],[-93.8278,32.58895277]],length:1000,widthFt:85}
+  ],
+  K5LS9:[
+    {ends:[[-93.70825833,31.52715555],[-93.70657222,31.53553611]],length:3093,widthFt:30}
+  ],
+  K5M1:[
+    {ends:[[-91.30735416,34.26668102],[-91.30762366,34.25787811]],length:3205,widthFt:60}
+  ],
+  K5M4:[
+    {ends:[[-92.36941472,33.8428575],[-92.36164333,33.84872583]],length:3183,widthFt:60}
+  ],
+  K5M5:[
+    {ends:[[-94.44949202,36.34734575],[-94.44016455,36.33988805]],length:3863,widthFt:75}
+  ],
+  K5M8:[
+    {ends:[[-93.17539444,33.92376388],[-93.16087777,33.92380277]],length:4403,widthFt:60}
+  ],
+  K5MO:[
+    {ends:[[-92.56566944,40.39501944],[-92.56387222,40.38887222]],length:2295,widthFt:75}
+  ],
+  K5MO6:[
+    {ends:[[-92.29113055,40.13042777],[-92.291125,40.12548055]],length:1800,widthFt:75}
+  ],
+  K5MO7:[
+    {ends:[[-93.63276666,36.59375555],[-93.62675,36.59788055]],length:2315,widthFt:60}
+  ],
+  K5MU5:[
+    {ends:[[-94.484175,38.511175],[-94.48452222,38.50678333]],length:1600,widthFt:60}
+  ],
+  K5MU9:[
+    {ends:[[-90.714675,37.68276666],[-90.71457222,37.67580277]],length:2537,widthFt:75}
+  ],
+  K5R8:[
+    {ends:[[-93.47666691,30.44741725],[-93.47054986,30.43474108]],length:4997,widthFt:75}
+  ],
+  K60AR:[
+    {ends:[[-92.03917777,36.4048],[-92.03948055,36.40178611]],length:1100,widthFt:100}
+  ],
+  K60AS:[
+    {ends:[[-90.931422,34.38009],[-90.931386,34.372391]],length:2802,widthFt:100}
+  ],
+  K60MU:[
+    {ends:[[-94.41648611,37.25842777],[-94.41204444,37.25990555]],length:1400,widthFt:30}
+  ],
+  K63M:[
+    {ends:[[-91.495725,38.70348055],[-91.48538333,38.70685555]],length:3198,widthFt:50}
+  ],
+  K64AR:[
+    {ends:[[-91.83129,34.97398],[-91.831,34.96559]],length:3055,widthFt:75}
+  ],
+  K65AR:[
+    {ends:[[-91.408032,35.797026],[-91.40671908,35.8004073]],length:1291,widthFt:60},
+    {ends:[[-91.410941,35.79912844],[-91.40663533,35.79806]],length:1335,widthFt:60}
+  ],
+  K65MO:[
+    {ends:[[-89.58222777,36.73675277],[-89.58206388,36.7289]],length:2860,widthFt:60}
+  ],
+  K66AR:[
+    {ends:[[-94.388676,36.039693],[-94.389034,36.033672]],length:2194,widthFt:60}
+  ],
+  K66MO:[
+    {ends:[[-90.95150277,38.83469166],[-90.95134722,38.83221944]],length:900,widthFt:75}
+  ],
+  K67MO:[
+    {ends:[[-93.36975833,37.81437777],[-93.37013333,37.80713055]],length:2640,widthFt:100}
+  ],
+  K67MU:[
+    {ends:[[-91.4007,39.45451111],[-91.39113888,39.453825]],length:2710,widthFt:100}
+  ],
+  K68LS:[
+    {ends:[[-91.37296388,31.81681666],[-91.36983888,31.81443333]],length:1300,widthFt:60},
+    {ends:[[-91.37020833,31.81821944],[-91.37028055,31.81134722]],length:2500,widthFt:80}
+  ],
+  K69MU:[
+    {ends:[[-94.62736111,39.76638888],[-94.62736111,39.76208333]],length:1568,widthFt:60}
+  ],
+  K6AR5:[
+    {ends:[[-91.80656944,34.77843333],[-91.79130833,34.77820833]],length:4584,widthFt:45}
+  ],
+  K6K2:[
+    {ends:[[-92.05055277,39.81571388],[-92.04988055,39.80942222]],length:2300,widthFt:46}
+  ],
+  K6M0:[
+    {ends:[[-91.63801666,34.764775],[-91.638075,34.75365277]],length:4048,widthFt:150}
+  ],
+  K6M2:[
+    {ends:[[-91.76169172,36.22494488],[-91.74925686,36.21777761]],length:4502,widthFt:60}
+  ],
+  K6M6:[
+    {ends:[[-91.67811666,40.13397777],[-91.67842222,40.124375]],length:3500,widthFt:60}
+  ],
+  K6M7:[
+    {ends:[[-90.80985011,34.78827533],[-90.81007536,34.77723036]],length:4021,widthFt:75}
+  ],
+  K6M8:[
+    {ends:[[-90.400075,35.53748611],[-90.40010277,35.52869444]],length:3200,widthFt:60}
+  ],
+  K6MU5:[
+    {ends:[[-93.77886111,39.36188888],[-93.777675,39.36674444]],length:1800,widthFt:50}
+  ],
+  K6R1:[
+    {ends:[[-92.83563027,30.24132916],[-92.82752194,30.24366305]],length:2700,widthFt:50},
+    {ends:[[-92.83320083,30.24104],[-92.82621944,30.24109444]],length:2200,widthFt:150}
+  ],
+  K70MO:[
+    {ends:[[-94.12341111,38.64562777],[-94.11798333,38.64562222]],length:1550,widthFt:50},
+    {ends:[[-94.11719444,38.65041666],[-94.11738333,38.64581944]],length:1675,widthFt:50}
+  ],
+  K71AR:[
+    {ends:[[-94.47374444,36.2852],[-94.47378333,36.27995277]],length:1910,widthFt:30}
+  ],
+  K71LA:[
+    {ends:[[-92.23701388,30.41898611],[-92.23138333,30.42342222]],length:2400,widthFt:100}
+  ],
+  K72AR:[
+    {ends:[[-93.484436,34.302808],[-93.4805223,34.29770966]],length:2200,widthFt:50}
+  ],
+  K74AR:[
+    {ends:[[-92.19083333,34.53786111],[-92.18336111,34.53772222]],length:2251,widthFt:90}
+  ],
+  K74MU:[
+    {ends:[[-91.13111388,39.03747777],[-91.12977777,39.04230555]],length:1800,widthFt:40}
+  ],
+  K75K:[
+    {ends:[[-94.00957777,40.27422222],[-94.00525277,40.27945277]],length:2255,widthFt:48}
+  ],
+  K76A:[
+    {ends:[[-91.23015744,35.467704],[-91.229884,35.460303]],length:2695,widthFt:24}
+  ],
+  K77MO:[
+    {ends:[[-93.77111944,37.09368888],[-93.76835277,37.08719166]],length:2500,widthFt:100}
+  ],
+  K78AR:[
+    {ends:[[-92.86333333,36.48944444],[-92.8630095,36.48230725]],length:2600,widthFt:60}
+  ],
+  K78LA:[
+    {ends:[[-90.7025,29.730691],[-90.69890277,29.73966583]],length:3458,widthFt:75}
+  ],
+  K78MO:[
+    {ends:[[-92.40598333,37.45886944],[-92.40227777,37.45424444]],length:2000,widthFt:50}
+  ],
+  K78Y:[
+    {ends:[[-94.83476944,40.33588055],[-94.83460277,40.32750833]],length:3050,widthFt:25}
+  ],
+  K79MU:[
+    {ends:[[-94.55970833,39.32816388],[-94.55510277,39.33233888]],length:2000,widthFt:35}
+  ],
+  K7AR8:[
+    {ends:[[-91.17648888,34.66935277],[-91.17681111,34.66081666]],length:3108,widthFt:80}
+  ],
+  K7AR9:[
+    {ends:[[-90.81295277,35.95989444],[-90.81301388,35.95286666]],length:2558,widthFt:70}
+  ],
+  K7M1:[
+    {ends:[[-91.36466833,33.62572333],[-91.36499055,33.61471277]],length:4007,widthFt:75}
+  ],
+  K7M2:[
+    {ends:[[-92.09792777,35.86475555],[-92.08274888,35.86420444]],length:4502,widthFt:70}
+  ],
+  K7M3:[
+    {ends:[[-93.535975,34.52818611],[-93.52286388,34.529975]],length:4000,widthFt:75}
+  ],
+  K7M4:[
+    {ends:[[-90.01110472,35.68598752],[-90.00913238,35.69629869]],length:3799,widthFt:75}
+  ],
+  K7M5:[
+    {ends:[[-93.84338333,35.50761777],[-93.83522916,35.51376777]],length:3302,widthFt:75}
+  ],
+  K7M6:[
+    {ends:[[-93.68446611,35.29621861],[-93.67876138,35.30201194]],length:2710,widthFt:60}
+  ],
+  K7M7:[
+    {ends:[[-90.16622777,36.38170833],[-90.16625555,36.37470277]],length:2550,widthFt:50}
+  ],
+  K7M9:[
+    {ends:[[-91.83327472,36.35149888],[-91.82863416,36.36031694]],length:3489,widthFt:50}
+  ],
+  K7MO1:[
+    {ends:[[-91.70880833,39.47748888],[-91.70926111,39.46871111]],length:3200,widthFt:100}
+  ],
+  K7MO5:[
+    {ends:[[-92.207611,36.562628],[-92.202225,36.556957]],length:2600,widthFt:30}
+  ],
+  K7MO7:[
+    {ends:[[-94.21028888,37.39615],[-94.2089,37.40333333]],length:2646,widthFt:60}
+  ],
+  K7MO8:[
+    {ends:[[-94.50859,38.144324],[-94.508933,38.137273]],length:2570,widthFt:30}
+  ],
+  K80AR:[
+    {ends:[[-90.73333055,34.41138888],[-90.72542369,34.4171165]],length:3168,widthFt:80}
+  ],
+  K80LA:[
+    {ends:[[-92.17769444,31.21963888],[-92.17052777,31.21644444]],length:2524,widthFt:150}
+  ],
+  K80MO:[
+    {ends:[[-94.35609166,37.27819722],[-94.34748888,37.27475277]],length:2800,widthFt:100}
+  ],
+  K81AR:[
+    {ends:[[-90.73076388,35.92138055],[-90.72866111,35.91703611]],length:1700,widthFt:75}
+  ],
+  K82AR:[
+    {ends:[[-90.759454,34.541074],[-90.759376,34.533198]],length:2867,widthFt:100}
+  ],
+  K87K:[
+    {ends:[[-94.00332777,37.85361944],[-93.9949,37.85972222]],length:3295,widthFt:50},
+    {ends:[[-93.995425,37.86111111],[-93.995825,37.85444444]],length:2430,widthFt:50}
+  ],
+  K89MO:[
+    {ends:[[-94.58391944,38.58291666],[-94.58378055,38.57589166]],length:2560,widthFt:40}
+  ],
+  K8M2:[
+    {ends:[[-90.91425555,35.58710833],[-90.91308611,35.59343888]],length:2330,widthFt:160}
+  ],
+  K8MO1:[
+    {ends:[[-93.35222222,37.40680555],[-93.35055555,37.40333333]],length:1354,widthFt:100}
+  ],
+  K8MO3:[
+    {ends:[[-93.94583611,39.32598055],[-93.93806111,39.32604444]],length:2200,widthFt:80},
+    {ends:[[-93.93924444,39.32965833],[-93.93934166,39.32279722]],length:2500,widthFt:80}
+  ],
+  K8MO4:[
+    {ends:[[-90.46978191,37.39449191],[-90.46775,37.39869444]],length:1640,widthFt:75}
+  ],
+  K8TA9:[
+    {ends:[[-92.06194166,30.64436388],[-92.05538055,30.64326944]],length:2100,widthFt:125}
+  ],
+  K8WC:[
+    {ends:[[-90.73372097,37.92399619],[-90.72924705,37.93439427]],length:4000,widthFt:60}
+  ],
+  K90AR:[
+    {ends:[[-90.79480355,35.73425402],[-90.79496666,35.727525]],length:2450,widthFt:23}
+  ],
+  K91AS:[
+    {ends:[[-90.992293,34.147529],[-90.992243,34.140953]],length:2393,widthFt:100}
+  ],
+  K92MU:[
+    {ends:[[-94.60615555,39.41186944],[-94.60630555,39.40638055]],length:2000,widthFt:60}
+  ],
+  K93M:[
+    {ends:[[-91.594746,39.852575],[-91.594884,39.845572]],length:2551,widthFt:45}
+  ],
+  K93MO:[
+    {ends:[[-91.12992222,37.20648055],[-91.11670277,37.20008055]],length:4500,widthFt:75}
+  ],
+  K94K:[
+    {ends:[[-93.90666305,36.69737747],[-93.89438747,36.69743288]],length:3599,widthFt:60}
+  ],
+  K95MO:[
+    {ends:[[-93.74436788,36.55375163],[-93.74354302,36.55753938]],length:1400,widthFt:70}
+  ],
+  K98LS:[
+    {ends:[[-92.72152777,30.43801388],[-92.72163888,30.43113888]],length:2501,widthFt:80}
+  ],
+  K99A:[
+    {ends:[[-91.95875,34.41142777],[-91.95875,34.40098888]],length:3800,widthFt:75}
+  ],
+  K9AR1:[
+    {ends:[[-93.51861111,34.93694444],[-93.51583333,34.93]],length:2661,widthFt:70}
+  ],
+  K9AR9:[
+    {ends:[[-90.90982283,35.82403394],[-90.90616111,35.82991388]],length:2400,widthFt:21}
+  ],
+  K9M6:[
+    {ends:[[-91.40364166,32.85285833],[-91.40446944,32.84243888]],length:3799,widthFt:75}
+  ],
+  K9M8:[
+    {ends:[[-92.35246263,34.32322683],[-92.35018355,34.33182102]],length:3202,widthFt:75}
+  ],
+  KACP:[
+    {ends:[[-92.6884263,30.75738102],[-92.68855552,30.74363638]],length:5000,widthFt:75}
+  ],
+  KADF:[
+    {ends:[[-93.07163836,34.09472847],[-93.06053261,34.10490547]],length:5002,widthFt:75}
+  ],
+  KAEX:[
+    {ends:[[-92.55922686,31.33787736],[-92.54161172,31.31708486]],length:9352,widthFt:150},
+    {ends:[[-92.54431797,31.33673],[-92.54781755,31.31772025]],length:7001,widthFt:150}
+  ],
+  KAGO:[
+    {ends:[[-93.21673786,33.23434336],[-93.21724547,33.22058975]],length:5007,widthFt:100}
+  ],
+  KAIZ:[
+    {ends:[[-92.556284,38.08891127],[-92.54267419,38.10314408]],length:6497,widthFt:100}
+  ],
+  KAN37:[
+    {ends:[[-90.651895,35.784908],[-90.652015,35.779616]],length:1927,widthFt:60}
+  ],
+  KAOV:[
+    {ends:[[-92.68615911,36.97556808],[-92.6777315,36.96822747]],length:3634,widthFt:50}
+  ],
+  KAPS:[
+    {ends:[[-90.5839308,30.09448469],[-90.58171461,30.08045469]],length:5151,widthFt:75}
+  ],
+  KARA:[
+    {ends:[[-91.88662694,30.04849483],[-91.88115744,30.02701347]],length:8002,widthFt:200},
+    {ends:[[-91.88934722,30.04236111],[-91.88595555,30.02893333]],length:5000,widthFt:150}
+  ],
+  KARG:[
+    {ends:[[-90.93366319,36.11356369],[-90.91928513,36.12520958]],length:6001,widthFt:150},
+    {ends:[[-90.93125636,36.13464261],[-90.91928372,36.12492011]],length:5003,widthFt:150},
+    {ends:[[-90.92326963,36.13273477],[-90.92328058,36.11899761]],length:5001,widthFt:150}
+  ],
+  KAS04:[
+    {ends:[[-90.998865,34.567297],[-90.998879,34.565115]],length:794,widthFt:100}
+  ],
+  KAS11:[
+    {ends:[[-90.81166666,34.44861111],[-90.80333333,34.44611111]],length:2672,widthFt:80}
+  ],
+  KAS31:[
+    {ends:[[-90.52661666,35.84400555],[-90.52654722,35.83774444]],length:2280,widthFt:20}
+  ],
+  KAS91:[
+    {ends:[[-91.002473,34.292608],[-90.988958,34.292515]],length:4082,widthFt:100}
+  ],
+  KASD:[
+    {ends:[[-89.82086536,30.35321975],[-89.82073288,30.33946838]],length:5002,widthFt:100}
+  ],
+  KASG:[
+    {ends:[[-94.11813855,36.18362613],[-94.12035675,36.16917433]],length:5302,widthFt:76}
+  ],
+  KAWM:[
+    {ends:[[-90.23434927,35.14330494],[-90.23454377,35.1268125]],length:6003,widthFt:100}
+  ],
+  KBAD:[
+    {ends:[[-93.67174722,32.51612222],[-93.65350833,32.48774166]],length:11758,widthFt:299}
+  ],
+  KBBG:[
+    {ends:[[-93.20751138,36.54011694],[-93.19357944,36.52404833]],length:7140,widthFt:150}
+  ],
+  KBDQ:[
+    {ends:[[-92.72039372,35.13627836],[-92.70702275,35.13618863]],length:3998,widthFt:75}
+  ],
+  KBPK:[
+    {ends:[[-92.47719013,36.36469336],[-92.46384847,36.37319111]],length:5000,widthFt:75}
+  ],
+  KBQP:[
+    {ends:[[-91.88239694,32.76136252],[-91.87873366,32.75080897]],length:4002,widthFt:100}
+  ],
+  KBTR:[
+    {ends:[[-91.15741847,30.52454333],[-91.1410298,30.53950877]],length:7500,widthFt:150},
+    {ends:[[-91.14987741,30.52863419],[-91.14157408,30.53621269]],length:3799,widthFt:75},
+    {ends:[[-91.16089952,30.54073438],[-91.1447545,30.52748458]],length:7005,widthFt:150}
+  ],
+  KBUM:[
+    {ends:[[-94.33989611,38.29525458],[-94.34035952,38.28427994]],length:3999,widthFt:75}
+  ],
+  KBVX:[
+    {ends:[[-91.66113091,35.72307019],[-91.64123077,35.72598905]],length:6002,widthFt:150},
+    {ends:[[-91.63941288,35.73365191],[-91.63957552,35.72595122]],length:2804,widthFt:60}
+  ],
+  KBXA:[
+    {ends:[[-89.86457291,30.82056388],[-89.86533636,30.80682836]],length:5002,widthFt:100}
+  ],
+  KBYH:[
+    {ends:[[-89.94395361,35.98027825],[-89.94395488,35.9484095]],length:11602,widthFt:150}
+  ],
+  KCCA:[
+    {ends:[[-92.45658163,35.60145361],[-92.44660427,35.59405266]],length:4007,widthFt:60}
+  ],
+  KCDH:[
+    {ends:[[-92.76507805,33.6139753],[-92.76171172,33.63161927]],length:6502,widthFt:100}
+  ],
+  KCGI:[
+    {ends:[[-89.57283683,37.22080188],[-89.56787166,37.231036]],length:3997,widthFt:100},
+    {ends:[[-89.58174861,37.22737513],[-89.560269,37.22251191]],length:6500,widthFt:150}
+  ],
+  KCHQ:[
+    {ends:[[-89.35963416,36.8465375],[-89.35966472,36.83775972]],length:3196,widthFt:60}
+  ],
+  KCHT:[
+    {ends:[[-93.49957441,39.77752327],[-93.49413741,39.78617602]],length:3503,widthFt:110},
+    {ends:[[-93.49982475,39.78644288],[-93.49153369,39.77786275]],length:3899,widthFt:75}
+  ],
+  KCOU:[
+    {ends:[[-92.22372608,38.80521497],[-92.21423375,38.82412991]],length:7401,widthFt:150},
+    {ends:[[-92.22296763,38.82723477],[-92.20941797,38.81647894]],length:5500,widthFt:100}
+  ],
+  KCRT:[
+    {ends:[[-91.88660891,33.17407494],[-91.87375236,33.18259947]],length:5010,widthFt:75}
+  ],
+  KCVK:[
+    {ends:[[-91.56800347,36.25927352],[-91.55734272,36.2705068]],length:5158,widthFt:75}
+  ],
+  KCWF:[
+    {ends:[[-93.15050163,30.22385813],[-93.13587841,30.19731558]],length:10702,widthFt:200}
+  ],
+  KCXW:[
+    {ends:[[-92.56157022,35.01451208],[-92.54863972,35.02524472]],length:5500,widthFt:100}
+  ],
+  KDEQ:[
+    {ends:[[-94.40756788,34.04621127],[-94.39116586,34.04777452]],length:5001,widthFt:75}
+  ],
+  KDMO:[
+    {ends:[[-93.18599458,38.70167047],[-93.1759605,38.70728661]],length:3519,widthFt:50},
+    {ends:[[-93.17237744,38.71683041],[-93.17294516,38.70173619]],length:5500,widthFt:100}
+  ],
+  KDRI:[
+    {ends:[[-93.3475805,30.83744425],[-93.33798727,30.82932386]],length:4218,widthFt:60},
+    {ends:[[-93.3378015,30.83799941],[-93.33762638,30.82289497]],length:5494,widthFt:100}
+  ],
+  KDRP:[
+    {ends:[[-90.82640236,35.12692352],[-90.82660061,35.11318086]],length:5003,widthFt:75}
+  ],
+  KDTN:[
+    {ends:[[-93.74776527,32.53773936],[-93.73656308,32.54430322]],length:4198,widthFt:75},
+    {ends:[[-93.75042958,32.54596052],[-93.74003811,32.53534791]],length:5016,widthFt:150}
+  ],
+  KDXE:[
+    {ends:[[-89.94097777,36.78228333],[-89.94153888,36.76855833]],length:5000,widthFt:100}
+  ],
+  KEIW:[
+    {ends:[[-89.59974166,36.53970277],[-89.59970555,36.53091388]],length:3200,widthFt:60}
+  ],
+  KELD:[
+    {ends:[[-92.81876411,33.21394102],[-92.80325866,33.22655941]],length:6601,widthFt:150},
+    {ends:[[-92.81850338,33.22755125],[-92.80690352,33.2174808]],length:5100,widthFt:100}
+  ],
+  KEOS:[
+    {ends:[[-94.39348463,36.80407933],[-94.38992672,36.81751488]],length:5001,widthFt:100}
+  ],
+  KESF:[
+    {ends:[[-92.306,31.39443833],[-92.28677972,31.39418875]],length:5998,widthFt:150},
+    {ends:[[-92.30027027,31.40183527],[-92.28995491,31.38923694]],length:5600,widthFt:150}
+  ],
+  KEVU:[
+    {ends:[[-94.920975,40.35866111],[-94.91229583,40.34792133]],length:4600,widthFt:75}
+  ],
+  KEZZ:[
+    {ends:[[-94.27705644,39.73302527],[-94.27570047,39.72209386]],length:4000,widthFt:75}
+  ],
+  KF43:[
+    {ends:[[-92.66326666,33.19537222],[-92.66318333,33.18712777]],length:3000,widthFt:60}
+  ],
+  KF86:[
+    {ends:[[-92.05573744,32.1174588],[-92.05327869,32.1268515]],length:3501,widthFt:75}
+  ],
+  KF87:[
+    {ends:[[-92.3385468,32.72878111],[-92.33577463,32.72086833]],length:3003,widthFt:75}
+  ],
+  KF88:[
+    {ends:[[-92.73300702,32.20639852],[-92.73286002,32.19759183]],length:3204,widthFt:75}
+  ],
+  KF89:[
+    {ends:[[-91.69854294,32.15715494],[-91.698604,32.1489075]],length:3001,widthFt:75}
+  ],
+  KFAM:[
+    {ends:[[-90.43168183,37.75546125],[-90.42565358,37.76632286]],length:4323,widthFt:75}
+  ],
+  KFCY:[
+    {ends:[[-90.77487833,34.94613777],[-90.77505416,34.93785861]],length:3014,widthFt:50}
+  ],
+  KFLP:[
+    {ends:[[-92.59686588,36.28658747],[-92.58364277,36.2951938]],length:5001,widthFt:75}
+  ],
+  KFSM:[
+    {ends:[[-94.36930586,35.33225838],[-94.36324977,35.34507108]],length:5001,widthFt:150},
+    {ends:[[-94.38145322,35.33360602],[-94.35058213,35.33751977]],length:9318,widthFt:150}
+  ],
+  KFTT:[
+    {ends:[[-92.00824197,38.83765575],[-91.99880116,38.84243147]],length:3203,widthFt:60},
+    {ends:[[-92.00901441,38.8417455],[-92.00174066,38.83796338]],length:2488,widthFt:100},
+    {ends:[[-91.99986919,38.84099436],[-92.00033994,38.83001608]],length:4001,widthFt:75}
+  ],
+  KFWB:[
+    {ends:[[-93.40729155,36.69295733],[-93.39720977,36.70403847]],length:5002,widthFt:75}
+  ],
+  KFYG:[
+    {ends:[[-90.99762975,38.59375963],[-90.98997569,38.58141013]],length:5002,widthFt:75}
+  ],
+  KFYV:[
+    {ends:[[-94.17200955,36.01318969],[-94.16811741,35.99700141]],length:6005,widthFt:100}
+  ],
+  KGAO:[
+    {ends:[[-90.26101338,29.45004108],[-90.26122369,29.43216763]],length:6500,widthFt:100}
+  ],
+  KGLY:[
+    {ends:[[-93.68910477,38.35268211],[-93.67924952,38.360459]],length:4001,widthFt:60},
+    {ends:[[-93.67491861,38.36006444],[-93.67546844,38.34634222]],length:5000,widthFt:75}
+  ],
+  KGPH:[
+    {ends:[[-94.30844202,39.34000147],[-94.31085377,39.32501413]],length:5502,widthFt:100}
+  ],
+  KH17:[
+    {ends:[[-93.09013333,37.65042777],[-93.08386111,37.657725]],length:3220,widthFt:50}
+  ],
+  KH19:[
+    {ends:[[-91.22432061,39.37377758],[-91.21623888,39.36761522]],length:3203,widthFt:75}
+  ],
+  KH34:[
+    {ends:[[-93.75524722,36.07735555],[-93.75266944,36.080075]],length:1250,widthFt:60},
+    {ends:[[-93.76004547,36.08086647],[-93.75001705,36.07524791]],length:3601,widthFt:60}
+  ],
+  KH35:[
+    {ends:[[-93.43469283,35.47119183],[-93.41962152,35.47016383]],length:4504,widthFt:75}
+  ],
+  KH57:[
+    {ends:[[-90.61711388,37.76160277],[-90.61652222,37.75598888]],length:2050,widthFt:50}
+  ],
+  KH58:[
+    {ends:[[-92.73841111,37.18615555],[-92.73569444,37.18194444]],length:1725,widthFt:25}
+  ],
+  KH79:[
+    {ends:[[-92.57106486,38.36707122],[-92.57157036,38.35609638]],length:4000,widthFt:75}
+  ],
+  KH88:[
+    {ends:[[-90.28921702,37.60031786],[-90.28574722,37.61094786]],length:4000,widthFt:75}
+  ],
+  KHAE:[
+    {ends:[[-91.44523908,39.7311068],[-91.44246288,39.71921955]],length:4400,widthFt:100}
+  ],
+  KHBZ:[
+    {ends:[[-92.01880555,35.50890833],[-92.00721388,35.51447777]],length:4002,widthFt:75}
+  ],
+  KHDC:[
+    {ends:[[-90.42514708,30.52792711],[-90.41042263,30.51539527]],length:6502,widthFt:100},
+    {ends:[[-90.41921947,30.52859633],[-90.41908838,30.51484669]],length:5001,widthFt:150}
+  ],
+  KHEE:[
+    {ends:[[-90.67791302,34.5722973],[-90.66791208,34.57228627]],length:3011,widthFt:60},
+    {ends:[[-90.67761519,34.58589011],[-90.67774858,34.57215125]],length:5001,widthFt:100}
+  ],
+  KHFJ:[
+    {ends:[[-94.01387105,36.91336655],[-94.01446191,36.89689227]],length:6001,widthFt:100}
+  ],
+  KHIG:[
+    {ends:[[-93.67930555,39.07830555],[-93.67541666,39.06661111]],length:4400,widthFt:75}
+  ],
+  KHKA:[
+    {ends:[[-89.83096111,35.94728333],[-89.83063627,35.93354469]],length:5002,widthFt:75}
+  ],
+  KHOT:[
+    {ends:[[-93.10626363,34.47302086],[-93.08850091,34.48360236]],length:6595,widthFt:150},
+    {ends:[[-93.09925527,34.48148041],[-93.08951847,34.47362277]],length:4098,widthFt:100}
+  ],
+  KHRO:[
+    {ends:[[-93.15372255,36.26993772],[-93.15574227,36.25309466]],length:6161,widthFt:150}
+  ],
+  KHUM:[
+    {ends:[[-90.66699058,29.57110511],[-90.65416125,29.56315533]],length:4999,widthFt:185},
+    {ends:[[-90.66025236,29.57496788],[-90.66037158,29.55707116]],length:6509,widthFt:150}
+  ],
+  KHZR:[
+    {ends:[[-91.478063,30.72517541],[-91.47925883,30.71146083]],length:5003,widthFt:75}
+  ],
+  KIER:[
+    {ends:[[-93.10740916,31.73781666],[-93.09489472,31.74039388]],length:4000,widthFt:60},
+    {ends:[[-93.09945666,31.73966722],[-93.09568888,31.72629444]],length:5003,widthFt:150}
+  ],
+  KIRK:[
+    {ends:[[-92.55008088,40.09780441],[-92.54518452,40.09775852]],length:1370,widthFt:100},
+    {ends:[[-92.54420047,40.10073247],[-92.54438286,40.08425091]],length:6005,widthFt:100}
+  ],
+  KIYA:[
+    {ends:[[-92.08710408,29.98217255],[-92.08134988,29.96937002]],length:5000,widthFt:75}
+  ],
+  KJBR:[
+    {ends:[[-90.6512403,35.82880952],[-90.63516636,35.83970597]],length:6200,widthFt:150},
+    {ends:[[-90.65621,35.83181305],[-90.64636858,35.82390419]],length:4099,widthFt:150}
+  ],
+  KJEF:[
+    {ends:[[-92.16412069,38.59102727],[-92.15222363,38.59084886]],length:3401,widthFt:75},
+    {ends:[[-92.16384469,38.59573541],[-92.14614669,38.58687802]],length:6000,widthFt:100}
+  ],
+  KJLN:[
+    {ends:[[-94.50729358,37.15780897],[-94.49236305,37.14454708]],length:6501,widthFt:150},
+    {ends:[[-94.4974053,37.16407847],[-94.49816936,37.14623327]],length:6502,widthFt:100}
+  ],
+  KK07:[
+    {ends:[[-91.81877972,37.93589666],[-91.80829777,37.935425]],length:3028,widthFt:38}
+  ],
+  KK15:[
+    {ends:[[-92.68396141,38.11392627],[-92.67715527,38.10696061]],length:3205,widthFt:60}
+  ],
+  KK19:[
+    {ends:[[-94.34022222,40.25775555],[-94.33780833,40.26662777]],length:3300,widthFt:50}
+  ],
+  KK26:[
+    {ends:[[-93.50650066,39.31574663],[-93.50659597,39.30860713]],length:2600,widthFt:50}
+  ],
+  KK33:[
+    {ends:[[-91.60556002,37.61924813],[-91.60332194,37.61121075]],length:2998,widthFt:60}
+  ],
+  KK43:[
+    {ends:[[-93.02613333,40.54403055],[-93.02490277,40.53638611]],length:2805,widthFt:49}
+  ],
+  KK52:[
+    {ends:[[-91.73323222,39.63457111],[-91.72075666,39.63425027]],length:3515,widthFt:50}
+  ],
+  KK57:[
+    {ends:[[-95.3672213,40.4504293],[-95.36739161,40.44054891]],length:3600,widthFt:75}
+  ],
+  KK89:[
+    {ends:[[-92.45921461,39.72444808],[-92.4542103,39.7351655]],length:4150,widthFt:75}
+  ],
+  KL31:[
+    {ends:[[-89.98890366,30.44917613],[-89.98888411,30.44091638]],length:3004,widthFt:75}
+  ],
+  KL32:[
+    {ends:[[-91.83844166,31.61816111],[-91.83014166,31.62235277]],length:3000,widthFt:75}
+  ],
+  KL33:[
+    {ends:[[-91.24062777,31.97776388],[-91.23683888,31.968675]],length:3509,widthFt:75}
+  ],
+  KL39:[
+    {ends:[[-93.34245188,31.17341988],[-93.34246841,31.16295383]],length:3807,widthFt:75}
+  ],
+  KL66:[
+    {ends:[[-92.46117394,31.48366605],[-92.46117522,31.47129955]],length:4499,widthFt:75}
+  ],
+  KL83:[
+    {ends:[[-90.83760472,29.74732222],[-90.82821611,29.74825083]],length:2999,widthFt:75}
+  ],
+  KLA03:[
+    {ends:[[-92.336875,30.43527777],[-92.33052777,30.43527777]],length:2000,widthFt:60}
+  ],
+  KLA04:[
+    {ends:[[-91.80938611,31.94404166],[-91.80063888,31.94486944]],length:2730,widthFt:90}
+  ],
+  KLA11:[
+    {ends:[[-93.96123611,32.79097222],[-93.95184722,32.79186111]],length:2900,widthFt:50}
+  ],
+  KLA17:[
+    {ends:[[-92.66266666,31.48514444],[-92.66008333,31.47922222]],length:2300,widthFt:65}
+  ],
+  KLA35:[
+    {ends:[[-92.42534722,31.16314166],[-92.418,31.16044444]],length:2500,widthFt:100}
+  ],
+  KLA41:[
+    {ends:[[-91.94353611,30.31267222],[-91.93631666,30.30868888]],length:2700,widthFt:150}
+  ],
+  KLA46:[
+    {ends:[[-91.31194444,30.50359722],[-91.30302777,30.50933333]],length:3500,widthFt:250}
+  ],
+  KLA52:[
+    {ends:[[-92.58511111,30.36513888],[-92.58097222,30.37226388]],length:2900,widthFt:120}
+  ],
+  KLA89:[
+    {ends:[[-90.63825277,29.71837777],[-90.63493333,29.73012222]],length:4400,widthFt:60}
+  ],
+  KLA90:[
+    {ends:[[-92.42945277,30.29465555],[-92.42249166,30.29453888]],length:2197,widthFt:110}
+  ],
+  KLBO:[
+    {ends:[[-92.65217527,37.65518413],[-92.65268633,37.64145955]],length:5000,widthFt:75}
+  ],
+  KLCH:[
+    {ends:[[-93.22974427,30.12849908],[-93.21679777,30.13732005]],length:5200,widthFt:100},
+    {ends:[[-93.22792058,30.12872119],[-93.21913158,30.11256347]],length:6500,widthFt:150}
+  ],
+  KLFT:[
+    {ends:[[-91.99251658,30.20161247],[-91.98439211,30.21039552]],length:4098,widthFt:75},
+    {ends:[[-91.9937368,30.1958953],[-91.97788244,30.21304841]],length:8000,widthFt:150},
+    {ends:[[-91.99813558,30.20764794],[-91.98206569,30.20256475]],length:5403,widthFt:150}
+  ],
+  KLIT:[
+    {ends:[[-92.23802336,34.72251236],[-92.21804916,34.73815455]],length:8273,widthFt:150},
+    {ends:[[-92.22121938,34.7193865],[-92.20129519,34.73498522]],length:8251,widthFt:150},
+    {ends:[[-92.23809425,34.73979011],[-92.23863986,34.72269575]],length:6224,widthFt:150}
+  ],
+  KLLQ:[
+    {ends:[[-91.75535113,33.63269169],[-91.74665033,33.64441141]],length:5020,widthFt:75}
+  ],
+  KLLU:[
+    {ends:[[-94.31419413,37.48613961],[-94.30881144,37.49284838]],length:2900,widthFt:60},
+    {ends:[[-94.31364625,37.488804],[-94.31111725,37.47800738]],length:4000,widthFt:75}
+  ],
+  KLRF:[
+    {ends:[[-92.1654775,34.91140766],[-92.12763105,34.922144]],length:12001,widthFt:150},
+    {ends:[[-92.14472222,34.91861111],[-92.13416666,34.92166666]],length:3354,widthFt:60}
+  ],
+  KLRY:[
+    {ends:[[-94.34387683,38.61568433],[-94.343179,38.60471563]],length:4000,widthFt:75}
+  ],
+  KLS08:[
+    {ends:[[-90.75842777,29.47254722],[-90.75556944,29.46327777]],length:3491,widthFt:100}
+  ],
+  KLS09:[
+    {ends:[[-92.33333055,30.14607777],[-92.33332222,30.13948055]],length:2400,widthFt:150}
+  ],
+  KLS21:[
+    {ends:[[-92.18502777,30.26988888],[-92.18502777,30.26301388]],length:2500,widthFt:100}
+  ],
+  KLS26:[
+    {ends:[[-90.31161111,30.63616388],[-90.30366666,30.63615]],length:2503,widthFt:50}
+  ],
+  KLS46:[
+    {ends:[[-92.81283888,30.86206666],[-92.81186111,30.85496666]],length:2600,widthFt:75}
+  ],
+  KLS59:[
+    {ends:[[-90.83036944,29.58870555],[-90.82619444,29.58352222]],length:2325,widthFt:200},
+    {ends:[[-90.82611111,29.59305555],[-90.82611111,29.58472222]],length:3031,widthFt:210}
+  ],
+  KLS70:[
+    {ends:[[-92.73692777,30.34597777],[-92.73683888,30.335325]],length:3875,widthFt:120}
+  ],
+  KLS84:[
+    {ends:[[-89.62642222,29.4478],[-89.62099166,29.45064722]],length:2015,widthFt:20}
+  ],
+  KLS87:[
+    {ends:[[-89.47736666,29.33542777],[-89.47575833,29.32813611]],length:2700,widthFt:75}
+  ],
+  KLS88:[
+    {ends:[[-92.32805555,30.45194444],[-92.32416666,30.4475]],length:2029,widthFt:75}
+  ],
+  KLXT:[
+    {ends:[[-94.37548872,38.96038683],[-94.36257911,38.95602608]],length:4000,widthFt:75},
+    {ends:[[-94.37340327,38.96728147],[-94.37454688,38.95220586]],length:5501,widthFt:100}
+  ],
+  KM05:[
+    {ends:[[-89.67655797,36.1746235],[-89.67640388,36.16362802]],length:4003,widthFt:75}
+  ],
+  KM12:[
+    {ends:[[-89.85947536,36.10108283],[-89.85946444,36.0901405]],length:3984,widthFt:60}
+  ],
+  KM17:[
+    {ends:[[-93.34777516,37.60132725],[-93.34830427,37.59035061]],length:4000,widthFt:75}
+  ],
+  KM18:[
+    {ends:[[-93.66949444,33.71476944],[-93.65661111,33.72458333]],length:5301,widthFt:100},
+    {ends:[[-93.65686325,33.72765347],[-93.6529478,33.71289613]],length:5501,widthFt:100}
+  ],
+  KM19:[
+    {ends:[[-91.18318416,35.62996055],[-91.17148972,35.63984472]],length:5002,widthFt:150},
+    {ends:[[-91.1752845,35.64741216],[-91.17558386,35.6336723]],length:5002,widthFt:150}
+  ],
+  KM27:[
+    {ends:[[-94.11497188,34.87615127],[-94.1028108,34.87585486]],length:3650,widthFt:60}
+  ],
+  KM28:[
+    {ends:[[-89.72889444,36.22894444],[-89.72875,36.21955]],length:3420,widthFt:175}
+  ],
+  KM32:[
+    {ends:[[-91.31729669,33.34065136],[-91.31384191,33.35238966]],length:4400,widthFt:75}
+  ],
+  KM36:[
+    {ends:[[-91.17934291,34.87533111],[-91.1735303,34.88522913]],length:4002,widthFt:75}
+  ],
+  KM48:[
+    {ends:[[-91.9740385,37.33498161],[-91.9723033,37.32547066]],length:3500,widthFt:60}
+  ],
+  KM60:[
+    {ends:[[-91.27668888,35.27197277],[-91.26397222,35.27183611]],length:3797,widthFt:75}
+  ],
+  KM70:[
+    {ends:[[-90.95511891,36.25099083],[-90.95529625,36.24000586]],length:4000,widthFt:75}
+  ],
+  KM71:[
+    {ends:[[-90.966,38.90191666],[-90.95465,38.90163333]],length:3227,widthFt:50}
+  ],
+  KM73:[
+    {ends:[[-91.46754333,34.41544655],[-91.45796441,34.41322697]],length:3000,widthFt:50},
+    {ends:[[-91.46744122,34.41568513],[-91.46755183,34.40608466]],length:3494,widthFt:60}
+  ],
+  KM74:[
+    {ends:[[-91.56054166,35.29663888],[-91.55610833,35.30019166]],length:1850,widthFt:100},
+    {ends:[[-91.56086944,35.30057222],[-91.55342222,35.30011944]],length:2228,widthFt:50}
+  ],
+  KM77:[
+    {ends:[[-93.83944944,33.99183947],[-93.83671027,34.00257377]],length:3994,widthFt:75}
+  ],
+  KM78:[
+    {ends:[[-92.764735,34.32985638],[-92.75826083,34.33677777]],length:3188,widthFt:60}
+  ],
+  KM79:[
+    {ends:[[-91.77214788,32.49082316],[-91.77256947,32.47984152]],length:3998,widthFt:75}
+  ],
+  KM80:[
+    {ends:[[-91.1492173,32.419922],[-91.14919638,32.41266141]],length:2642,widthFt:140},
+    {ends:[[-91.14873913,32.420366],[-91.14871266,32.41211111]],length:3003,widthFt:75}
+  ],
+  KM85:[
+    {ends:[[-89.90765805,36.44910333],[-89.90000111,36.43839138]],length:4504,widthFt:58}
+  ],
+  KMAW:[
+    {ends:[[-89.99757316,36.60075597],[-89.985666,36.5909348]],length:5001,widthFt:80},
+    {ends:[[-89.99338427,36.60743838],[-89.99356855,36.59367738]],length:5010,widthFt:100}
+  ],
+  KMBY:[
+    {ends:[[-92.43252647,39.46197938],[-92.42304258,39.46750738]],length:3350,widthFt:60},
+    {ends:[[-92.43143094,39.46650158],[-92.41781083,39.45772997]],length:5000,widthFt:75}
+  ],
+  KMCI:[
+    {ends:[[-94.72931758,39.29333413],[-94.72077319,39.32223322]],length:10801,widthFt:150},
+    {ends:[[-94.70899819,39.28145391],[-94.7014785,39.30687136]],length:9500,widthFt:150},
+    {ends:[[-94.72659363,39.29086083],[-94.69322161,39.28807544]],length:9501,widthFt:150}
+  ],
+  KMEZ:[
+    {ends:[[-94.20638333,34.54295277],[-94.18818461,34.54237886]],length:5485,widthFt:100},
+    {ends:[[-94.20899605,34.55545752],[-94.20709538,34.54180866]],length:5001,widthFt:75}
+  ],
+  KMHL:[
+    {ends:[[-93.21260927,39.09657136],[-93.20102977,39.09566627]],length:3303,widthFt:150},
+    {ends:[[-93.2003305,39.10192508],[-93.20062691,39.08818622]],length:5005,widthFt:75}
+  ],
+  KMKC:[
+    {ends:[[-94.59534716,39.11468872],[-94.59006358,39.13297063]],length:6827,widthFt:150},
+    {ends:[[-94.59851291,39.116295],[-94.58745041,39.12715538]],length:5050,widthFt:100}
+  ],
+  KMKV:[
+    {ends:[[-92.07332777,31.09094241],[-92.06478919,31.09836408]],length:3799,widthFt:75}
+  ],
+  KMLU:[
+    {ends:[[-92.04564947,32.50385325],[-92.02842697,32.5184285]],length:7504,widthFt:150},
+    {ends:[[-92.04162063,32.51649519],[-92.02849177,32.50322166]],length:6301,widthFt:150}
+  ],
+  KMNE:[
+    {ends:[[-93.30035188,32.6394153],[-93.2958275,32.65262497]],length:5004,widthFt:75}
+  ],
+  KMNF:[
+    {ends:[[-91.72291933,36.99392563],[-91.70600613,36.99172102]],length:5005,widthFt:75}
+  ],
+  KMO00:[
+    {ends:[[-93.66339722,36.59763333],[-93.66423333,36.58680277]],length:3950,widthFt:80}
+  ],
+  KMO01:[
+    {ends:[[-93.10686388,37.25414444],[-93.10694722,37.24738611]],length:2460,widthFt:30}
+  ],
+  KMO04:[
+    {ends:[[-93.64016388,36.55967222],[-93.63836388,36.56395555]],length:1648,widthFt:130}
+  ],
+  KMO06:[
+    {ends:[[-93.54121111,36.61997777],[-93.53867222,36.62477777]],length:1900,widthFt:50}
+  ],
+  KMO1:[
+    {ends:[[-92.41143611,37.87802222],[-92.40465555,37.87177777]],length:3000,widthFt:60}
+  ],
+  KMO11:[
+    {ends:[[-91.587475,39.40074444],[-91.57830833,39.40014444]],length:2600,widthFt:60}
+  ],
+  KMO15:[
+    {ends:[[-93.14291111,37.3727],[-93.1431,37.3694]],length:1204,widthFt:50}
+  ],
+  KMO17:[
+    {ends:[[-95.64855555,40.48339444],[-95.64856944,40.47751944]],length:2140,widthFt:50}
+  ],
+  KMO18:[
+    {ends:[[-93.09625,37.12283055],[-93.08801388,37.12267777]],length:2400,widthFt:60}
+  ],
+  KMO2:[
+    {ends:[[-93.13295,37.17343333],[-93.12518333,37.17698333]],length:2640,widthFt:70}
+  ],
+  KMO22:[
+    {ends:[[-94.5533088,37.19607913],[-94.54731666,37.18938333]],length:3000,widthFt:60}
+  ],
+  KMO23:[
+    {ends:[[-92.52848055,38.64418611],[-92.52971944,38.63767222]],length:2400,widthFt:50}
+  ],
+  KMO29:[
+    {ends:[[-94.33346944,38.77446111],[-94.33393333,38.76925833]],length:1900,widthFt:40}
+  ],
+  KMO3:[
+    {ends:[[-93.81832625,37.65624088],[-93.81533455,37.66429911]],length:3060,widthFt:50}
+  ],
+  KMO30:[
+    {ends:[[-92.81571944,38.26840555],[-92.807775,38.27150277]],length:2545,widthFt:45}
+  ],
+  KMO31:[
+    {ends:[[-93.07375555,37.048075],[-93.07195277,37.05193333]],length:1500,widthFt:35}
+  ],
+  KMO33:[
+    {ends:[[-94.25431388,37.12657777],[-94.252125,37.13287222]],length:2380,widthFt:60}
+  ],
+  KMO39:[
+    {ends:[[-91.04526944,39.11385555],[-91.03774444,39.10931666]],length:2700,widthFt:75}
+  ],
+  KMO43:[
+    {ends:[[-91.44457222,38.96517222],[-91.44203888,38.97223055]],length:2670,widthFt:50}
+  ],
+  KMO46:[
+    {ends:[[-91.17293611,39.51743888],[-91.17091944,39.52172222]],length:1660,widthFt:60}
+  ],
+  KMO48:[
+    {ends:[[-91.423925,38.33840555],[-91.41884722,38.33621111]],length:1661,widthFt:40}
+  ],
+  KMO49:[
+    {ends:[[-94.57860277,36.97265555],[-94.57588333,36.96597222]],length:2560,widthFt:40}
+  ],
+  KMO5:[
+    {ends:[[-91.00898611,37.00624444],[-91.00480555,37.01255277]],length:2600,widthFt:50}
+  ],
+  KMO51:[
+    {ends:[[-94.85032222,39.42651666],[-94.84493333,39.42145833]],length:2390,widthFt:33}
+  ],
+  KMO61:[
+    {ends:[[-92.74299166,39.52441666],[-92.74063888,39.52436111]],length:664,widthFt:50}
+  ],
+  KMO66:[
+    {ends:[[-93.14988888,37.05765555],[-93.14070555,37.06032222]],length:2850,widthFt:80}
+  ],
+  KMO71:[
+    {ends:[[-94.42355555,39.46227222],[-94.41364444,39.46186111]],length:2800,widthFt:100},
+    {ends:[[-94.419675,39.46621388],[-94.41776388,39.46236666]],length:1502,widthFt:60},
+    {ends:[[-94.41369444,39.46851388],[-94.41303333,39.45947222]],length:3300,widthFt:100}
+  ],
+  KMO74:[
+    {ends:[[-92.16762777,38.92085],[-92.159225,38.91741666]],length:2700,widthFt:150}
+  ],
+  KMO8:[
+    {ends:[[-93.01261233,39.77823086],[-93.01292147,39.76449975]],length:5002,widthFt:75}
+  ],
+  KMO85:[
+    {ends:[[-92.83689444,37.26904444],[-92.83749166,37.26247222]],length:2400,widthFt:60}
+  ],
+  KMO89:[
+    {ends:[[-90.528825,38.30510833],[-90.52548333,38.30333055]],length:1158,widthFt:100}
+  ],
+  KMO9:[
+    {ends:[[-93.92980277,37.23408333],[-93.93061388,37.22554166]],length:3119,widthFt:150}
+  ],
+  KMO95:[
+    {ends:[[-93.96166111,37.39186666],[-93.958275,37.39603055]],length:1805,widthFt:60}
+  ],
+  KMPJ:[
+    {ends:[[-92.9139398,35.13181944],[-92.90443869,35.14587441]],length:5852,widthFt:75}
+  ],
+  KMSY:[
+    {ends:[[-90.25141525,29.98450127],[-90.24551027,30.0030538]],length:7002,widthFt:150},
+    {ends:[[-90.28172872,29.99662694],[-90.25096808,29.98921436]],length:10104,widthFt:150}
+  ],
+  KMU06:[
+    {ends:[[-92.57889166,39.93183333],[-92.57141111,39.93165277]],length:2100,widthFt:60}
+  ],
+  KMU13:[
+    {ends:[[-94.71676111,40.4713],[-94.71616944,40.46696388]],length:1590,widthFt:80}
+  ],
+  KMU14:[
+    {ends:[[-91.69168055,38.29686111],[-91.68755,38.30227777]],length:2300,widthFt:75}
+  ],
+  KMU22:[
+    {ends:[[-90.19391111,37.69158333],[-90.19462222,37.68577222]],length:2126,widthFt:80}
+  ],
+  KMU26:[
+    {ends:[[-94.56292222,38.77041388],[-94.55507222,38.77127777]],length:2260,widthFt:30}
+  ],
+  KMU38:[
+    {ends:[[-93.135675,40.18019166],[-93.12589444,40.17646944]],length:3050,widthFt:50}
+  ],
+  KMU57:[
+    {ends:[[-92.8176,37.521525],[-92.81625277,37.51562222]],length:2185,widthFt:60}
+  ],
+  KMU62:[
+    {ends:[[-94.59098611,38.56498888],[-94.59114722,38.5617]],length:1200,widthFt:70}
+  ],
+  KMU68:[
+    {ends:[[-91.53596666,38.67108333],[-91.53601388,38.66614166]],length:1800,widthFt:75}
+  ],
+  KMU72:[
+    {ends:[[-90.89891111,38.42395277],[-90.89791111,38.42476388]],length:411,widthFt:50},
+    {ends:[[-90.89997777,38.42472222],[-90.892975,38.42471111]],length:2006,widthFt:90},
+    {ends:[[-90.89983888,38.425425],[-90.89816944,38.42401944]],length:700,widthFt:50},
+    {ends:[[-90.89976111,38.42541944],[-90.89981111,38.42432777]],length:398,widthFt:50}
+  ],
+  KMU73:[
+    {ends:[[-93.29144166,36.9264],[-93.28733611,36.92638888]],length:1200,widthFt:75}
+  ],
+  KMU83:[
+    {ends:[[-91.25052777,38.50725833],[-91.24626666,38.50362222]],length:1800,widthFt:70}
+  ],
+  KMU88:[
+    {ends:[[-90.39971944,36.86061111],[-90.39979444,36.85539444]],length:1900,widthFt:55}
+  ],
+  KMU89:[
+    {ends:[[-91.03926388,38.91181388],[-91.03311944,38.91203888]],length:1750,widthFt:80}
+  ],
+  KMU97:[
+    {ends:[[-93.9303025,39.20691444],[-93.92332916,39.21283527]],length:2925,widthFt:40},
+    {ends:[[-93.93032738,39.21307027],[-93.92275838,39.20692216]],length:3100,widthFt:125},
+    {ends:[[-93.93049861,39.21282555],[-93.93049861,39.20664111]],length:2250,widthFt:125}
+  ],
+  KMU98:[
+    {ends:[[-93.68588888,36.514],[-93.68255555,36.52211111]],length:3111,widthFt:40}
+  ],
+  KMU99:[
+    {ends:[[-91.90305555,38.02583333],[-91.90111111,38.02194444]],length:1523,widthFt:50}
+  ],
+  KMXA:[
+    {ends:[[-90.15453588,35.90021744],[-90.15460511,35.8886768]],length:4201,widthFt:75}
+  ],
+  KMYJ:[
+    {ends:[[-91.82553375,39.15429086],[-91.80785375,39.16050888]],length:5501,widthFt:100},
+    {ends:[[-91.8207965,39.162093],[-91.82113047,39.15331222]],length:3200,widthFt:50}
+  ],
+  KNBG:[
+    {ends:[[-90.03730075,29.82350666],[-90.01528805,29.84319833]],length:10000,widthFt:200},
+    {ends:[[-90.03309658,29.82335213],[-90.02106861,29.81061727]],length:6000,widthFt:200}
+  ],
+  KNEW:[
+    {ends:[[-90.03061794,30.03704894],[-90.0207798,30.0371713]],length:3114,widthFt:75},
+    {ends:[[-90.0276715,30.05018494],[-90.02751622,30.04002038]],length:3697,widthFt:75},
+    {ends:[[-90.02991927,30.05281394],[-90.02963916,30.03390122]],length:6879,widthFt:150}
+  ],
+  KNVD:[
+    {ends:[[-94.30869672,37.84613922],[-94.300971,37.85842675]],length:5000,widthFt:75},
+    {ends:[[-94.30730777,37.85537611],[-94.30103166,37.85032777]],length:2581,widthFt:40}
+  ],
+  KOPL:[
+    {ends:[[-92.10566444,30.55306847],[-92.09449994,30.55861091]],length:4051,widthFt:100},
+    {ends:[[-92.09887211,30.56837477],[-92.09892641,30.55188238]],length:5999,widthFt:100}
+  ],
+  KORK:[
+    {ends:[[-92.25901661,34.82856491],[-92.24533811,34.83641763]],length:5002,widthFt:75},
+    {ends:[[-92.25743461,34.83835338],[-92.25737363,34.83005858]],length:3019,widthFt:75}
+  ],
+  KOZS:[
+    {ends:[[-92.69412638,37.97894625],[-92.68679155,37.9664985]],length:5002,widthFt:75}
+  ],
+  KPBF:[
+    {ends:[[-91.9356378,34.18275419],[-91.93557063,34.16627188]],length:5998,widthFt:150}
+  ],
+  KPCD:[
+    {ends:[[-89.86573736,37.8594843],[-89.85854022,37.87784858]],length:7003,widthFt:100}
+  ],
+  KPGR:[
+    {ends:[[-90.51329027,36.05863558],[-90.50226111,36.06715838]],length:4500,widthFt:75},
+    {ends:[[-90.51621805,36.0652075],[-90.50677333,36.06534638]],length:2792,widthFt:100}
+  ],
+  KPLK:[
+    {ends:[[-93.23451338,36.62838733],[-93.22333238,36.62346891]],length:3738,widthFt:100}
+  ],
+  KPOE:[
+    {ends:[[-93.19383972,31.05010386],[-93.18944513,31.03946147]],length:4107,widthFt:100}
+  ],
+  KPOF:[
+    {ends:[[-90.32464663,36.78081022],[-90.32505869,36.76706025]],length:5008,widthFt:100}
+  ],
+  KPTN:[
+    {ends:[[-91.34386388,29.70441944],[-91.33232861,29.71159444]],length:4500,widthFt:100},
+    {ends:[[-91.34700883,29.70700727],[-91.33241636,29.71462963]],length:5399,widthFt:150}
+  ],
+  KPYN:[
+    {ends:[[-90.71654358,37.12230875],[-90.71051358,37.12996625]],length:3296,widthFt:60}
+  ],
+  KRAW:[
+    {ends:[[-93.34501388,38.35333055],[-93.34576111,38.34236388]],length:4000,widthFt:75}
+  ],
+  KRBM:[
+    {ends:[[-92.30610555,34.840825],[-92.29417777,34.85302222]],length:5702,widthFt:75}
+  ],
+  KRCM:[
+    {ends:[[-93.80349994,38.7804238],[-93.80141886,38.79185508]],length:4206,widthFt:75},
+    {ends:[[-93.8067848,38.78403669],[-93.80010877,38.77839491]],length:2801,widthFt:60}
+  ],
+  KREG:[
+    {ends:[[-90.94156922,30.17816841],[-90.93921694,30.16456447]],length:5003,widthFt:100}
+  ],
+  KROG:[
+    {ends:[[-94.11031541,36.36461119],[-94.10361522,36.38020797]],length:6011,widthFt:100}
+  ],
+  KRSN:[
+    {ends:[[-92.58843358,32.52147283],[-92.58845611,32.50497661]],length:6002,widthFt:100}
+  ],
+  KRUE:[
+    {ends:[[-93.10152972,35.25733213],[-93.0837145,35.26123322]],length:5505,widthFt:75}
+  ],
+  KSET:[
+    {ends:[[-90.43168141,38.93238291],[-90.42465041,38.93231366]],length:2000,widthFt:75},
+    {ends:[[-90.43082613,38.93350841],[-90.43098597,38.92307563]],length:3800,widthFt:75}
+  ],
+  KSGF:[
+    {ends:[[-93.38922911,37.23565102],[-93.38029691,37.25350736]],length:7003,widthFt:150},
+    {ends:[[-93.40051002,37.25523925],[-93.38350988,37.23797713]],length:8000,widthFt:150}
+  ],
+  KSGT:[
+    {ends:[[-91.57873527,34.6039855],[-91.56212369,34.60353461]],length:5002,widthFt:150},
+    {ends:[[-91.57847805,34.60418066],[-91.57912461,34.58766241]],length:6015,widthFt:100}
+  ],
+  KSHV:[
+    {ends:[[-93.8351875,32.44398188],[-93.81535338,32.45334233]],length:7003,widthFt:150},
+    {ends:[[-93.83488258,32.45384138],[-93.81848952,32.43558652]],length:8348,widthFt:200}
+  ],
+  KSIK:[
+    {ends:[[-89.56557113,36.89197366],[-89.55792902,36.90578269]],length:5502,widthFt:100}
+  ],
+  KSLG:[
+    {ends:[[-94.48920277,36.19868611],[-94.490775,36.18501666]],length:4997,widthFt:75}
+  ],
+  KSPH:[
+    {ends:[[-93.40918569,32.98949788],[-93.40916036,32.97795108]],length:4202,widthFt:75}
+  ],
+  KSRC:[
+    {ends:[[-91.73973827,35.20255422],[-91.73533711,35.21865855]],length:6008,widthFt:100}
+  ],
+  KSTJ:[
+    {ends:[[-94.92035,39.77401897],[-94.90843661,39.76459016]],length:4797,widthFt:75},
+    {ends:[[-94.90691052,39.78457361],[-94.90691211,39.76244591]],length:8061,widthFt:150}
+  ],
+  KSTL:[
+    {ends:[[-90.38121761,38.74668391],[-90.35750388,38.75621747]],length:7603,widthFt:150},
+    {ends:[[-90.4098723,38.75995227],[-90.38316261,38.74679225]],length:9000,widthFt:150},
+    {ends:[[-90.36632172,38.7517933],[-90.33958547,38.73860719]],length:9013,widthFt:150},
+    {ends:[[-90.37915886,38.75390386],[-90.34646444,38.7377818]],length:11020,widthFt:150}
+  ],
+  KSUS:[
+    {ends:[[-90.66828425,38.66413894],[-90.65114991,38.66697361]],length:5000,widthFt:75},
+    {ends:[[-90.6597473,38.6576958],[-90.63409872,38.6619423]],length:7486,widthFt:150}
+  ],
+  KSUZ:[
+    {ends:[[-92.48227661,34.5839425],[-92.47659602,34.59685691]],length:5002,widthFt:100}
+  ],
+  KSZL:[
+    {ends:[[-93.55198055,38.71359166],[-93.54374722,38.74702222]],length:12400,widthFt:150}
+  ],
+  KTBN:[
+    {ends:[[-92.14639325,37.74859266],[-92.13507547,37.73466222]],length:6037,widthFt:150}
+  ],
+  KTKX:[
+    {ends:[[-90.04056669,36.21721297],[-90.03536533,36.23028525]],length:5000,widthFt:75},
+    {ends:[[-90.03457433,36.23350558],[-90.03431177,36.22523686]],length:3012,widthFt:75}
+  ],
+  KTRX:[
+    {ends:[[-93.59073905,40.08944002],[-93.59053969,40.07761694]],length:4307,widthFt:75}
+  ],
+  KTVB:[
+    {ends:[[-92.08675738,37.12896816],[-92.08118086,37.13589897]],length:3002,widthFt:60}
+  ],
+  KTVR:[
+    {ends:[[-91.02781061,32.35847988],[-91.02756683,32.34473233]],length:5002,widthFt:100}
+  ],
+  KTXK:[
+    {ends:[[-94.00135591,33.44625194],[-93.9860603,33.45908572]],length:6602,widthFt:150},
+    {ends:[[-93.99365813,33.46009652],[-93.98160258,33.44999466]],length:5200,widthFt:100}
+  ],
+  KUBX:[
+    {ends:[[-91.42944663,38.06410033],[-91.42827036,38.07344563]],length:3420,widthFt:61}
+  ],
+  KUNO:[
+    {ends:[[-91.90253702,36.88542697],[-91.90281202,36.87141894]],length:5101,widthFt:75}
+  ],
+  KUUV:[
+    {ends:[[-91.17108352,38.23041266],[-91.15748622,38.23654825]],length:4500,widthFt:75}
+  ],
+  KUXL:[
+    {ends:[[-93.3800853,30.13740927],[-93.37226636,30.1254558]],length:5001,widthFt:75}
+  ],
+  KVBT:[
+    {ends:[[-94.21977777,36.34885],[-94.21983888,36.342125]],length:2448,widthFt:75},
+    {ends:[[-94.21929783,36.35140325],[-94.21942775,36.33752491]],length:5053,widthFt:75}
+  ],
+  KVER:[
+    {ends:[[-92.68209783,38.95219991],[-92.6832415,38.94125702]],length:4000,widthFt:75}
+  ],
+  KVIH:[
+    {ends:[[-91.77666238,38.12480611],[-91.76277922,38.13518975]],length:5500,widthFt:100},
+    {ends:[[-91.77588302,38.13034297],[-91.76273108,38.11937866]],length:5501,widthFt:100}
+  ],
+  KX33:[
+    {ends:[[-90.78864444,36.692825],[-90.78029722,36.69489166]],length:2560,widthFt:57}
+  ],
+  KXNA:[
+    {ends:[[-94.31198222,36.29320216],[-94.30164077,36.27052663]],length:8801,widthFt:150},
+    {ends:[[-94.31389216,36.29263111],[-94.30354988,36.26995591]],length:8800,widthFt:150}
+  ]
+};
+const runwayDataByAirport=missouriRunwayExactData;
+
+const imageOutline=[[0,900],[0,150],[1118,150],[1118,900],[0,900]];
+const moOutline=[[-91.7291104740812,40.6136325963862],[-92.0537491091891,40.6030961371643],[-92.4251158382545,40.595632267924],[-92.8057308660876,40.5885573021038],[-93.2036879211947,40.5815121861527],[-93.5849745980606,40.579750353685],[-93.9651164959279,40.5747897576174],[-94.3461460733688,40.5714970633596],[-94.7453932441863,40.5727071342966],[-95.1259327519517,40.5775077730391],[-95.5453303643924,40.5825649038953],[-95.7739850281178,40.5762779033152],[-95.7632516771787,40.5516638633534],[-95.7624740919451,40.5280112202114],[-95.7245078460774,40.5280530586278],[-95.6942013006544,40.5569235336984],[-95.6784824178161,40.5121080527566],[-95.6950277030908,40.485314713806],[-95.6833777278904,40.4625561886222],[-95.6578602183979,40.4418647818303],[-95.661447850292,40.4164893916393],[-95.6438100155576,40.3874933140038],[-95.6385522977139,40.3629233077897],[-95.6230696818845,40.3450039102142],[-95.6410037570105,40.3273064655495],[-95.6577772411946,40.3158324998985],[-95.6434930594671,40.3059666748746],[-95.6170419809866,40.3140423338691],[-95.5910335292515,40.3035409590063],[-95.5607861003552,40.2966958497698],[-95.5513427011887,40.2817431055875],[-95.5524982999271,40.2619087306365],[-95.5262145832603,40.2504175879252],[-95.4937443647623,40.2492982924797],[-95.4708216291017,40.2330916759149],[-95.4795710512716,40.2064951953244],[-95.4775603095324,40.1835729831951],[-95.4476175348568,40.1649365914196],[-95.4339102277853,40.144497107513],[-95.4108807693634,40.1301387464592],[-95.393202493699,40.110237318057],[-95.4085563415743,40.0967873840665],[-95.4119059317506,40.0717718866331],[-95.41618877947,40.0415320239195],[-95.3654646270783,40.0312886887811],[-95.3330143594949,40.0174031168909],[-95.3080972613464,40.0000055055814],[-95.2993120092812,39.9825635144323],[-95.2693038017052,39.9688571860264],[-95.2529486198441,39.9508763130631],[-95.2270983086334,39.9439804595776],[-95.2092640505465,39.94109910387],[-95.2010910481495,39.9256554368847],[-95.2053682789867,39.9074968702445],[-95.1772289098007,39.9003716910637],[-95.1473985057581,39.9048434798376],[-95.1418058872366,39.8838586584728],[-95.1030163878539,39.8682334424434],[-95.0570694238545,39.8637758562543],[-95.0285423170655,39.8708028811798],[-95.0243225465239,39.8910162361033],[-94.9973732521642,39.8989451577213],[-94.9495835604215,39.8999321540042],[-94.9272333536525,39.8799977228729],[-94.9371042735809,39.8684075513961],[-94.9402297634941,39.8525822700476],[-94.9170355481612,39.8363232912585],[-94.8885570377311,39.8338051062071],[-94.8760802264212,39.8151523431476],[-94.8801538482086,39.7986773025053],[-94.9049306880616,39.7885366236777],[-94.9321302622536,39.7872754335209],[-94.9337761254302,39.7709358309807],[-94.9029566146697,39.7584264917843],[-94.8798843740265,39.7730568660186],[-94.8604797747657,39.7629234546424],[-94.8623994373779,39.7413481405796],[-94.8931457728423,39.724718322453],[-94.9328840443974,39.7373655450199],[-94.9570508456864,39.7449287735203],[-94.9715037815116,39.7274564887131],[-94.9687204947398,39.7020469236737],[-94.9776367705997,39.6806498911256],[-95.0022999952061,39.6763401450345],[-95.0283094249566,39.6638334208206],[-95.040139399647,39.649227493905],[-95.0538229141126,39.6289768467799],[-95.0491827953068,39.6089930158262],[-95.0516369115327,39.5854863911949],[-95.084720621645,39.5797496619097],[-95.1116993543875,39.5635080904667],[-95.1017566591636,39.5316124281044],[-95.0585221759713,39.5057553563326],[-95.0475803478613,39.4772940289512],[-95.0124144225487,39.4522573221536],[-94.9799396273115,39.4370164990557],[-94.9602027358714,39.4153419695179],[-94.9461318603014,39.3949856744761],[-94.9168287532103,39.3856662360679],[-94.8857032252442,39.3895682269537],[-94.883179466653,39.3688139121829],[-94.9086370723125,39.3551841000764],[-94.9087474814456,39.3356544073602],[-94.8994302277112,39.2997328733535],[-94.8760605647048,39.280330591532],[-94.8346890631047,39.2595859543316],[-94.8311697634686,39.228928341834],[-94.8227236893184,39.2100331437311],[-94.7882500749492,39.2077037985906],[-94.766044809499,39.1832102577291],[-94.7309673025894,39.16874500214],[-94.69184837066,39.1817981337379],[-94.6623865223635,39.1776056659635],[-94.6604875597711,39.1594945817131],[-94.6504831833647,39.1539273935379],[-94.6345367297765,39.1540891112763],[-94.6216696154558,39.1570413606028],[-94.6102331229857,39.160679705733],[-94.5913882094333,39.1546537418136],[-94.5953979090052,39.1323088723545],[-94.6074638597133,39.0356145614912],[-94.6080822771609,38.854588099547],[-94.6122391689078,38.5208725203858],[-94.6125515103692,38.2268163761277],[-94.6158513981301,37.8725155261703],[-94.6168545599636,37.5069012740766],[-94.6180132731879,37.145552172358],[-94.618236071095,36.8679167348751],[-94.6180042520974,36.5194451510886],[-94.49842459228,36.4990904243921],[-94.3574311939593,36.4997592879904],[-94.2178768864521,36.4989967198159],[-94.0947530770497,36.4986759126476],[-93.9605919634577,36.4988627369086],[-93.8341565805437,36.4991022143407],[-93.5302734955856,36.4993547423116],[-93.169061317491,36.4979272772791],[-92.7722621119754,36.4977515790557],[-92.5476216129569,36.4983905260475],[-92.3549520339541,36.4974152437352],[-92.0428078030657,36.4984738882892],[-91.6178267078278,36.499339825912],[-91.308873210701,36.496924582373],[-90.9811317848708,36.4982836438429],[-90.6305675859448,36.4984823438594],[-90.4493948079157,36.498287559467],[-90.300345841808,36.4979915557576],[-90.157724839668,36.4978727173058],[-90.1530868905597,36.4933927843836],[-90.1595349283845,36.4943950673799],[-90.1565173129784,36.4902350600652],[-90.1600667372137,36.4874603731281],[-90.1573134942169,36.484406958777],[-90.1591874956313,36.4795710610599],[-90.1499302559799,36.4766016594807],[-90.143226940881,36.4735477267054],[-90.1459204496453,36.4689602718512],[-90.1550101301386,36.4673194517025],[-90.1443418710547,36.4634275482993],[-90.1404825745852,36.4659938362478],[-90.1404815078731,36.4578540070464],[-90.1337409665981,36.4535518862016],[-90.1359758036818,36.447558880255],[-90.1353818689956,36.4415235452441],[-90.1373991616526,36.4351884165461],[-90.1381948681574,36.4314093237015],[-90.1438407985177,36.4277083395716],[-90.1393547818334,36.4213279035925],[-90.1339691361391,36.4225324625373],[-90.1355409271003,36.4159642187187],[-90.1367895396255,36.4132384396589],[-90.1266886445549,36.416353279098],[-90.127534876787,36.4110977298164],[-90.1190502734821,36.412543116313],[-90.1166620219433,36.4087071674982],[-90.1133740910083,36.408823474345],[-90.1135554673048,36.4063477003385],[-90.1107818941082,36.4054175961948],[-90.1041151673835,36.4053322686313],[-90.0989618477784,36.4038617283832],[-90.0914030121023,36.4030395544994],[-90.0839903256089,36.4004727708561],[-90.0784294962501,36.3975737890961],[-90.0717598305087,36.3931607200638],[-90.0686623132185,36.3884652386218],[-90.0662452206503,36.3869119618448],[-90.0646092926391,36.3843843481269],[-90.0658284762753,36.3798674078343],[-90.0644908466206,36.3770425476782],[-90.0637725526423,36.3744432152308],[-90.0642092558436,36.3673616256371],[-90.0662927753779,36.3648891945505],[-90.0663571887343,36.3586396517983],[-90.0705247541595,36.3561940470755],[-90.0754708352492,36.3500606856136],[-90.0744938869943,36.3418255052616],[-90.0768938987478,36.3355559639191],[-90.078850458044,36.3281457495677],[-90.0799492706178,36.3231050418944],[-90.0805964522096,36.3204028710519],[-90.0757779043084,36.318050016424],[-90.0709415841978,36.3140182597764],[-90.0680675386696,36.3094614286907],[-90.065553307918,36.3050279861485],[-90.0681504814831,36.2991482031102],[-90.0719207081607,36.2929782026283],[-90.0771367070058,36.2904245073066],[-90.0779497498279,36.2878281957777],[-90.0763901270376,36.2828475246622],[-90.0791954818433,36.2789084891897],[-90.0822861598656,36.2735486670835],[-90.0873437204879,36.2713602194144],[-90.0960441874133,36.2713255675609],[-90.1006953047503,36.2689817214847],[-90.1057013772443,36.2662198329148],[-90.1099498496244,36.2667780922581],[-90.1144782501214,36.2655612859543],[-90.1161518351737,36.2611808978272],[-90.1190411455368,36.2573153543284],[-90.118353412611,36.2533852867406],[-90.1219806000475,36.2481749716624],[-90.1238212244119,36.2448275769243],[-90.1252577981362,36.2432242626249],[-90.1301126173263,36.2433119291402],[-90.1278474650642,36.2396918871957],[-90.125398427889,36.2354803573654],[-90.1258632605237,36.232070839933],[-90.1287569435297,36.2292632169856],[-90.1338491628251,36.2265009972359],[-90.1397546405735,36.2266931528596],[-90.1439456107267,36.2233653809318],[-90.1471642206733,36.2211883159752],[-90.1515900821008,36.2182717122924],[-90.1547787426452,36.214441332297],[-90.1623581698163,36.2150635267475],[-90.1687243997946,36.2138664297997],[-90.174061573734,36.2101950718413],[-90.1770889463944,36.2075778064317],[-90.1822859797684,36.206294384418],[-90.1858995965423,36.2045241456735],[-90.1893763119968,36.203076708516],[-90.1923907455857,36.2007993601853],[-90.1957952329705,36.1981107277841],[-90.2003784755694,36.1962105693409],[-90.2042486284134,36.1894667801334],[-90.2077407264218,36.1860478427964],[-90.2118699540118,36.1830567511995],[-90.2158915050813,36.1841070821492],[-90.2219114293308,36.1814857588006],[-90.2264194724521,36.1758431196452],[-90.2302394114411,36.1706844404046],[-90.2311909952895,36.1642199605645],[-90.2353368412594,36.1589164362707],[-90.2328801198688,36.1558374360095],[-90.23127830115,36.1538652996333],[-90.2336945788811,36.145250142466],[-90.2354300595225,36.1401141681275],[-90.2382039168556,36.1387270515169],[-90.245576766239,36.1361000987848],[-90.2475957009604,36.1326451904643],[-90.2498339466088,36.1294568284398],[-90.253859505324,36.1271995429217],[-90.2589516608487,36.1276073394184],[-90.2644553874243,36.1229030376705],[-90.2684167605169,36.1191757298126],[-90.2730501965133,36.1167502458691],[-90.280523848387,36.1166840176937],[-90.2873748371676,36.115675132464],[-90.2938544304866,36.111092770038],[-90.2970517709271,36.1082120021371],[-90.2979919002197,36.1039893413639],[-90.2998289362202,36.0984664829162],[-90.3089829975701,36.0946522489176],[-90.316466253812,36.090576277021],[-90.320120394794,36.0882745981163],[-90.3200229486427,36.0818095140273],[-90.319206194184,36.0743369520443],[-90.3230007765375,36.0713928591174],[-90.3280831783092,36.0684647164037],[-90.3339440882359,36.0657055495288],[-90.3362756343343,36.0606655274382],[-90.3338195155031,36.055544306191],[-90.3377941222368,36.0510681274297],[-90.3376912736815,36.0470285987107],[-90.3428914366849,36.0454776724336],[-90.3476171271851,36.0418066839261],[-90.3482844360408,36.035231905709],[-90.3525077594198,36.0310264692661],[-90.3523304534943,36.0246026725886],[-90.3608178652104,36.0166365756455],[-90.3777068876637,35.9958002008329],[-90.1114312807123,35.998059532277],[-89.7333406621842,36.0015695147669],[-89.7327095928508,36.0112706527461],[-89.7274449409381,36.0150871485442],[-89.7166040617171,36.0195305496546],[-89.7131567325494,36.0275878486637],[-89.709800405738,36.0338014843503],[-89.6945453340981,36.0455908529567],[-89.6823821285194,36.0690395241693],[-89.6638276896139,36.0969013721475],[-89.6217033412757,36.1100815823952],[-89.5928972632347,36.1305883856876],[-89.5976391428064,36.160135839636],[-89.6227800797465,36.1826070918532],[-89.651517658804,36.1992096469986],[-89.6941229470699,36.2262374318766],[-89.7016481724834,36.2465788862905],[-89.6756468462799,36.2484438486332],[-89.6267221678258,36.244103326752],[-89.5868883929281,36.2395804720114],[-89.5583426703007,36.2510102694626],[-89.5365483253362,36.251634777566],[-89.537891031866,36.2756073973868],[-89.5603239064494,36.2800311458927],[-89.599214262231,36.3021478739274],[-89.6202662911017,36.3268973058708],[-89.596247630085,36.3428791321274],[-89.5544764804064,36.3370645438858],[-89.5234982380339,36.3440364449159],[-89.5102103305018,36.3702407011721],[-89.5227904211811,36.3969378595039],[-89.545361485584,36.4307865220212],[-89.5349002105144,36.4457318951489],[-89.5204613469225,36.4634165357469],[-89.5305380155868,36.4876477329451],[-89.549519807704,36.5104714296403],[-89.5650533620455,36.5341475269331],[-89.5708849190126,36.5559226956879],[-89.5615872039374,36.5708486587839],[-89.5405657894205,36.5809888772342],[-89.5188332726568,36.5779675915783],[-89.4842739262648,36.5715496853673],[-89.4680520440787,36.5478035075172],[-89.4726443305267,36.5132631088834],[-89.4875015938566,36.4931076205288],[-89.4874046245321,36.4622239280823],[-89.4457487789196,36.4664104330929],[-89.4152772065198,36.5031675065933],[-89.4040874735206,36.531076812464],[-89.3946712233884,36.5618721781264],[-89.3801398448928,36.5936108948196],[-89.3694801364873,36.6223158423533],[-89.3366927450556,36.6326023919619],[-89.3100845409857,36.6154681439189],[-89.28791868584,36.5869153610978],[-89.2562902357946,36.5649596867675],[-89.2046218298865,36.5709660827115],[-89.1793617912312,36.614610875618],[-89.1873686501192,36.6455205140353],[-89.169087849011,36.6715984346268],[-89.1705266402489,36.6901396926646],[-89.1871113652049,36.7037257391341],[-89.20118723515,36.7274833018706],[-89.1893588415046,36.749527475813],[-89.1722690526902,36.7589077934985],[-89.1581993011667,36.7561357832261],[-89.1456055763386,36.756081465673],[-89.1376748516257,36.7531033662826],[-89.1177758984716,36.7633467623921],[-89.1254746809725,36.7864328842808],[-89.1458238206987,36.7884994320459],[-89.1700808703266,36.7971118752847],[-89.1794118091941,36.8152894410811],[-89.1790344353098,36.8292043845185],[-89.1770522569185,36.8363576806249],[-89.1737602731835,36.8395968451602],[-89.1610243022306,36.8426576549066],[-89.1558868291434,36.8449295898402],[-89.1317484189589,36.8577309174886],[-89.1163377110273,36.8916738707863],[-89.1021121027945,36.9390045090659],[-89.1102974956203,36.9772398295569],[-89.1402396730538,36.9795838930531],[-89.1729264051096,36.9701497576778],[-89.1948501369672,36.9897172891935],[-89.2021741792918,37.0181766849419],[-89.2416605033982,37.0495914177064],[-89.261993636645,37.064434945072],[-89.3088987845889,37.0531195676649],[-89.2784190935149,37.0361516464948],[-89.2595197870119,37.0092723923488],[-89.2790878048136,36.9885780217118],[-89.3137021982738,37.0102192506413],[-89.3652281556307,37.0317509656442],[-89.3851494392067,37.0501901140749],[-89.3784837539888,37.0717580835758],[-89.3842495047831,37.1032759294779],[-89.4163405735892,37.1273158977492],[-89.4413521854218,37.1657430218208],[-89.4625825032199,37.2031669533722],[-89.4597924684755,37.237307177113],[-89.4716640773877,37.2532693414271],[-89.4919996393485,37.2600463794745],[-89.5051698392004,37.2689130520116],[-89.5144422086553,37.2786379530157],[-89.51701861832,37.284762954713],[-89.5150681469388,37.2919597803868],[-89.5092025548799,37.3048783781656],[-89.5049772998184,37.3161457526935],[-89.502221483909,37.3191134743467],[-89.498564281994,37.3220903413605],[-89.4891152230653,37.3287449029074],[-89.4692123640968,37.3383873604464],[-89.4340208891741,37.3457924783175],[-89.4212604621745,37.3836592299953],[-89.4330634575443,37.4239924680117],[-89.464854564888,37.4620061971413],[-89.4957512408755,37.5007544552772],[-89.5087978423904,37.5263884300277],[-89.5194396824662,37.5485504270855],[-89.5192920438679,37.5830244782449],[-89.4987564402743,37.5812579899822],[-89.4764210015702,37.5889876114231],[-89.4921508015273,37.6125022775462],[-89.5083213537399,37.6282734956054],[-89.517560335911,37.6414120918905],[-89.5164714767674,37.6577339635513],[-89.5114690117779,37.6832753549838],[-89.5348868810792,37.700715875065],[-89.5786443604871,37.7155828090474],[-89.6018261316397,37.7282471912254],[-89.608254466081,37.7392808907045],[-89.6160385241815,37.7453717629564],[-89.6319947131015,37.7463406077952],[-89.6514581365841,37.7455738080701],[-89.6679700439863,37.7589350887069],[-89.6611976586742,37.7751521910678],[-89.6669725161473,37.7959217247522],[-89.6885783475281,37.8102565802934],[-89.7234466963012,37.8305311199578],[-89.7394704437084,37.8459271676172],[-89.7509797036588,37.8468452763825],[-89.7747933381396,37.8521480557992],[-89.8001749909391,37.8689643801731],[-89.7980190985278,37.8798361818362],[-89.8369136523137,37.9023409282567],[-89.8515724612052,37.9034566815172],[-89.8629814265472,37.896865237932],[-89.886880637875,37.8766475476345],[-89.9271130208828,37.8717631105074],[-89.9541919961695,37.8859742626517],[-89.966883465,37.9074614130536],[-89.9741108503543,37.9209193957846],[-89.965682633883,37.9329841727663],[-89.9609016290429,37.9368946781925],[-89.9544130311879,37.9404158383215],[-89.9448076900618,37.9419061566896],[-89.9326567366327,37.9473980111464],[-89.9248327334089,37.9575502621729],[-89.9367158759445,37.9611905942298],[-89.9722334542002,37.9638804759315],[-89.9938949137099,37.9625050031409],[-90.0066420050676,37.9689329290119],[-90.0123696050644,37.9750627629809],[-90.020960613536,37.984844637146],[-90.0410002425763,38.0004132711506],[-90.0712688711224,38.0141150169351],[-90.0864942816562,38.0273723264156],[-90.1186117066229,38.0527442205293],[-90.1129687083484,38.0281583797401],[-90.1238039107077,38.0344187086918],[-90.1380389133272,38.04727584707],[-90.1769234501571,38.0710034104277],[-90.2231537941786,38.0974659887995],[-90.252485172888,38.1278266997913],[-90.2743306082072,38.1569443139787],[-90.3057574593404,38.1771397764553],[-90.339281987708,38.1956136842972],[-90.3618618897567,38.2301494745464],[-90.3700484827279,38.2685944616747],[-90.3723072877921,38.3006802969375],[-90.371355386122,38.3236620946684],[-90.360828017769,38.3528129236937],[-90.352765061987,38.3700228520215],[-90.3362646402961,38.3922815980643],[-90.321805276394,38.4049508959062],[-90.2955257508677,38.4255446589921],[-90.2850698872278,38.4466346458457],[-90.2781464032691,38.4765515842597],[-90.2671096258857,38.5107310206538],[-90.26139881243,38.5259003643768],[-90.2512746922407,38.5418037369896],[-90.2412488232681,38.5532994164467],[-90.2246178614008,38.5746288334368],[-90.2086882581032,38.5847364942633],[-90.1972257668616,38.5931972625139],[-90.1878447265154,38.6062763039119],[-90.1793831680897,38.6266641956836],[-90.1791331718914,38.6487717282791],[-90.1838431798746,38.6671055507163],[-90.1916070353523,38.6829958274596],[-90.2079092032256,38.7004519773011],[-90.2124056151459,38.714847877718],[-90.2061060161974,38.7310352887136],[-90.1948475444344,38.7413048756751],[-90.1770921675783,38.7530854394958],[-90.164448379121,38.7741891481378],[-90.1305307034254,38.7921655342417],[-90.1167364560779,38.8080715442223],[-90.1066978573702,38.8355541861833],[-90.1351609890658,38.851377673202],[-90.1656914861171,38.8739935692259],[-90.1907518757171,38.8867090138234],[-90.2136460433561,38.9003598837702],[-90.2521066731798,38.9196905463238],[-90.2854003511877,38.9238872556478],[-90.3170401664539,38.9275421477344],[-90.338221540601,38.9357645274647],[-90.3744399254423,38.952038234642],[-90.4153651678599,38.9634942673643],[-90.4414635568946,38.9672935700255],[-90.4532254248671,38.9670260104892],[-90.473165522829,38.9572660136033],[-90.482599463641,38.9443491789943],[-90.4865263388806,38.9280049678926],[-90.5013654091363,38.9087735328181],[-90.514561080462,38.8999786287511],[-90.540312735808,38.8787346205908],[-90.5721565389561,38.8685628754248],[-90.600978356155,38.8773119216323],[-90.6293008979733,38.8927726447712],[-90.6492107361347,38.9136558073744],[-90.6633097527432,38.9352617025925],[-90.6756493364923,38.9604401444637],[-90.6765145414349,38.9857437251803],[-90.6893404751565,39.009480219271],[-90.7058790411273,39.038342793723],[-90.7123555338152,39.0571587037851],[-90.6962372167816,39.0767011222758],[-90.6811090517694,39.0989531201783],[-90.6912972378245,39.1239713226515],[-90.7047844620809,39.1423317999805],[-90.7098450987855,39.1707698440407],[-90.7173963008721,39.1980327007754],[-90.7214285293133,39.2227262836969],[-90.7257874533021,39.246946078308],[-90.7488769578227,39.264114083291],[-90.7684013222471,39.2809275324057],[-90.7845876876513,39.2976256775731],[-90.7978023954444,39.3121375897357],[-90.8339215288583,39.3346353480912],[-90.8598834160088,39.3517281833632],[-90.8983090355426,39.3705663861039],[-90.9127479138503,39.3816584454875],[-90.9355987559979,39.396784294092],[-90.9658970680388,39.4115310334312],[-90.9840187490261,39.4206677163794],[-91.0119548496429,39.4328551392601],[-91.0436722520255,39.4532975032945],[-91.0636869995259,39.4896013978384],[-91.0696954333277,39.5226124306329],[-91.1068934901492,39.5399630538348],[-91.1431881572261,39.5449963349079],[-91.1692272052926,39.5672924529717],[-91.1769035590732,39.5965354648425],[-91.2110747870204,39.6131354692561],[-91.2430779784038,39.6325067465534],[-91.2618257826266,39.6510284836418],[-91.2832929861235,39.6700575378644],[-91.3063900689794,39.6848548593447],[-91.3430279899736,39.70820380701],[-91.3627243629872,39.7246309627729],[-91.369667373559,39.7425921659901],[-91.3658220279989,39.7642327226167],[-91.3616013577579,39.7872361576316],[-91.3727941128454,39.806356535022],[-91.3996386515339,39.8222898330621],[-91.4321646674828,39.8403152570047],[-91.4460578063228,39.8705171776708],[-91.4409335353663,39.8960914306288],[-91.4199774019398,39.9163005386327],[-91.4273709206046,39.9392405463891],[-91.4495491521934,39.9644008336646],[-91.4606160651024,39.980555528493],[-91.4692837670507,39.9953280475672],[-91.4839849287793,40.0192760569053],[-91.4933012974918,40.0437020727975],[-91.4921331470657,40.0617097541426],[-91.4993736111646,40.0846714635444],[-91.5046724857156,40.1036291487791],[-91.5106178949098,40.1250685702729],[-91.5116274758287,40.1475386389671],[-91.5107880786819,40.1655618532675],[-91.5113232369299,40.1875686289261],[-91.5068506420378,40.206484844236],[-91.5042067652967,40.226251696585],[-91.5057352084152,40.2389290582502],[-91.4970628174546,40.2490801012015],[-91.4900354808624,40.2635897243847],[-91.4856681898837,40.2939456928264],[-91.4670061604654,40.3332928738359],[-91.4508534607005,40.3553416913415],[-91.4346935851089,40.3682008095082],[-91.4259561882808,40.3824372662719],[-91.4443934074632,40.3861743396898],[-91.4479209907263,40.3773815795069],[-91.4648744975252,40.3765977762185],[-91.4651498412917,40.3857237293404],[-91.4777139152345,40.3820025959965],[-91.489454742569,40.389079384044],[-91.4871374404523,40.3960592260054],[-91.4809041239601,40.4035481379634],[-91.4921227538147,40.4009215330014],[-91.5091209254951,40.4068855062738],[-91.5266785073816,40.4175158021172],[-91.5198535149924,40.4336700959774],[-91.5329142086179,40.4410523146473],[-91.5337685015893,40.4589488881095],[-91.584413557049,40.4814061890249],[-91.6216416416364,40.5112527033212],[-91.6201779098625,40.5413028125335],[-91.6635972780383,40.5502353051276],[-91.6913250426679,40.5656997351345],[-91.6967857459297,40.5884221431373],[-91.7291104740812,40.6136325963862]];
+
+const map=document.getElementById('map');
+const dots=document.getElementById('dots');
+const clocks=document.getElementById('clocks');
+const tooltip=document.getElementById('tooltip');
+const hudMissing=document.getElementById('hudMissing');
+const hudStale=document.getElementById('hudStale');
+const hudJsonUpdated=document.getElementById('hudJsonUpdated');
+const topControlRow=document.getElementById('topControlRow');
+const topHelpBtn=document.getElementById('topHelpBtn');
+const topUsaBtn=document.getElementById('topUsaBtn');
+const windToggle=document.getElementById('windToggle');
+const metarStatusBtn=document.getElementById('metarStatusBtn');
+const stateNamePanel=document.getElementById('stateNamePanel');
+const stateNameTitle=document.getElementById('stateNameTitle');
+const homeTitle=document.getElementById('homeTitle');
+const homeCompass=document.getElementById('homeCompass');
+const welcomeOverlay=document.getElementById('welcomeOverlay');
+const welcomeInput=document.getElementById('welcomeInput');
+const welcomeBtn=document.getElementById('welcomeBtn');
+const welcomeError=document.getElementById('welcomeError');
+const infoOverlay=document.getElementById('infoOverlay');
+
+const metarById=new Map();
+const metarRecordById=new Map();
+const lastSeenMetarRawById=new Map();
+const freshUpdateUntilById=new Map();
+const vrbVisualStateByAirport=new Map();
+const steadyWindVisualStateByAirport=new Map();
+
+let homeAirportId=(localStorage.getItem('homeAirportId_missouri')||'KSTL').toUpperCase();
+let liveMetarStatus=`0 of ${airports.length} Airports updated`;
+let lastMetarError='';
+let lastMetarUpdatedAt=null;
+let showMetarHud=false;
+let showWindsock=true;
+let showHudWindsock=false;
+let kioskMode=false;
+let altColorMode=false;
+let missingAirportIds=[];
+let staleAirportIds=[];
+let clockIntervalId=null;
+let metarIntervalId=null;
+let compassIntervalId=null;
+stateNameTitle.textContent=document.title.replace(/\s+LED Map$/i,'').replace(/\s+WX Map$/i,'').toUpperCase();
+const CLOCK_LAYOUT={x:748,width:348,boxHeight:102,box1Y:40,box2Y:156};
+
+function svgEl(name,attrs={},text=''){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',name);
+  Object.entries(attrs).forEach(([key,val])=>el.setAttribute(key,val));
+  if(text) el.textContent=text;
+  return el;
+}
+
+function albersMO(lat,lon){
+  const centerLat=38.4*Math.PI/180,centerLon=-92.6;
+  return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-38.4};
+}
+
+function computeBounds(points){
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const [lon,lat] of points){
+    const p=albersMO(lat,lon);
+    if(p.x<minX) minX=p.x;
+    if(p.x>maxX) maxX=p.x;
+    if(p.y<minY) minY=p.y;
+    if(p.y>maxY) maxY=p.y;
+  }
+  return{minX,maxX,minY,maxY};
+}
+
+const projBounds=computeBounds(moOutline);
+const imageBounds={
+  minX:Math.min(...imageOutline.map(p=>p[0])),
+  maxX:Math.max(...imageOutline.map(p=>p[0])),
+  minY:Math.min(...imageOutline.map(p=>p[1])),
+  maxY:Math.max(...imageOutline.map(p=>p[1]))
+};
+const projWidth=projBounds.maxX-projBounds.minX;
+const projHeight=projBounds.maxY-projBounds.minY;
+const frameWidth=imageBounds.maxX-imageBounds.minX;
+const frameHeight=imageBounds.maxY-imageBounds.minY;
+const fitScale=Math.min(frameWidth/projWidth,frameHeight/projHeight)*1.06;
+const fittedWidth=projWidth*fitScale;
+const fittedHeight=projHeight*fitScale;
+const frameOffsetX=imageBounds.minX+((frameWidth-fittedWidth)/2);
+const frameOffsetY=imageBounds.minY+((frameHeight-fittedHeight)/2);
+
+function getDisplayAgeMinutes(record,airport){
+  const primary=
+    airport&&airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())
+      ? airport.obsDate
+      : (record?parseObsTime(record):null);
+
+  if(primary instanceof Date&&!isNaN(primary.getTime())){
+    const ageMs=Date.now()-primary.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      return Math.round(ageMs/60000);
+    }
+  }
+
+  if(lastMetarUpdatedAt){
+    const fallback=new Date(lastMetarUpdatedAt);
+    if(!isNaN(fallback.getTime())){
+      const ageMs=Date.now()-fallback.getTime();
+      if(ageMs>=0&&ageMs<=24*60*60*1000){
+        return Math.round(ageMs/60000);
+      }
+    }
+  }
+
+  return null;
+}
+
+function project(lat,lon){
+  const p=albersMO(lat,lon);
+  return{
+    x:frameOffsetX+((p.x-projBounds.minX)*fitScale),
+    y:frameOffsetY+((projBounds.maxY-p.y)*fitScale)
+  };
+}
+
+function updateHudButtons(){
+  document.body.classList.toggle('show-metar-hud',showMetarHud);
+  document.body.classList.toggle('hide-windsock',!showWindsock&&!showHudWindsock);
+  document.body.classList.toggle('show-hud-windsock',showHudWindsock);
+  windToggle.classList.toggle('is-off',!showWindsock);
+  metarStatusBtn.textContent='STATUS';
+  const summaryValue=hudSummary.querySelector('.summary-value');
+  summaryValue.textContent=lastMetarError
+    ? `${liveMetarStatus} (${lastMetarError})`
+    : liveMetarStatus;
+  const jsonValue=hudJsonUpdated.querySelector('.json-value');
+  jsonValue.textContent=lastMetarUpdatedAt
+    ? new Date(lastMetarUpdatedAt).toLocaleString('en-US',{
+        month:'2-digit',
+        day:'2-digit',
+        hour:'2-digit',
+        minute:'2-digit',
+        second:'2-digit',
+        hour12:true
+      })
+    : 'WAITING';
+  positionHomePanel();
+}
+
+function updateMissingStationsDisplay(){
+  const list=hudMissing.querySelector('.missing-list');
+  list.textContent=missingAirportIds.length?missingAirportIds.join(', '):'NONE';
+  hudMissing.style.display=missingAirportIds.length>0?'block':'none';
+
+  const staleList=hudStale.querySelector('.stale-list');
+  staleList.textContent=staleAirportIds.length?staleAirportIds.join(', '):'NONE';
+  hudStale.style.display=staleAirportIds.length>0?'block':'none';
+}
+
+function toggleWindsock(){
+  showWindsock=!showWindsock;
+  if(!showWindsock) showHudWindsock=false;
+  updateHudButtons();
+}
+
+function toggleHudWindsock(){
+  showHudWindsock=!showHudWindsock;
+  if(showHudWindsock){
+    showWindsock=false;
+  }
+  updateHudButtons();
+}
+
+function drawMap(){
+  map.innerHTML='';
+  let path='';
+  moOutline.forEach(([lon,lat],i)=>{
+    const p=project(lat,lon);
+    path+=`${i===0?'M':'L'} ${p.x} ${p.y} `;
+  });
+  path+='Z';
+  const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
+  const outline=svgEl('path',{d:path,class:'outline'});
+  map.appendChild(fillShape);
+  map.appendChild(outline);
+}
+
+function getAirportDisplayColor(airport){
+  if(!metarRecordById.has(airport.id)) return colors.NONE;
+  return colors[airport.cat]||colors.VFR;
+}
+
+function drawDots(){
+  dots.innerHTML='';
+  airports.forEach(a=>{
+    const p=project(a.lat,a.lon);
+    const isMissing=!metarRecordById.has(a.id);
+    const classes=['led-group'];
+    const freshUntil=freshUpdateUntilById.get(a.id)||0;
+    if(a.stale) classes.push('stale');
+    if(isMissing) classes.push('missing');
+    if(freshUntil>Date.now()&&!a.stale&&!isMissing) classes.push('fresh-update');
+    const g=svgEl('g',{class:classes.join(' ')});
+    g.dataset.airportId=a.id;
+    const dotColor=getAirportDisplayColor(a);
+
+    const glow=svgEl('circle',{cx:p.x,cy:p.y,r:14,fill:dotColor,class:'led-glow'});
+    const core=svgEl('circle',{cx:p.x,cy:p.y,r:5,fill:dotColor,class:'led-core'});
+    const label=svgEl('text',{
+      x:p.x+(a.dx||10),
+      y:p.y+(a.dy||-10),
+      class:'label'
+    },a.id);
+    if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
+
+    g.appendChild(glow);
+    g.appendChild(core);
+    dots.appendChild(g);
+    dots.appendChild(label);
+  });
+  attachTooltipHandlers();
+}
+
+function drawClocks(){
+  clocks.innerHTML='';
+  const now=new Date();
+  const zulu=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false});
+  const localParts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).split(' ');
+  const localTime=localParts[0]||'';
+  const localMeridiem=localParts[1]||'';
+  const updatedZulu=lastMetarUpdatedAt
+    ? new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+'Z'
+    : 'WAITING';
+
+  const panel=svgEl('g');
+  const clockX=CLOCK_LAYOUT.x;
+  const boxWidth=CLOCK_LAYOUT.width;
+  const box1Y=CLOCK_LAYOUT.box1Y;
+  const box2Y=CLOCK_LAYOUT.box2Y;
+  const boxHeight=CLOCK_LAYOUT.boxHeight;
+  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  panel.appendChild(box1);
+  const zuluTitle=svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU');
+  const zuluTime=svgEl('text',{x:clockX+25,y:box1Y+72,class:'clock-time'},zulu);
+  const zuluUpdated=svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`);
+  panel.appendChild(zuluTitle);
+  panel.appendChild(zuluTime);
+  panel.appendChild(zuluUpdated);
+  panel.appendChild(box2);
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},localTime));
+  panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+67,class:'clock-meridiem'},localMeridiem));
+  clocks.appendChild(panel);
+  positionWindToggle();
+}
+
+function positionWindToggle(){
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const viewWidth=1118;
+  const viewHeight=1196;
+  const scale=Math.min(wrapRect.width/viewWidth,wrapRect.height/viewHeight);
+  const offsetX=(wrapRect.width-viewWidth*scale)/2;
+  const offsetY=(wrapRect.height-viewHeight*scale)/2;
+  const buttonWidth=248;
+  const buttonHeight=38;
+  const left=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(buttonWidth*scale);
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+20)*scale;
+  const controlsWidth=(70+64+8);
+  const controlsLeft=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(controlsWidth*scale);
+  windToggle.style.left=`${Math.round(left)}px`;
+  windToggle.style.top=`${Math.round(top)}px`;
+  windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
+  windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
+  const controlsTop=offsetY+(CLOCK_LAYOUT.box1Y-42)*scale;
+  topControlRow.style.left=`${Math.round(controlsLeft)}px`;
+  topControlRow.style.top=`${Math.round(Math.max(offsetY+8,controlsTop))}px`;
+  topControlRow.style.transform=`scale(${scale})`;
+  topControlRow.style.transformOrigin='top left';
+  positionHomePanel();
+}
+
+function positionHomePanel(){
+  const homePanel=document.getElementById('homePanel');
+  homePanel.style.left='';
+  homePanel.style.right='';
+  homePanel.style.bottom='';
+  stateNamePanel.style.left='';
+  stateNamePanel.style.right='';
+  stateNamePanel.style.bottom='';
+  const panelGap=10;
+  const homeHeight=homePanel.offsetHeight||330;
+
+  if(showHudWindsock){
+    const hudRect=document.getElementById('hud').getBoundingClientRect();
+    const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+    const gap=12;
+    homePanel.style.left='auto';
+    homePanel.style.right=`${Math.max(22,Math.round(wrapRect.right-hudRect.right))}px`;
+    homePanel.style.bottom=`${Math.max(22,Math.round(wrapRect.bottom-hudRect.top+gap))}px`;
+    homePanel.style.zIndex='35';
+    stateNamePanel.style.left='auto';
+    stateNamePanel.style.right=homePanel.style.right;
+    stateNamePanel.style.bottom=`${parseInt(homePanel.style.bottom,10)+homeHeight+panelGap}px`;
+    stateNamePanel.style.zIndex='35';
+    return;
+  }
+
+  homePanel.style.left='22px';
+  homePanel.style.right='auto';
+  homePanel.style.bottom='22px';
+  homePanel.style.zIndex='30';
+  stateNamePanel.style.left='22px';
+  stateNamePanel.style.right='auto';
+  stateNamePanel.style.bottom=`${22+homeHeight+panelGap}px`;
+  stateNamePanel.style.zIndex='30';
+}
+
+function getFallbackMetar(airport){
+  return `${airport.id} NO CURRENT METAR`;
+}
+
+function getAirportCardName(airport,record){
+  const raw=String(record?.name||record?.stationName||record?.site||airport?.name||airport?.id||'').trim();
+  const cleaned=raw.replace(/,\s*[A-Z]{2}\s*,\s*US$/i,'').replace(/,\s*US$/i,'');
+  return cleaned.length>28?`${cleaned.slice(0,25).trim()}...`:cleaned;
+}
+
+function extractAirportId(item){
+  return String(item.icaoId||item.stationId||item.icaoid||item.icao||item.id||'').toUpperCase();
+}
+
+function extractRawMetar(item){
+  return item.rawOb||item.raw_text||item.rawText||item.raw||item.metar||'';
+}
+
+function parseObsTime(record){
+  const candidates=[record.obsTime,record.observation_time,record.reportTime,record.report_time,record.obsTimeUtc].filter(Boolean);
+  for(const value of candidates){
+    if(typeof value==='number' && Number.isFinite(value)){
+      const epochMs=value<1e12 ? value*1000 : value;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
+    if(typeof value==='string' && /^\d+$/.test(value)){
+      const numeric=Number(value);
+      const epochMs=numeric<1e12 ? numeric*1000 : numeric;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
+    const d=new Date(value);
+    if(!Number.isNaN(d.getTime())) return d;
+  }
+
+  const raw=record.rawOb||record.raw_text||record.rawText||record.raw||'';
+  const m=String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
+  if(m){
+    const now=new Date();
+    const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),Number(m[1]),Number(m[2]),Number(m[3]),0));
+    if(d.getTime()>now.getTime()+6*3600000) d.setUTCMonth(d.getUTCMonth()-1);
+    return d;
+  }
+
+  return null;
+}
+
+function isStaleObs(obsDate){
+  if(!obsDate) return false;
+  const ageMs=Date.now()-obsDate.getTime();
+  if(ageMs<0) return false;
+  if(ageMs>36*3600000) return false;
+  return ageMs>66*60*1000;
+}
+
+function extractWind(record){
+  const dir=record.wdir!==undefined?record.wdir:(record.windDir!==undefined?record.windDir:record.wind_direction);
+  const speed=record.wspd!==undefined?record.wspd:(record.windSpeed!==undefined?record.windSpeed:record.wind_speed_kt);
+  const gust=record.wgst!==undefined?record.wgst:(record.windGust!==undefined?record.windGust:record.wind_gust_kt);
+  return{dir,speed,gust};
+}
+
+function inferFlightCategory(record){
+  const visibilityRaw=record.visib??record.visibility??record.vis??record.prevail_vis_sm;
+  const visibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
+    ? Number(visibilityRaw.replace('+',''))||10
+    : Number(visibilityRaw);
+  const cloudLayers=Array.isArray(record.clouds)&&record.clouds.length
+    ? record.clouds
+    : (record.cover||record.base ? [{cover:record.cover,base:record.base}] : []);
+  const ceilingBases=cloudLayers
+    .filter(layer=>['BKN','OVC','OVX'].includes(String(layer.cover||'').toUpperCase()))
+    .map(layer=>Number(layer.base))
+    .filter(base=>Number.isFinite(base));
+  const ceiling=ceilingBases.length?Math.min(...ceilingBases):Infinity;
+
+  if((Number.isFinite(visibility)&&visibility<1)||ceiling<500) return 'LIFR';
+  if((Number.isFinite(visibility)&&visibility<3)||ceiling<1000) return 'IFR';
+  if((Number.isFinite(visibility)&&visibility<=5)||ceiling<=3000) return 'MVFR';
+  return 'VFR';
+}
+
+function showTooltip(airportId,clientX,clientY){
+  const airport=airports.find(a=>a.id===airportId);
+  if(!airport) return;
+
+  const raw=metarById.get(airportId)||getFallbackMetar(airport);
+  const record=metarRecordById.get(airportId);
+  const inferredCategory=record?inferFlightCategory(record):airport.cat;
+  const category=inferredCategory&&colors[inferredCategory]?inferredCategory:(record?(record.fltCat||record.flightCategory||record.flight_category||airport.cat):airport.cat);
+  const visibility=record&&(record.visib||record.visibility||record.vis||record.prevail_vis_sm);
+  const tempC=record&&(record.temp!==undefined?record.temp:record.tempC);
+  const tempF=(tempC!==undefined&&tempC!==null&&tempC!=='')?Math.round((Number(tempC)*9/5)+32):null;
+  const clouds=record&&Array.isArray(record.clouds)&&record.clouds.length?record.clouds[0]:null;
+
+  const decodedParts=[category];
+  if(visibility) decodedParts.push(`${visibility}SM`);
+  if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
+  if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
+    const ageMs=Date.now()-airport.obsDate.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      decodedParts.push(`${Math.round(ageMs/60000)}m old`);
+    }
+  }
+  if(airport.stale) decodedParts.push('STALE');
+
+  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
+  tooltip.innerHTML=
+    `<div class="tip-id">${airportId}</div>`+
+    `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
+    `<div class="tip-raw">${raw}</div>`;
+  tooltip.style.display='block';
+
+  const margin=14;
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const tipRect=tooltip.getBoundingClientRect();
+  let left=clientX-wrapRect.left+margin;
+  let top=clientY-wrapRect.top+margin;
+  if(left+tipRect.width>wrapRect.width-margin) left=clientX-wrapRect.left-tipRect.width-margin;
+  if(top+tipRect.height>wrapRect.height-margin) top=clientY-wrapRect.top-tipRect.height-margin;
+  left=Math.max(margin,left);
+  top=Math.max(margin,top);
+  tooltip.style.left=`${left}px`;
+  tooltip.style.top=`${top}px`;
+}
+
+function hideTooltip(){ tooltip.style.display='none'; }
+
+function setHomeAirport(airportId,{restart=false}={}){
+  if(!airports.some(a=>a.id===airportId)) return;
+  homeAirportId=airportId;
+  localStorage.setItem('homeAirportId_missouri',airportId);
+  welcomeError.textContent='';
+  if(restart){
+    startApp();
+    return;
+  }
+  drawHomeCompass();
+}
+
+function attachTooltipHandlers(){
+  dots.querySelectorAll('g[data-airport-id]').forEach(node=>{
+    node.addEventListener('mouseenter',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
+    node.addEventListener('mousemove',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
+    node.addEventListener('mouseleave',hideTooltip);
+    node.addEventListener('dblclick',e=>{
+      e.preventDefault();
+      const airportId=node.dataset.airportId;
+      setHomeAirport(airportId);
+      hideTooltip();
+    });
+  });
+}
+
+function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style=''){
+  const segment=svgEl('g',{class:'windsock-segment',style});
+  const poly=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:cls
+  });
+  const outline=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:'windsock-outline'
+  });
+  segment.appendChild(poly);
+  segment.appendChild(outline);
+  group.appendChild(segment);
+}
+
+function buildSockRibbon(group,{
+  bandLengths=[],
+  totalLength=80,
+  mouthRadius=10,
+  tailWidth=6,
+  inflate=1,
+  stretch=0,
+  wavePhase=0,
+  waveAmp=1,
+  sag=2,
+  gustAmp=0,
+  angleDeg=0
+}){
+  const angleRad=angleDeg*Math.PI/180;
+  const dirX=Math.cos(angleRad);
+  const dirY=Math.sin(angleRad);
+  const normalX=-dirY;
+  const normalY=dirX;
+  const samples=24;
+  const pts=[];
+  for(let i=0;i<=samples;i++){
+    const t=i/samples;
+    const stretchFactor=1+stretch*(0.15+0.85*t);
+    const along=8+t*totalLength*stretchFactor;
+    const width=(mouthRadius*2)*(1-Math.pow(t,0.82))+tailWidth*Math.pow(t,0.82);
+    const sagCurve=sag*Math.pow(t,1.3);
+    const flowT=1-t;
+    const primaryWave=Math.sin((flowT*1.9+wavePhase)*Math.PI*2)*waveAmp*(0.28+0.92*t);
+    const gustWave=Math.sin((flowT*2.15+wavePhase*1.02)*Math.PI*2)*gustAmp*(0.03+0.62*t);
+    const wave=primaryWave+gustWave;
+    const x=along*dirX + wave*normalX;
+    const y=along*dirY + wave*normalY + sagCurve;
+    pts.push({x,y,width});
+  }
+
+  let consumed=0;
+  const bandStops=bandLengths.map(length=>{
+    const start=consumed/totalLength;
+    consumed+=length;
+    return {start,end:consumed/totalLength};
+  });
+
+  for(let i=0;i<samples;i++){
+    const a=pts[i];
+    const b=pts[i+1];
+    const dx=b.x-a.x;
+    const dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len;
+    const ny=dx/len;
+    const midT=((i+0.5)/samples);
+    let bandIndex=bandStops.findIndex(stop=>midT>=stop.start&&midT<stop.end);
+    if(bandIndex===-1) bandIndex=bandStops.length-1;
+    const fill=bandIndex%2===0?'windsock-segment-orange':'windsock-segment-white';
+
+    const poly=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:fill
+    });
+    const outline=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:'windsock-outline'
+    });
+    group.appendChild(poly);
+    group.appendChild(outline);
+  }
+}
+
+function getSockSegmentCount(speed){
+  const windSpeed=Math.max(0,Number(speed)||0);
+  if(windSpeed < 5) return 1;
+  if(windSpeed < 9) return 2;
+  if(windSpeed <= 11) return 3;
+  if(windSpeed <= 15) return 4;
+  return 5;
+}
+
+function normalizeHeading(deg){
+  const normalized=((deg%360)+360)%360;
+  return normalized===0?360:normalized;
+}
+
+function getAirportMagneticVariationEast(airportId){
+  return magneticVariationByAirport[airportId]??DEFAULT_MISSOURI_MAGNETIC_VARIATION_EAST;
+}
+
+function trueToMagnetic(deg,airportId){
+  return normalizeHeading(Number(deg)-getAirportMagneticVariationEast(airportId));
+}
+
+function shortestAngleDelta(fromDeg,toDeg){
+  let delta=((toDeg-fromDeg+540)%360)-180;
+  if(delta===-180) delta=180;
+  return delta;
+}
+
+function easeInOutSine(t){
+  return -(Math.cos(Math.PI*t)-1)/2;
+}
+
+function getVariableWindVisualHeading(airportId){
+  const now=Date.now();
+  const current=vrbVisualStateByAirport.get(airportId);
+  if(current){
+    if(now<current.nextChangeAt){
+      const duration=Math.max(1,current.nextChangeAt-current.startAt);
+      const progress=Math.min(1,Math.max(0,(now-current.startAt)/duration));
+      const eased=easeInOutSine(progress);
+      return normalizeHeading(current.fromHeading + current.delta*eased);
+    }
+    const settledHeading=normalizeHeading(current.fromHeading + current.delta);
+    const nextTarget=Math.round(Math.random()*359);
+    const nextDuration=1800+Math.random()*1800;
+    vrbVisualStateByAirport.set(airportId,{
+      fromHeading:settledHeading,
+      delta:shortestAngleDelta(settledHeading,nextTarget),
+      startAt:now,
+      nextChangeAt:now+nextDuration
+    });
+    return settledHeading;
+  }
+
+  const initialHeading=Math.round(Math.random()*359);
+  const nextTarget=Math.round(Math.random()*359);
+  const nextDuration=1800+Math.random()*1800;
+  vrbVisualStateByAirport.set(airportId,{
+    fromHeading:initialHeading,
+    delta:shortestAngleDelta(initialHeading,nextTarget),
+    startAt:now,
+    nextChangeAt:now+nextDuration
+  });
+  return initialHeading;
+}
+
+function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
+  const key=`${airportId}:${Math.round(baseHeading)}`;
+  const now=Date.now();
+  const current=steadyWindVisualStateByAirport.get(key);
+
+  if(current){
+    if(now<current.nextChangeAt){
+      const duration=Math.max(1,current.nextChangeAt-current.startAt);
+      const progress=Math.min(1,Math.max(0,(now-current.startAt)/duration));
+      const eased=easeInOutSine(progress);
+      return normalizeHeading(current.fromHeading + current.delta*eased);
+    }
+    const settledHeading=normalizeHeading(current.fromHeading + current.delta);
+    const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+    const nextDuration=1800+Math.random()*1800;
+    steadyWindVisualStateByAirport.set(key,{
+      fromHeading:settledHeading,
+      delta:shortestAngleDelta(settledHeading,nextTarget),
+      startAt:now,
+      nextChangeAt:now+nextDuration
+    });
+    return settledHeading;
+  }
+
+  const initialHeading=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg*0.5));
+  const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+  const nextDuration=1800+Math.random()*1800;
+  steadyWindVisualStateByAirport.set(key,{
+    fromHeading:initialHeading,
+    delta:shortestAngleDelta(initialHeading,nextTarget),
+    startAt:now,
+    nextChangeAt:now+nextDuration
+  });
+  return initialHeading;
+}
+
+function projectExactRunways(runways,airport){
+  if(!airport||!runways.every(runway=>Array.isArray(runway.ends)&&runway.ends.length===2)) return null;
+  const airportPoint=albersMO(airport.lat,airport.lon);
+  const projected=runways.map(runway=>{
+    const [[lon1,lat1],[lon2,lat2]]=runway.ends;
+      const p1=albersMO(lat1,lon1);
+      const p2=albersMO(lat2,lon2);
+    return{
+      p1:{x:p1.x-airportPoint.x,y:p1.y-airportPoint.y},
+      p2:{x:p2.x-airportPoint.x,y:p2.y-airportPoint.y},
+      widthFt:Number(runway.widthFt)||75
+    };
+  });
+
+  const xs=projected.flatMap(runway=>[runway.p1.x,runway.p2.x]);
+  const ys=projected.flatMap(runway=>[runway.p1.y,runway.p2.y]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const spanX=Math.max(0.000001,maxX-minX);
+  const spanY=Math.max(0.000001,maxY-minY);
+  const scale=Math.min(112/spanX,92/spanY);
+
+  return projected.map(runway=>({
+    x1:123+runway.p1.x*scale,
+    y1:114-runway.p1.y*scale,
+    x2:123+runway.p2.x*scale,
+    y2:114-runway.p2.y*scale,
+    width:Math.max(5.5,Math.min(9,(runway.widthFt/150)*9))
+  }));
+}
+
+function drawRunwayOverlay(airportId,target=homeCompass){
+  const runways=runwayDataByAirport[airportId];
+  if(!runways||!runways.length) return;
+  const airport=airports.find(a=>a.id===airportId);
+
+  const group=svgEl('g',{class:'runway-group'});
+  const exactRunways=projectExactRunways(runways,airport);
+  if(exactRunways){
+    exactRunways.forEach(runway=>{
+      const dx=runway.x2-runway.x1;
+      const dy=runway.y2-runway.y1;
+      const length=Math.sqrt(dx*dx+dy*dy);
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const centerX=(runway.x1+runway.x2)/2;
+      const centerY=(runway.y1+runway.y2)/2;
+      const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${angle})`});
+      runwayGroup.appendChild(svgEl('rect',{
+        x:-length/2,
+        y:-runway.width/2,
+        width:length,
+        height:runway.width,
+        rx:1.5,
+        ry:1.5,
+        class:'runway-strip'
+      }));
+      runwayGroup.appendChild(svgEl('line',{
+        x1:-length/2+5,
+        y1:0,
+        x2:length/2-5,
+        y2:0,
+        class:'runway-centerline'
+      }));
+      group.appendChild(runwayGroup);
+    });
+    target.appendChild(group);
+    return;
+  }
+
+  const maxLength=Math.max(...runways.map(runway=>runway.length||0),1);
+  runways.forEach(runway=>{
+    const headingValue=Number(runway.heading)||0;
+    const heading=headingValue-90;
+    const normalizedLength=36+((runway.length||0)/maxLength)*42;
+    const width=8;
+    const offset=Number(runway.offset)||0;
+    const xOffset=Number(runway.xOffset)||0;
+    const yOffset=Number(runway.yOffset)||0;
+    const headingRad=heading*Math.PI/180;
+    const normalX=-Math.sin(headingRad);
+    const normalY=Math.cos(headingRad);
+    const centerX=123+normalX*offset+xOffset;
+    const centerY=114+normalY*offset+yOffset;
+    const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${heading})`});
+    runwayGroup.appendChild(svgEl('rect',{
+      x:-normalizedLength/2,
+      y:-width/2,
+      width:normalizedLength,
+      height:width,
+      rx:1.5,
+      ry:1.5,
+      class:'runway-strip'
+    }));
+    runwayGroup.appendChild(svgEl('line',{
+      x1:-normalizedLength/2+5,
+      y1:0,
+      x2:normalizedLength/2-5,
+      y2:0,
+      class:'runway-centerline'
+    }));
+    group.appendChild(runwayGroup);
+  });
+  target.appendChild(group);
+}
+
+function drawHomeCompass(){
+  homeCompass.innerHTML='';
+  const airport=airports.find(a=>a.id===homeAirportId);
+  const record=metarRecordById.get(homeAirportId);
+  const ageMin=getDisplayAgeMinutes(record,airport);
+  const compassRotation=airport?getAirportMagneticVariationEast(airport.id):DEFAULT_MISSOURI_MAGNETIC_VARIATION_EAST;
+  const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
+  const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
+  const badgeTextColor=badgeColor===colors.VFR?'#020617':'#f8fafc';
+
+  homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
+
+  const compassFrame=svgEl('g',{transform:`rotate(${compassRotation} 123 114)`});
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
+  if(airport) drawRunwayOverlay(airport.id,compassFrame);
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
+  [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
+    const rad=(deg-90)*Math.PI/180;
+    const tx=123+Math.cos(rad)*75;
+    const ty=114+Math.sin(rad)*70+4;
+    compassFrame.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
+  });
+  for(let deg=0;deg<360;deg+=30){
+    const rad=(deg-90)*Math.PI/180;
+    const x1=123+Math.cos(rad)*78;
+    const y1=114+Math.sin(rad)*78;
+    const x2=123+Math.cos(rad)*88;
+    const y2=114+Math.sin(rad)*88;
+    compassFrame.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
+  }
+  homeCompass.appendChild(compassFrame);
+  homeCompass.appendChild(svgEl('text',{x:123,y:-8,class:'windsock-airport'},homeAirportId||'----'));
+  homeCompass.appendChild(svgEl('text',{x:123,y:8,class:'windsock-airport-name'},getAirportCardName(airport,record)));
+
+  const statusBadge=svgEl('rect',{
+    x:194,y:20,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
+    fill:badgeColor,
+    stroke:badgeStroke
+  });
+  const statusText=svgEl('text',{x:220,y:34,class:'windsock-status',style:`fill:${badgeTextColor}`},airport?airport.cat:'WAITING');
+  homeCompass.appendChild(statusBadge);
+  homeCompass.appendChild(statusText);
+
+  if(!airport||!record){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},'WAITING FOR METAR'));
+    return;
+  }
+
+  const {dir,speed,gust}=extractWind(record);
+  if(dir===undefined||dir===null||speed===undefined||speed===null){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},airport.stale?'STALE METAR':'NO WIND FIELD'));
+    return;
+  }
+
+  if(dir==='VRB'){
+    const variableHeading=getVariableWindVisualHeading(homeAirportId||'VRB');
+    const streamAngle=(variableHeading+90)%360;
+    const vrbSpeed=Math.max(0,Number(speed)||0);
+    const vrbGustDelta=Math.max(0,(Number(gust)||0)-vrbSpeed);
+    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
+    const vrbMotion=svgEl('g',{
+      class:'windsock-rig',
+      style:'--sway:2deg;--wave-ms:1600ms'
+    });
+    const vrbCloth=svgEl('g');
+    buildSockRibbon(vrbCloth,{
+      bandLengths:[18],
+      totalLength:34,
+      mouthRadius:13.5,
+      tailWidth:8.5,
+      inflate:Math.min(1,vrbSpeed/15),
+      stretch:0.01,
+      wavePhase:(Date.now()%2600)/2600,
+      waveAmp:0.24,
+      sag:1.8,
+      gustAmp:vrbGustDelta>0?0.04:0,
+      angleDeg:streamAngle
+    });
+    vrbMotion.appendChild(vrbCloth);
+    vrbAnchor.appendChild(vrbMotion);
+    homeCompass.appendChild(vrbAnchor);
+
+    const vrbAlert=(Number(speed)>=20)||(gust&&Number(gust)>=20);
+    const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
+    const measureText=(text,cls)=>{
+      const probe=svgEl('text',{x:-9999,y:-9999,class:cls,style:'visibility:hidden;text-anchor:start;'});
+      probe.textContent=text;
+      homeCompass.appendChild(probe);
+      const width=probe.getComputedTextLength();
+      probe.remove();
+      return width;
+    };
+    const dirLabel='VRB';
+    const speedLabel=`${speed}KT${gust?` G${gust}`:''}`;
+    const gap=12;
+    const dirWidth=measureText(dirLabel,'windsock-copy');
+    const speedWidth=measureText(speedLabel,'windsock-copy');
+    const totalWidth=dirWidth+gap+speedWidth;
+    let cursorX=123-totalWidth/2;
+    const vrbText=svgEl('g');
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},dirLabel));
+    cursorX+=dirWidth+gap;
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${vrbAlert?alertFill:'#e5eefc'};`},speedLabel));
+    homeCompass.appendChild(vrbText);
+    homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    if(gust){
+      homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},`GUSTING TO ${gust}KT`));
+    }else{
+      homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},airport.stale?'STALE METAR':'VARIABLE WIND'));
+    }
+    return;
+  }
+
+  const windDir=Number(dir);
+  const magneticWindDir=trueToMagnetic(windDir,airport?airport.id:homeAirportId);
+  const windSpeed=Math.max(0,Number(speed)||0);
+  const gustSpeed=Math.max(windSpeed,Number(gust)||0);
+  const gustDelta=Math.max(0,gustSpeed-windSpeed);
+
+  if(windSpeed===0){
+    homeCompass.appendChild(svgEl('text',{x:123,y:114,class:'windsock-copy'},'NO WIND'));
+    homeCompass.appendChild(svgEl('text',{x:123,y:256,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    return;
+  }
+
+  const segmentCount=getSockSegmentCount(windSpeed);
+  const calmFactor=Math.min(1,windSpeed/12);
+  const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
+  const visualHeading=getSmoothedHeadingAroundBase(homeAirportId||'HOME',magneticWindDir,5);
+  const streamAngle=(visualHeading+90)%360;
+  const lightWindFactor=Math.min(1,windSpeed/6);
+  const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
+  const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
+  const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
+  const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
+
+  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
+  const motion=svgEl('g',{
+    class:'windsock-rig',
+    style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
+  });
+  const cloth=svgEl('g');
+  const bandLengths=[18,16,15,14,13].slice(0,segmentCount);
+  const veryLightWind=windSpeed<=4;
+  const lowWindTrim=windSpeed<5 ? 16-(windSpeed*1.5) : (windSpeed<7 ? (7-windSpeed)*3 : 0);
+  const totalLength=veryLightWind
+    ? 34
+    : Math.max(34,bandLengths.reduce((sum,length)=>sum+length,0)+12-lowWindTrim);
+  const inflate=Math.min(1,windSpeed/15);
+  const stretch=Math.min(0.35,Math.max(0,gustDelta)*0.03 + windSpeed*0.006) * (0.35+0.65*lightWindFactor);
+  const wavePhase=((Date.now()%2400)/2400);
+  buildSockRibbon(cloth,{
+    bandLengths,
+    totalLength,
+    mouthRadius:13.5,
+    tailWidth:veryLightWind ? 8.5 : Math.max(4.5,8-(segmentCount*0.55)),
+    inflate,
+    stretch:veryLightWind ? 0.01 : stretch,
+    wavePhase,
+    waveAmp:veryLightWind ? 0.22 : Number(flutterPx)*(0.2+0.55*lightWindFactor),
+    sag:veryLightWind ? 1.8 : (1-inflate)*(7+6*lightWindFactor),
+    gustAmp:veryLightWind ? 0 : Math.max(0,gustDelta)*0.14*(0.3+0.7*lightWindFactor),
+    angleDeg:streamAngle
+  });
+
+  motion.appendChild(cloth);
+  anchor.appendChild(motion);
+  homeCompass.appendChild(anchor);
+
+  const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
+  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'';
+  const speedAlert=windSpeed>=20;
+  const gustAlert=gust&&Number(gust)>=20;
+  const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
+  const measureText=(text,cls)=>{
+    const probe=svgEl('text',{x:-9999,y:-9999,class:cls,style:'visibility:hidden;text-anchor:start;'});
+    probe.textContent=text;
+    homeCompass.appendChild(probe);
+    const width=probe.getComputedTextLength();
+    probe.remove();
+    return width;
+  };
+  const dirLabel=`${String(windDir).padStart(3,'0')} DEG`;
+  const speedLabel=`${windSpeed}KT`;
+  const gustLabel=gust?`G${gust}`:'';
+  const gap=12;
+  const dirWidth=measureText(dirLabel,'windsock-copy');
+  const speedWidth=measureText(speedLabel,'windsock-copy');
+  const gustWidth=gust?measureText(gustLabel,'windsock-copy'):0;
+  const totalWidth=dirWidth+gap+speedWidth+(gust?(gap+gustWidth):0);
+  let cursorX=123-totalWidth/2;
+  const windText=svgEl('g');
+  windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},dirLabel));
+  cursorX+=dirWidth+gap;
+  windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${speedAlert?alertFill:'#e5eefc'};`},speedLabel));
+  cursorX+=speedWidth+gap;
+  if(gust){
+    windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${gustAlert?alertFill:'#e5eefc'};`},gustLabel));
+  }
+
+  homeCompass.appendChild(windText);
+  homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageCopy));
+  if(gustCopy){
+    homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},gustCopy));
+  }
+}
+
+async function fetchMetars(){
+  const url=`./metars.json?t=${Date.now()}`;
+  liveMetarStatus=`0 of ${airports.length} Airports updated`;
+  lastMetarError='';
+  updateHudButtons();
+
+  try{
+    const response=await fetch(url,{cache:'no-store'});
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const payload=await response.json();
+    const data=Array.isArray(payload)?payload:(Array.isArray(payload.data)?payload.data:null);
+    if(!data) throw new Error('BAD SHAPE');
+    const fetchStartedAt=Date.now();
+    let latestDataTimestampMs=null;
+
+    metarById.clear();
+    metarRecordById.clear();
+    airports.forEach(a=>{
+      a.stale=false;
+      a.cat='NONE';
+      a.obsDate=null;
+    });
+
+    data.forEach(item=>{
+      const id=extractAirportId(item);
+      const raw=extractRawMetar(item);
+      const upstreamCategory=item.fltCat||item.flightCategory||item.flight_category;
+      if(!id) return;
+
+      const airport=airports.find(a=>a.id===id);
+      if(airport){
+        const inferredCategory=inferFlightCategory(item);
+        const resolvedCategory=inferredCategory&&colors[inferredCategory]?inferredCategory:(upstreamCategory&&colors[upstreamCategory]?upstreamCategory:'NONE');
+        airport.cat=resolvedCategory;
+      }
+      if(raw){
+        const priorRaw=lastSeenMetarRawById.get(id);
+        if(priorRaw&&priorRaw!==raw){
+          freshUpdateUntilById.set(id,fetchStartedAt+3000);
+        }
+        lastSeenMetarRawById.set(id,raw);
+      }
+      if(raw) metarById.set(id,raw);
+      metarRecordById.set(id,item);
+      const itemTimestamp=parseObsTime(item);
+      if(itemTimestamp instanceof Date&&!isNaN(itemTimestamp.getTime())){
+        const itemMs=itemTimestamp.getTime();
+        if(latestDataTimestampMs===null||itemMs>latestDataTimestampMs){
+          latestDataTimestampMs=itemMs;
+        }
+      }
+      if(airport){
+        airport.stale=isStaleObs(itemTimestamp);
+        airport.obsDate=itemTimestamp;
+      }
+    });
+    missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
+    staleAirportIds=airports.filter(a=>a.stale).map(a=>a.id);
+
+    const updatedAirportCount=airports.length-missingAirportIds.length;
+    liveMetarStatus=`${updatedAirportCount} of ${airports.length} Airports updated`;
+    lastMetarUpdatedAt=latestDataTimestampMs?new Date(latestDataTimestampMs).toISOString():null;
+    drawDots();
+    drawHomeCompass();
+    drawClocks();
+    updateMissingStationsDisplay();
+    updateHudButtons();
+  }catch(error){
+    liveMetarStatus=`0 of ${airports.length} Airports updated`;
+    lastMetarError=error.message||'UNKNOWN';
+    lastMetarUpdatedAt=null;
+    missingAirportIds=airports.map(a=>a.id);
+    staleAirportIds=[];
+    updateMissingStationsDisplay();
+    updateHudButtons();
+    console.error('Cached METAR load failed',error);
+  }
+}
+
+function draw(){
+  drawMap();
+  drawDots();
+  drawClocks();
+  drawHomeCompass();
+  updateMissingStationsDisplay();
+}
+
+function updateColorMode(){
+  document.body.classList.toggle('alt-color',altColorMode);
+  drawMap();
+}
+
+function toggleColorMode(){
+  altColorMode=!altColorMode;
+  updateColorMode();
+}
+
+function showInstructions(){
+  infoOverlay.classList.add('show');
+  infoOverlay.setAttribute('aria-hidden','false');
+}
+
+function hideInstructions(){
+  infoOverlay.classList.remove('show');
+  infoOverlay.setAttribute('aria-hidden','true');
+}
+
+function goToUsaMap(){
+  const wantsKiosk=kioskMode?'1':'0';
+  sessionStorage.setItem('usaReturnKiosk',wantsKiosk);
+  sessionStorage.setItem('navReturnKiosk',wantsKiosk);
+  window.location.href='./usa-led-map.html';
+}
+
+function restoreReturnMode(){
+  const wantsKiosk=(sessionStorage.getItem('navReturnKiosk')==='1')||(sessionStorage.getItem('usaReturnKiosk')==='1');
+  sessionStorage.removeItem('navReturnKiosk');
+  sessionStorage.removeItem('usaReturnKiosk');
+  if(wantsKiosk){
+    kioskMode=true;
+    document.body.classList.add('kiosk');
+  }
+}
+
+function stopIntervals(){
+  if(clockIntervalId) clearInterval(clockIntervalId);
+  if(metarIntervalId) clearInterval(metarIntervalId);
+  if(compassIntervalId) clearInterval(compassIntervalId);
+  clockIntervalId=null;
+  metarIntervalId=null;
+  compassIntervalId=null;
+}
+
+function startApp(){
+  stopIntervals();
+  welcomeOverlay.classList.remove('show');
+  draw();
+  fetchMetars();
+  clockIntervalId=setInterval(drawClocks,1000);
+  metarIntervalId=setInterval(fetchMetars,5*60*1000);
+  compassIntervalId=setInterval(drawHomeCompass,200);
+}
+
+function initWelcome(){
+  if(!homeAirportId&&airports.length){
+    setHomeAirport(airports[0].id);
+  }
+  startApp();
+}
+
+windToggle.addEventListener('click',e=>{
+  const rect=windToggle.getBoundingClientRect();
+  const clickedRightHalf=(e.clientX-rect.left)>(rect.width/2);
+  if(clickedRightHalf){
+    toggleHudWindsock();
+    return;
+  }
+  toggleWindsock();
+});
+
+welcomeBtn.addEventListener('click',()=>{
+  const val=welcomeInput.value.trim().toUpperCase();
+  if(!airports.some(a=>a.id===val)){
+    welcomeError.textContent='Enter a valid Missouri airport from this map';
+    return;
+  }
+  setHomeAirport(val,{restart:true});
+});
+
+welcomeInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter') welcomeBtn.click();
+});
+
+document.addEventListener('keydown',async e=>{
+  if(e.target===welcomeInput) return;
+
+  if(e.key==='m'||e.key==='M'||e.key==='s'||e.key==='S'){
+    showMetarHud=!showMetarHud;
+    updateHudButtons();
+  }
+
+  if(e.key==='w'||e.key==='W'){
+    toggleWindsock();
+  }
+
+  if(e.key==='f'||e.key==='F'){
+    try{
+      if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    }catch(err){
+      console.warn(err);
+    }
+  }
+
+  if(e.key==='k'||e.key==='K'){
+    kioskMode=!kioskMode;
+    document.body.classList.toggle('kiosk',kioskMode);
+  }
+
+  if(e.key==='c'||e.key==='C'){
+    toggleColorMode();
+  }
+
+  if(e.key==='Escape'&&kioskMode){
+    kioskMode=false;
+    document.body.classList.remove('kiosk');
+  }
+});
+
+document.getElementById('homePanel').addEventListener('click',()=>{
+  stopIntervals();
+  welcomeOverlay.classList.add('show');
+  welcomeInput.value=homeAirportId||'';
+  setTimeout(()=>welcomeInput.focus(),50);
+});
+
+topHelpBtn.addEventListener('click',showInstructions);
+topUsaBtn.addEventListener('click',goToUsaMap);
+infoOverlay.addEventListener('click',hideInstructions);
+
+document.querySelector('svg').addEventListener('click',e=>{
+  if(e.target===e.currentTarget){
+    toggleColorMode();
+  }
+});
+
+window.addEventListener('resize',positionWindToggle);
+
+initWelcome();
+restoreReturnMode();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
