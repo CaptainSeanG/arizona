@@ -1,0 +1,1562 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nebraska LED Map</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap');
+html,body{width:100%;height:100%}
+body{margin:0;background:#0b1220;color:#fff;overflow:hidden;font-family:Inter,Arial,sans-serif}
+body.kiosk{cursor:none}
+body.alt-color{background:#2b0814}
+#wrap{width:100vw;height:100vh;position:relative}
+svg{width:100%;height:100%;display:block;background:#000}
+body.alt-color svg{background:#2b0814}
+.outline{fill:none;stroke:#64748b;stroke-width:3;vector-effect:non-scaling-stroke}
+.led-group{pointer-events:all}
+.led-core{stroke:#000;stroke-width:.6;transition:fill .45s ease,opacity .45s ease,r .45s ease}
+.led-glow{filter:url(#glow);opacity:.88;transition:fill .6s ease,opacity .6s ease,r .6s ease}
+.label{fill:#e5eefc;font-size:20px;font-weight:700;paint-order:stroke;stroke:#020617;stroke-width:4px;stroke-linejoin:round;user-select:none}
+.label-small{font-size:16px}
+.clock-box{fill:rgba(2,6,23,.78);stroke:#64748b;stroke-width:2}
+.clock-box.is-clickable{cursor:pointer}
+.clock-title{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px}
+.clock-time{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-anchor:start}
+.clock-meridiem{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-anchor:end}
+.clock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px}
+#windToggle{
+  position:absolute;
+  left:0;
+  top:0;
+  width:248px;
+  height:38px;
+  border:1px solid rgba(249,115,22,.55);
+  background:rgba(0,0,0,.88);
+  color:#f97316;
+  border-radius:999px;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:1px;
+  z-index:30;
+}
+.top-control-row{
+  position:absolute;
+  left:0;
+  top:0;
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  z-index:31;
+}
+.top-control-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  cursor:pointer;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#e5eefc;
+  background:rgba(2,6,23,.86);
+  border:1px solid rgba(148,163,184,.45);
+  backdrop-filter:blur(6px);
+}
+.top-control-btn{
+  min-width:70px;
+  height:34px;
+  padding:0 14px;
+}
+#topHelpBtn{min-width:64px}
+#topUsaBtn{
+  color:#bfdbfe;
+  border-color:rgba(147,197,253,.48);
+}
+#windToggle.is-off{
+  background:rgba(0,0,0,.58);
+  color:rgba(249,115,22,.55);
+  border-color:rgba(249,115,22,.32);
+}
+#tooltip{position:absolute;display:none;pointer-events:none;max-width:360px;background:rgba(2,6,23,.96);color:#e5eefc;border:1px solid #64748b;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35;z-index:60}
+#tooltip .tip-id{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:4px}
+#tooltip .tip-raw{white-space:normal}
+#tooltip .tip-summary{white-space:normal;color:#f59e0b}
+#hud{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s ease}
+body.show-metar-hud #hud{opacity:1;pointer-events:auto}
+.hud-btn{appearance:none;border:1px solid rgba(148,163,184,.45);background:rgba(2,6,23,.72);color:#e5eefc;border-radius:12px;padding:10px 14px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px}
+#metarStatusBtn{color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px}
+#hudInfo{
+  min-width:260px;
+  max-width:360px;
+  background:rgba(2,6,23,.78);
+  border:1px solid rgba(148,163,184,.45);
+  border-radius:12px;
+  padding:10px 14px;
+}
+#hudSummary{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudSummary .summary-value{color:#f8fafc}
+#hudMissing{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudMissing .missing-list{color:#f8fafc;word-break:break-word}
+#hudStale{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudStale .stale-list{color:#f8fafc;word-break:break-word}
+#hudJsonUpdated{margin-top:8px;color:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;line-height:1.35}
+#hudJsonUpdated .json-value{color:#f8fafc}
+#homePanel{
+  position:absolute;
+  left:22px;
+  bottom:22px;
+  width:236px;
+  background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));
+  border:1px solid rgba(148,163,184,.45);
+  border-radius:14px;
+  padding:8px 8px 10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  z-index:30;
+  cursor:pointer;
+}
+body.hide-windsock #homePanel{display:none}
+#stateNamePanel{position:absolute;left:22px;bottom:370px;width:236px;background:linear-gradient(180deg,rgba(1,4,14,.95),rgba(2,6,23,.96));border:1px solid rgba(148,163,184,.45);border-radius:14px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:30;pointer-events:none}
+body.hide-windsock #stateNamePanel{display:none}
+#stateNameTitle{font-family:'Orbitron',sans-serif;font-size:16px;color:#93c5fd;letter-spacing:1.5px;text-align:center;font-weight:700}
+#homeTitle{font-family:'Orbitron',sans-serif;font-size:12px;color:#93c5fd;letter-spacing:1px;margin-bottom:4px;text-align:center}
+#homeCompass{width:220px;height:300px;display:block;margin:0 auto;background:transparent}
+.windsock-mast{stroke:#94a3b8;stroke-width:7;stroke-linecap:round}
+.windsock-boom{stroke:#e2e8f0;stroke-width:4;stroke-linecap:round}
+.windsock-base{fill:rgba(51,65,85,.9);stroke:#94a3b8;stroke-width:2}
+.windsock-hinge{fill:#f8fafc;stroke:#64748b;stroke-width:2}
+.windsock-ground{stroke:rgba(51,65,85,.9);stroke-width:3;stroke-linecap:round}
+.windsock-ring{fill:rgba(15,23,42,.35);stroke:rgba(148,163,184,.35);stroke-width:2}
+.windsock-ring-inner{fill:none;stroke:rgba(148,163,184,.18);stroke-width:1.5}
+.windsock-tick{stroke:rgba(148,163,184,.55);stroke-width:2}
+.windsock-card{fill:#93c5fd;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle}
+.runway-group{opacity:.9}
+.runway-strip{fill:rgba(226,232,240,.2);stroke:rgba(226,232,240,.45);stroke-width:1.2}
+.runway-centerline{stroke:rgba(248,250,252,.35);stroke-width:1.1;stroke-dasharray:5 5;stroke-linecap:round}
+.windsock-segment-orange{fill:#ff7a1a}
+.windsock-segment-white{fill:#fffaf0}
+.windsock-outline{fill:none;stroke:rgba(15,23,42,.42);stroke-width:.9}
+.windsock-airport{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;text-anchor:middle;letter-spacing:1px}
+.windsock-airport-name{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:600;text-anchor:middle;letter-spacing:.8px}
+.windsock-copy{fill:#e5eefc;font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;text-anchor:middle}
+.windsock-sub{fill:#cbd5e1;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:600;text-anchor:middle;letter-spacing:1px}
+.windsock-status{fill:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:1px}
+.windsock-badge{stroke-width:1.5}
+.windsock-rig{animation:sockRigWave var(--wave-ms,1400ms) ease-in-out infinite;transform-origin:0 0}
+.windsock-segment{animation:sockCloth var(--cloth-ms,720ms) ease-in-out infinite alternate;transform-origin:0 0}
+.windsock-tail{animation:sockTail var(--tail-ms,560ms) ease-in-out infinite alternate;transform-origin:0 0}
+.stale .led-glow,.stale .led-core{animation:staleBlink 1.1s infinite steps(1)}
+.missing .led-glow,.missing .led-core{animation:missingPulse 1.8s ease-in-out infinite}
+.fresh-update .led-glow{animation:freshUpdateGlow 3s ease-out 1}
+.fresh-update .led-core{animation:freshUpdateCore 3s ease-out 1}
+@keyframes staleBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+@keyframes missingPulse{0%,100%{opacity:.22}50%{opacity:1}}
+@keyframes freshUpdateGlow{
+  0%{r:14;opacity:.88}
+  18%{r:70;opacity:1}
+  100%{r:14;opacity:.88}
+}
+@keyframes freshUpdateCore{
+  0%{r:5;opacity:1}
+  18%{r:25;opacity:1}
+  100%{r:5;opacity:1}
+}
+@keyframes sockRigWave{
+  0%,100%{transform:rotate(calc(var(--sway,4deg) * -1))}
+  50%{transform:rotate(var(--sway,4deg))}
+}
+@keyframes sockCloth{
+  0%{transform:translateY(calc(var(--flutter,2px) * -1)) rotate(calc(var(--bend,3deg) * -1))}
+  100%{transform:translateY(var(--flutter,2px)) rotate(var(--bend,3deg))}
+}
+@keyframes sockTail{
+  0%{transform:translateY(calc(var(--tail-drop,3px) * -1)) rotate(calc(var(--tail-bend,7deg) * -1))}
+  100%{transform:translateY(var(--tail-drop,3px)) rotate(var(--tail-bend,7deg))}
+}
+#welcomeOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.86);z-index:50}
+#welcomeOverlay.show{display:flex}
+#welcomeCard{width:min(92vw,500px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.82);z-index:55;cursor:pointer}
+.infoOverlay.show{display:flex}
+.infoCard{width:min(92vw,560px);background:rgba(15,23,42,.98);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.infoTitle{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:10px}
+.infoList{margin:14px 0 0;padding-left:18px;color:#e5eefc;line-height:1.55}
+.infoList li{margin-bottom:8px}
+.keycap{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border:1px solid rgba(148,163,184,.45);border-radius:6px;background:rgba(2,6,23,.92);color:#f8fafc;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
+.mini-wind-btn{display:inline-flex;align-items:center;justify-content:center;min-width:84px;height:24px;padding:0 12px;border:1px solid rgba(249,115,22,.55);border-radius:999px;background:rgba(0,0,0,.88);color:#f97316;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;vertical-align:middle}
+.infoClose{margin-top:16px;color:#93c5fd;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center}
+.welcome-title{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:2px;margin-bottom:8px}
+.welcome-sub{color:#cbd5e1;line-height:1.45;margin-bottom:18px}
+.welcome-row{display:flex;gap:10px;align-items:center}
+#welcomeInput{flex:1;background:rgba(2,6,23,.95);color:#e5eefc;border:1px solid rgba(148,163,184,.45);border-radius:10px;padding:12px 14px;font-family:'Orbitron',sans-serif;font-size:16px;text-transform:uppercase}
+#welcomeBtn{border:1px solid rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:#dcfce7;border-radius:10px;padding:12px 16px;font-family:'Orbitron',sans-serif;font-size:14px;cursor:pointer}
+#welcomeError{min-height:18px;color:#fca5a5;margin-top:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <svg viewBox="0 0 1118 1196" aria-label="Nebraska LED map">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <radialGradient id="stateBg" cx="50%" cy="12%" r="80%">
+        <stop offset="0%" stop-color="#0f1b31" />
+        <stop offset="42%" stop-color="#08111f" />
+        <stop offset="100%" stop-color="#020617" />
+      </radialGradient>
+      <radialGradient id="stateBgAlt" cx="50%" cy="12%" r="80%">
+        <stop offset="0%" stop-color="#214d82" />
+        <stop offset="42%" stop-color="#12345c" />
+        <stop offset="100%" stop-color="#08182f" />
+      </radialGradient>
+    </defs>
+    <g id="map"></g>
+    <g id="dots"></g>
+    <g id="clocks"></g>
+  </svg>
+  <div id="tooltip"></div>
+  <div id="topControlRow" class="top-control-row">
+    <button id="topUsaBtn" class="top-control-btn" type="button">USA</button>
+    <button id="topHelpBtn" class="top-control-btn" type="button">HELP</button>
+  </div>
+  <button id="windToggle" type="button">WINDSOCK</button>
+  <div id="stateNamePanel"><div id="stateNameTitle">NEBRASKA</div></div>
+  <div id="homePanel">
+    <div id="homeTitle">HOME AIRPORT WINDSOCK</div>
+    <svg id="homeCompass" viewBox="0 0 246 266" aria-label="Home airport windsock"></svg>
+  </div>
+  <div id="hud">
+    <div id="hudInfo">
+      <div id="metarStatusBtn">STATUS</div>
+      <div id="hudSummary" aria-live="polite">
+        <div class="summary-value">0 of 10 Airports updated</div>
+      </div>
+      <div id="hudMissing" aria-live="polite">
+        <div class="missing-title">MISSING STATIONS</div>
+        <div class="missing-list">NONE</div>
+      </div>
+      <div id="hudStale" aria-live="polite">
+        <div class="stale-title">STALE STATIONS</div>
+        <div class="stale-list">NONE</div>
+      </div>
+      <div id="hudJsonUpdated" aria-live="polite">
+        <div>LAST UPDATED</div>
+        <div class="json-value">WAITING</div>
+      </div>
+    </div>
+  </div>
+  <div id="welcomeOverlay">
+    <div id="welcomeCard">
+      <div class="welcome-title">NEBRASKA WX MAP</div>
+      <div class="welcome-sub">Enter your home airport any time. We&apos;ll save it and use it for the windsock card.</div>
+      <div class="welcome-row">
+        <input id="welcomeInput" maxlength="4" placeholder="KOMA" />
+        <button id="welcomeBtn" type="button">START</button>
+      </div>
+      <div id="welcomeError"></div>
+    </div>
+  </div>
+  <div id="infoOverlay" class="infoOverlay" aria-hidden="true">
+    <div id="infoCard" class="infoCard" role="dialog" aria-label="Map instructions">
+      <div class="infoTitle">HOW TO USE THE MAP</div>
+      <ul class="infoList">
+        <li>Double tap an airport LED to make it your home airport.</li>
+        <li>Tap the background to toggle colors.</li>
+        <li>On the <span class="mini-wind-btn">WINDSOCK</span> button, tap the left or right half of the button to show on the left or right.</li>
+        <li>Tap the windsock card to reopen the home-airport selector.</li>
+        <li>Press <span class="keycap">S</span> for the status panel.</li>
+        <li>Press <span class="keycap">F</span> for fullscreen and <span class="keycap">K</span> for kiosk cursor mode.</li>
+        <li>Hover over an airport LED to see the decoded weather and raw METAR.</li>
+      </ul>
+      <div class="infoClose">TAP TO CLOSE</div>
+    </div>
+  </div>
+</div>
+<script>
+const airports=[
+{id:'KOMA',lat:41.3031504733333,lon:-95.8939980316667,cat:'VFR',dx:14,dy:12},
+{id:'KLNK',lat:40.8520829883333,lon:-96.757771145,cat:'VFR',dx:10,dy:-10},
+{id:'KGRI',lat:40.9697427025,lon:-98.3090718,cat:'VFR',dx:10,dy:-10},
+{id:'KEAR',lat:40.7271249025,lon:-99.006200545,cat:'VFR',dx:10,dy:-10},
+{id:'KBFF',lat:41.874022955,lon:-103.595665225,cat:'VFR',dx:10,dy:-10},
+{id:'KOFK',lat:41.98546001,lon:-97.435113285,cat:'VFR',dx:10,dy:-10},
+{id:'KHSI',lat:40.604931685,lon:-98.427893195,cat:'VFR',dx:10,dy:-10},
+{id:'KLBF',lat:41.1263752475,lon:-100.685739335,cat:'VFR',dx:10,dy:-10},
+{id:'KANW',lat:42.57952267,lon:-99.9925422025,cat:'VFR',dx:10,dy:-10},
+{id:'KBIE',lat:40.3011740825,lon:-96.754189155,cat:'VFR',dx:10,dy:-10}
+];
+
+const colors={VFR:'#22c55e',MVFR:'#3b82f6',IFR:'#ef4444',LIFR:'#d946ef',NONE:'#6b7280'};
+const DEFAULT_NEBRASKA_MAGNETIC_VARIATION_EAST=6.7;
+const magneticVariationByAirport={
+  KANW:7.1,
+  KBFF:8.1,
+  KBIE:6.4,
+  KEAR:6.8,
+  KGRI:6.8,
+  KHSI:6.9,
+  KLBF:7.5,
+  KLNK:6.3,
+  KOFK:6.7,
+  KOMA:6.1
+};
+const legacyRunwayDataByAirport={};
+const nebraskaRunwayExactData={
+  KANW:[
+    {ends:[[-99.9958858,42.58754175],[-99.98127527,42.57699513]],length:5501,widthFt:75},
+    {ends:[[-99.99665322,42.58613658],[-99.99635452,42.56741722]],length:6824,widthFt:110}
+  ],
+  KBFF:[
+    {ends:[[-103.61063936,41.86978047],[-103.58338483,41.87797025]],length:8002,widthFt:150},
+    {ends:[[-103.60495163,41.88228458],[-103.58368508,41.86605652]],length:8279,widthFt:150}
+  ],
+  KBIE:[
+    {ends:[[-96.75952797,40.30504791],[-96.75007661,40.29537502]],length:4401,widthFt:75},
+    {ends:[[-96.75364152,40.30982463],[-96.75351052,40.29444877]],length:5602,widthFt:100}
+  ],
+  KEAR:[
+    {ends:[[-99.00873966,40.73231277],[-98.99857708,40.72269069]],length:4498,widthFt:75},
+    {ends:[[-99.00709361,40.73640102],[-99.01039183,40.71709513]],length:7094,widthFt:100}
+  ],
+  KGRI:[
+    {ends:[[-98.31171944,40.97836666],[-98.29489166,40.96547222]],length:6608,widthFt:100},
+    {ends:[[-98.31477138,40.97717416],[-98.31490472,40.95795777]],length:7002,widthFt:150}
+  ],
+  KHSI:[
+    {ends:[[-98.43378916,40.598942],[-98.4219878,40.60740891]],length:4501,widthFt:75},
+    {ends:[[-98.43365255,40.61437811],[-98.42214327,40.59899772]],length:6451,widthFt:100}
+  ],
+  KLBF:[
+    {ends:[[-100.69022338,41.132242],[-100.6667018,41.11936961]],length:8001,widthFt:150},
+    {ends:[[-100.6928615,41.13303044],[-100.69317066,41.12085894]],length:4436,widthFt:100}
+  ],
+  KLNK:[
+    {ends:[[-96.76967572,40.867305],[-96.75175872,40.84785133]],length:8649,widthFt:150},
+    {ends:[[-96.75075436,40.86134247],[-96.75085747,40.84542336]],length:5801,widthFt:100},
+    {ends:[[-96.76167563,40.86299161],[-96.76190497,40.82758416]],length:12901,widthFt:200}
+  ],
+  KOFK:[
+    {ends:[[-97.4375038,41.97760802],[-97.43041688,41.9926178]],length:5801,widthFt:100},
+    {ends:[[-97.44285008,41.99207847],[-97.42968238,41.97953575]],length:5806,widthFt:100}
+  ],
+  KOMA:[
+    {ends:[[-95.90041736,41.3135305],[-95.88240644,41.29456436]],length:8500,widthFt:150},
+    {ends:[[-95.90608536,41.31384169],[-95.88595002,41.29264019]],length:9502,widthFt:150},
+    {ends:[[-95.89450963,41.31335138],[-95.89461938,41.29097472]],length:8154,widthFt:150}
+  ]
+};
+const runwayDataByAirport=nebraskaRunwayExactData;
+
+const imageOutline=[[0,900],[0,150],[1118,150],[1118,900],[0,900]];
+const neOutline=[[-104.052447329914,41.3932339244264],[-104.052603826102,41.5642690993648],[-104.052804579823,41.8713554518563],[-104.052788355035,42.1448269619114],[-104.052875861213,42.4655048349602],[-104.053087722855,42.7845196444844],[-104.012038969949,43.0014957418357],[-103.621986338178,43.0009059021157],[-103.186327273985,43.0006030971459],[-102.733156071076,42.9999693629895],[-102.317774818313,42.9997053708437],[-102.023593867381,42.9995173510318],[-101.592295507426,42.9965299472164],[-101.140955329946,42.9977977529748],[-100.670998614119,42.9982083742205],[-100.218159987977,42.9987249904493],[-99.8654816238225,42.9980689716187],[-99.4316524258615,42.9980163008085],[-98.9589486094977,42.9982451325663],[-98.4972099977045,42.9924710016099],[-98.4405448134934,42.928598786904],[-98.3545624403336,42.906319220926],[-98.277099259343,42.8746742148135],[-98.2263360893289,42.8573952725217],[-98.1307243668498,42.8231075503153],[-98.0860718030419,42.795407592423],[-98.0481125818421,42.768349163871],[-97.991968684541,42.7665193907024],[-97.9260493945966,42.7860366133478],[-97.8820428000836,42.8316505905542],[-97.8481044052496,42.867298946306],[-97.7953419189249,42.8430533405703],[-97.7511046639339,42.8430868770057],[-97.7227326322934,42.8625256413778],[-97.6892437733797,42.8387908479721],[-97.6435671596093,42.8492910621141],[-97.6040956655748,42.8618206261403],[-97.5807690906372,42.8432633830233],[-97.5372425980215,42.8479515469767],[-97.5156760457656,42.8620157798806],[-97.4892657317396,42.867997439319],[-97.4734243402336,42.8553674701091],[-97.4430473912166,42.8460773308146],[-97.3823819687282,42.864253436064],[-97.3487389231291,42.8727648578579],[-97.3124944424189,42.8656662327349],[-97.2622259606601,42.8533448332117],[-97.2179885021226,42.8340451264194],[-97.1809244491787,42.8036350093737],[-97.1356011095067,42.7798058153523],[-97.0787253670273,42.7715071246566],[-97.012790207428,42.7610305209242],[-96.9846684411605,42.7570243329494],[-96.9613974886376,42.7408273185873],[-96.9575605783534,42.7206586871425],[-96.9304366832691,42.7242841817007],[-96.9062387749833,42.7338595183312],[-96.8508162718926,42.7206761994073],[-96.8132234484207,42.7044292768536],[-96.8032244167207,42.689182857968],[-96.7969889367394,42.6678193631684],[-96.7511785871933,42.6617421708505],[-96.7097806438485,42.6589768437472],[-96.693546119721,42.6438874339542],[-96.7058334118966,42.6220587622481],[-96.7036180780218,42.5967445250072],[-96.6427867067386,42.5568010666404],[-96.6209025902463,42.5101649293587],[-96.5433406637701,42.5189733967217],[-96.4772357419917,42.4802636463471],[-96.4035423726999,42.4871458085374],[-96.3798548429623,42.4527920934507],[-96.4156025422525,42.4037964363207],[-96.4168036595177,42.3496648284967],[-96.3686177547637,42.2952452135795],[-96.328416798948,42.2443106705481],[-96.3380772492299,42.2180976322964],[-96.3483835849459,42.1827639832087],[-96.3182728391371,42.1450981413517],[-96.2684296139743,42.1118416183508],[-96.2775722169629,42.0569928948401],[-96.2332601730885,42.0400810857536],[-96.2425614694597,42.0050599778509],[-96.2072531028192,42.0094236741237],[-96.1926258841959,41.9814495668512],[-96.141680101305,41.978121834412],[-96.1447135143876,41.9399936070874],[-96.1605658675537,41.9086169658513],[-96.1421830640021,41.8685094499957],[-96.1109167868554,41.8262371451939],[-96.0647404119547,41.7924962551025],[-96.0835825545673,41.7540469060391],[-96.0878637420226,41.7223180428885],[-96.0996849934119,41.6990744734322],[-96.116168953221,41.6720645819303],[-96.1124727316154,41.6002017101458],[-96.0948349533674,41.5543590343333],[-96.0873681317038,41.5293653294098],[-96.0311317625436,41.5259637960453],[-95.9985724249845,41.5365320796078],[-96.0056401188722,41.4992050362567],[-96.0068177723361,41.4731107773743],[-95.9679879537099,41.4644403247447],[-95.9254947435503,41.4589871267484],[-95.9330306675304,41.4301594564746],[-95.931920633904,41.421448965939],[-95.9294151822927,41.4121981210478],[-95.933541093647,41.4026756611425],[-95.937468643047,41.3943500398848],[-95.9289103370817,41.3692667882564],[-95.9499531385619,41.3359013127743],[-95.8937980738888,41.3206806046159],[-95.9006677024537,41.2748763449091],[-95.9287948557981,41.2960189624148],[-95.9202136167409,41.268771405421],[-95.9201951465228,41.2552249044723],[-95.9258325067802,41.2116056138556],[-95.9062605804139,41.1843207614331],[-95.8465745912758,41.1828394335058],[-95.844815029979,41.1670095681796],[-95.8642306899765,41.1677153858865],[-95.8772674205599,41.1642542633497],[-95.8830927408901,41.1532411606417],[-95.8829714536701,41.1476475076188],[-95.8817383042481,41.1429069565955],[-95.8786591036817,41.1374913612865],[-95.8720981347313,41.1299012458168],[-95.866583473492,41.1123013749085],[-95.8625407337711,41.0921124009588],[-95.8694810169724,41.0765561995654],[-95.8825245340797,41.0623448931925],[-95.8591521705227,41.0262057050838],[-95.8462903753623,40.9897526772142],[-95.8285396489614,40.9741933712067],[-95.8361710758835,40.9544899426432],[-95.8405671564034,40.9335766046203],[-95.8335578515401,40.9161810546806],[-95.813190296196,40.9013170719045],[-95.8134507220819,40.8825792217521],[-95.8354320366143,40.8727062685286],[-95.8488707872172,40.8611563205809],[-95.8408667528766,40.8440245247301],[-95.8392749427174,40.8256102846698],[-95.8449210422798,40.8059941611597],[-95.8342662995109,40.7879491461544],[-95.8552023511474,40.7648312135463],[-95.8856191267981,40.7452167397896],[-95.8732655203614,40.7130477414798],[-95.8445715058454,40.6797050814017],[-95.7890472023019,40.6587251389263],[-95.76711703291,40.6194955322974],[-95.7520365020661,40.5940827746086],[-95.7715650904776,40.5663027035746],[-95.7687254051483,40.5341921594384],[-95.72662145464,40.5273542438469],[-95.6785230083208,40.5625917689206],[-95.6950044609824,40.4967785598185],[-95.687040510287,40.4648205290161],[-95.6558046053369,40.4323437518987],[-95.6491189722919,40.3959068518879],[-95.6375241503408,40.3620729256102],[-95.6253777931664,40.334472155513],[-95.6577211459248,40.313809193191],[-95.6228789133633,40.3125851796364],[-95.5796790925293,40.2995179688163],[-95.5514869261557,40.2816161789929],[-95.5323321784146,40.2534313420244],[-95.4758479567658,40.2410342722994],[-95.4826794122993,40.1982581721447],[-95.4358706702576,40.1579365270421],[-95.3948917039081,40.1220657977368],[-95.3983170410411,40.0878587065213],[-95.4208521834108,40.0571429962333],[-95.3831783918912,40.0270199694689],[-95.3111510273403,40.0080836988432],[-95.6713827126975,40.0003192583189],[-96.1631367668951,40.0007563812916],[-96.5391387816177,40.0011108449528],[-96.8778627292029,40.001507649983],[-97.2754858673207,40.0019518041694],[-97.7272098378807,40.0021424284175],[-98.1414069460471,40.0023007187694],[-98.4672664051053,40.0024337520463],[-98.8701975033732,40.0023733500962],[-99.2352652068824,40.002042502453],[-99.64715691859,40.001837165118],[-100.005283648202,40.001669783518],[-100.363525665005,40.0018364744121],[-100.729813975205,40.0020620852531],[-101.041623298313,40.0023076744361],[-101.408948711249,40.0025980530286],[-101.794907675431,40.0030244820996],[-102.051733216958,40.0337799689121],[-102.051511949956,40.3224905333867],[-102.051524464011,40.6394771386512],[-102.051577072482,40.9886257322755],[-102.43084558606,41.0024072324005],[-102.830928985894,41.0023468472357],[-103.32540706514,41.0021001972673],[-103.801660527165,41.0016532968772],[-104.053337966638,41.1484269138313],[-104.052447329914,41.3932339244264]];
+
+const map=document.getElementById('map');
+const dots=document.getElementById('dots');
+const clocks=document.getElementById('clocks');
+const tooltip=document.getElementById('tooltip');
+const hudMissing=document.getElementById('hudMissing');
+const hudStale=document.getElementById('hudStale');
+const hudJsonUpdated=document.getElementById('hudJsonUpdated');
+const topControlRow=document.getElementById('topControlRow');
+const topHelpBtn=document.getElementById('topHelpBtn');
+const topUsaBtn=document.getElementById('topUsaBtn');
+const windToggle=document.getElementById('windToggle');
+const metarStatusBtn=document.getElementById('metarStatusBtn');
+const stateNamePanel=document.getElementById('stateNamePanel');
+const stateNameTitle=document.getElementById('stateNameTitle');
+const homeTitle=document.getElementById('homeTitle');
+const homeCompass=document.getElementById('homeCompass');
+const welcomeOverlay=document.getElementById('welcomeOverlay');
+const welcomeInput=document.getElementById('welcomeInput');
+const welcomeBtn=document.getElementById('welcomeBtn');
+const welcomeError=document.getElementById('welcomeError');
+const infoOverlay=document.getElementById('infoOverlay');
+
+const metarById=new Map();
+const metarRecordById=new Map();
+const lastSeenMetarRawById=new Map();
+const freshUpdateUntilById=new Map();
+const vrbVisualStateByAirport=new Map();
+const steadyWindVisualStateByAirport=new Map();
+
+let homeAirportId=(localStorage.getItem('homeAirportId_nebraska')||'KOMA').toUpperCase();
+let liveMetarStatus=`0 of ${airports.length} Airports updated`;
+let lastMetarError='';
+let lastMetarUpdatedAt=null;
+let showMetarHud=false;
+let showWindsock=true;
+let showHudWindsock=false;
+let kioskMode=false;
+let altColorMode=false;
+let missingAirportIds=[];
+let staleAirportIds=[];
+let clockIntervalId=null;
+let metarIntervalId=null;
+let compassIntervalId=null;
+stateNameTitle.textContent=document.title.replace(/\s+LED Map$/i,'').replace(/\s+WX Map$/i,'').toUpperCase();
+const CLOCK_LAYOUT={x:748,width:348,boxHeight:102,box1Y:40,box2Y:156};
+
+function svgEl(name,attrs={},text=''){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',name);
+  Object.entries(attrs).forEach(([key,val])=>el.setAttribute(key,val));
+  if(text) el.textContent=text;
+  return el;
+}
+
+function albersNE(lat,lon){
+  const centerLat=41.5*Math.PI/180,centerLon=-99.8;
+  return{x:(lon-centerLon)*Math.cos(centerLat),y:lat-41.5};
+}
+
+const projBounds=computeBounds(neOutline);
+const imageBounds={
+  minX:Math.min(...imageOutline.map(p=>p[0])),
+  maxX:Math.max(...imageOutline.map(p=>p[0])),
+  minY:Math.min(...imageOutline.map(p=>p[1])),
+  maxY:Math.max(...imageOutline.map(p=>p[1]))
+};
+
+function getDisplayAgeMinutes(record,airport){
+  const primary=
+    airport&&airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())
+      ? airport.obsDate
+      : (record?parseObsTime(record):null);
+
+  if(primary instanceof Date&&!isNaN(primary.getTime())){
+    const ageMs=Date.now()-primary.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      return Math.round(ageMs/60000);
+    }
+  }
+
+  if(lastMetarUpdatedAt){
+    const fallback=new Date(lastMetarUpdatedAt);
+    if(!isNaN(fallback.getTime())){
+      const ageMs=Date.now()-fallback.getTime();
+      if(ageMs>=0&&ageMs<=24*60*60*1000){
+        return Math.round(ageMs/60000);
+      }
+    }
+  }
+
+  return null;
+}
+
+function project(lat,lon){
+  const p=albersNE(lat,lon);
+  const nx=(p.x-projBounds.minX)/(projBounds.maxX-projBounds.minX);
+  const ny=(p.y-projBounds.minY)/(projBounds.maxY-projBounds.minY);
+  return{
+    x:imageBounds.minX+nx*(imageBounds.maxX-imageBounds.minX),
+    y:imageBounds.maxY-ny*(imageBounds.maxY-imageBounds.minY)
+  };
+}
+
+function updateHudButtons(){
+  document.body.classList.toggle('show-metar-hud',showMetarHud);
+  document.body.classList.toggle('hide-windsock',!showWindsock&&!showHudWindsock);
+  document.body.classList.toggle('show-hud-windsock',showHudWindsock);
+  windToggle.classList.toggle('is-off',!showWindsock);
+  metarStatusBtn.textContent='STATUS';
+  const summaryValue=hudSummary.querySelector('.summary-value');
+  summaryValue.textContent=lastMetarError
+    ? `${liveMetarStatus} (${lastMetarError})`
+    : liveMetarStatus;
+  const jsonValue=hudJsonUpdated.querySelector('.json-value');
+  jsonValue.textContent=lastMetarUpdatedAt
+    ? new Date(lastMetarUpdatedAt).toLocaleString('en-US',{
+        month:'2-digit',
+        day:'2-digit',
+        hour:'2-digit',
+        minute:'2-digit',
+        second:'2-digit',
+        hour12:true
+      })
+    : 'WAITING';
+  positionHomePanel();
+}
+
+function updateMissingStationsDisplay(){
+  const list=hudMissing.querySelector('.missing-list');
+  list.textContent=missingAirportIds.length?missingAirportIds.join(', '):'NONE';
+  hudMissing.style.display=missingAirportIds.length>0?'block':'none';
+
+  const staleList=hudStale.querySelector('.stale-list');
+  staleList.textContent=staleAirportIds.length?staleAirportIds.join(', '):'NONE';
+  hudStale.style.display=staleAirportIds.length>0?'block':'none';
+}
+
+function toggleWindsock(){
+  showWindsock=!showWindsock;
+  if(!showWindsock) showHudWindsock=false;
+  updateHudButtons();
+}
+
+function toggleHudWindsock(){
+  showHudWindsock=!showHudWindsock;
+  if(showHudWindsock){
+    showWindsock=false;
+  }
+  updateHudButtons();
+}
+
+function drawMap(){
+  map.innerHTML='';
+  let path='';
+  neOutline.forEach(([lon,lat],i)=>{
+    const p=project(lat,lon);
+    path+=`${i===0?'M':'L'} ${p.x} ${p.y} `;
+  });
+  path+='Z';
+  const fillShape=svgEl('path',{d:path,fill:altColorMode?'url(#stateBgAlt)':'url(#stateBg)'});
+  const outline=svgEl('path',{d:path,class:'outline'});
+  map.appendChild(fillShape);
+  map.appendChild(outline);
+}
+
+function getAirportDisplayColor(airport){
+  if(!metarRecordById.has(airport.id)) return colors.NONE;
+  return colors[airport.cat]||colors.VFR;
+}
+
+function drawDots(){
+  dots.innerHTML='';
+  airports.forEach(a=>{
+    const p=project(a.lat,a.lon);
+    const isMissing=!metarRecordById.has(a.id);
+    const classes=['led-group'];
+    const freshUntil=freshUpdateUntilById.get(a.id)||0;
+    if(a.stale) classes.push('stale');
+    if(isMissing) classes.push('missing');
+    if(freshUntil>Date.now()&&!a.stale&&!isMissing) classes.push('fresh-update');
+    const g=svgEl('g',{class:classes.join(' ')});
+    g.dataset.airportId=a.id;
+    const dotColor=getAirportDisplayColor(a);
+
+    const glow=svgEl('circle',{cx:p.x,cy:p.y,r:14,fill:dotColor,class:'led-glow'});
+    const core=svgEl('circle',{cx:p.x,cy:p.y,r:5,fill:dotColor,class:'led-core'});
+    const label=svgEl('text',{
+      x:p.x+(a.dx||10),
+      y:p.y+(a.dy||-10),
+      class:'label'
+    },a.id);
+    if(a.center||(a.dx||0)===0) label.setAttribute('text-anchor','middle');
+
+    g.appendChild(glow);
+    g.appendChild(core);
+    dots.appendChild(g);
+    dots.appendChild(label);
+  });
+  attachTooltipHandlers();
+}
+
+function drawClocks(){
+  clocks.innerHTML='';
+  const now=new Date();
+  const zulu=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false});
+  const localParts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).split(' ');
+  const localTime=localParts[0]||'';
+  const localMeridiem=localParts[1]||'';
+  const updatedZulu=lastMetarUpdatedAt
+    ? new Date(lastMetarUpdatedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+'Z'
+    : 'WAITING';
+
+  const panel=svgEl('g');
+  const clockX=CLOCK_LAYOUT.x;
+  const boxWidth=CLOCK_LAYOUT.width;
+  const box1Y=CLOCK_LAYOUT.box1Y;
+  const box2Y=CLOCK_LAYOUT.box2Y;
+  const boxHeight=CLOCK_LAYOUT.boxHeight;
+  const box1=svgEl('rect',{x:clockX,y:box1Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  const box2=svgEl('rect',{x:clockX,y:box2Y,rx:18,ry:18,width:boxWidth,height:boxHeight,class:'clock-box'});
+  panel.appendChild(box1);
+  const zuluTitle=svgEl('text',{x:clockX+25,y:box1Y+34,class:'clock-title'},'ZULU');
+  const zuluTime=svgEl('text',{x:clockX+25,y:box1Y+72,class:'clock-time'},zulu);
+  const zuluUpdated=svgEl('text',{x:clockX+25,y:box1Y+94,class:'clock-sub'},`UPDATED ${updatedZulu}`);
+  panel.appendChild(zuluTitle);
+  panel.appendChild(zuluTime);
+  panel.appendChild(zuluUpdated);
+  panel.appendChild(box2);
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+34,class:'clock-title'},'LOCAL'));
+  panel.appendChild(svgEl('text',{x:clockX+25,y:box2Y+72,class:'clock-time'},localTime));
+  panel.appendChild(svgEl('text',{x:clockX+boxWidth-24,y:box2Y+67,class:'clock-meridiem'},localMeridiem));
+  clocks.appendChild(panel);
+  positionWindToggle();
+}
+
+function positionWindToggle(){
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const viewWidth=1118;
+  const viewHeight=1196;
+  const scale=Math.min(wrapRect.width/viewWidth,wrapRect.height/viewHeight);
+  const offsetX=(wrapRect.width-viewWidth*scale)/2;
+  const offsetY=(wrapRect.height-viewHeight*scale)/2;
+  const buttonWidth=248;
+  const buttonHeight=38;
+  const left=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(buttonWidth*scale);
+  const top=offsetY+(CLOCK_LAYOUT.box2Y+CLOCK_LAYOUT.boxHeight+20)*scale;
+  const controlsWidth=(70+64+8);
+  const controlsLeft=offsetX+(CLOCK_LAYOUT.x+CLOCK_LAYOUT.width)*scale-(controlsWidth*scale);
+  windToggle.style.left=`${Math.round(left)}px`;
+  windToggle.style.top=`${Math.round(top)}px`;
+  windToggle.style.width=`${Math.round(buttonWidth*scale)}px`;
+  windToggle.style.height=`${Math.round(buttonHeight*scale)}px`;
+  const controlsTop=offsetY+(CLOCK_LAYOUT.box1Y-42)*scale;
+  topControlRow.style.left=`${Math.round(controlsLeft)}px`;
+  topControlRow.style.top=`${Math.round(Math.max(offsetY+8,controlsTop))}px`;
+  topControlRow.style.transform=`scale(${scale})`;
+  topControlRow.style.transformOrigin='top left';
+  positionHomePanel();
+}
+
+function positionHomePanel(){
+  const homePanel=document.getElementById('homePanel');
+  homePanel.style.left='';
+  homePanel.style.right='';
+  homePanel.style.bottom='';
+  stateNamePanel.style.left='';
+  stateNamePanel.style.right='';
+  stateNamePanel.style.bottom='';
+  const panelGap=10;
+  const homeHeight=homePanel.offsetHeight||330;
+
+  if(showHudWindsock){
+    const hudRect=document.getElementById('hud').getBoundingClientRect();
+    const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+    const gap=12;
+    homePanel.style.left='auto';
+    homePanel.style.right=`${Math.max(22,Math.round(wrapRect.right-hudRect.right))}px`;
+    homePanel.style.bottom=`${Math.max(22,Math.round(wrapRect.bottom-hudRect.top+gap))}px`;
+    homePanel.style.zIndex='35';
+    stateNamePanel.style.left='auto';
+    stateNamePanel.style.right=homePanel.style.right;
+    stateNamePanel.style.bottom=`${parseInt(homePanel.style.bottom,10)+homeHeight+panelGap}px`;
+    stateNamePanel.style.zIndex='35';
+    return;
+  }
+
+  homePanel.style.left='22px';
+  homePanel.style.right='auto';
+  homePanel.style.bottom='22px';
+  homePanel.style.zIndex='30';
+  stateNamePanel.style.left='22px';
+  stateNamePanel.style.right='auto';
+  stateNamePanel.style.bottom=`${22+homeHeight+panelGap}px`;
+  stateNamePanel.style.zIndex='30';
+}
+
+function getFallbackMetar(airport){
+  return `${airport.id} NO CURRENT METAR`;
+}
+
+function getAirportCardName(airport,record){
+  const raw=String(record?.name||record?.stationName||record?.site||airport?.name||airport?.id||'').trim();
+  const cleaned=raw.replace(/,\s*[A-Z]{2}\s*,\s*US$/i,'').replace(/,\s*US$/i,'');
+  return cleaned.length>28?`${cleaned.slice(0,25).trim()}...`:cleaned;
+}
+
+function extractAirportId(item){
+  return String(item.icaoId||item.stationId||item.icaoid||item.icao||item.id||'').toUpperCase();
+}
+
+function extractRawMetar(item){
+  return item.rawOb||item.raw_text||item.rawText||item.raw||item.metar||'';
+}
+
+function parseObsTime(record){
+  const candidates=[record.obsTime,record.observation_time,record.reportTime,record.report_time,record.obsTimeUtc].filter(Boolean);
+  for(const value of candidates){
+    if(typeof value==='number' && Number.isFinite(value)){
+      const epochMs=value<1e12 ? value*1000 : value;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
+    if(typeof value==='string' && /^\d+$/.test(value)){
+      const numeric=Number(value);
+      const epochMs=numeric<1e12 ? numeric*1000 : numeric;
+      const d=new Date(epochMs);
+      if(!Number.isNaN(d.getTime())) return d;
+    }
+    const d=new Date(value);
+    if(!Number.isNaN(d.getTime())) return d;
+  }
+
+  const raw=record.rawOb||record.raw_text||record.rawText||record.raw||'';
+  const m=String(raw).match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
+  if(m){
+    const now=new Date();
+    const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),Number(m[1]),Number(m[2]),Number(m[3]),0));
+    if(d.getTime()>now.getTime()+6*3600000) d.setUTCMonth(d.getUTCMonth()-1);
+    return d;
+  }
+
+  return null;
+}
+
+function isStaleObs(obsDate){
+  if(!obsDate) return false;
+  const ageMs=Date.now()-obsDate.getTime();
+  if(ageMs<0) return false;
+  if(ageMs>36*3600000) return false;
+  return ageMs>66*60*1000;
+}
+
+function extractWind(record){
+  const dir=record.wdir!==undefined?record.wdir:(record.windDir!==undefined?record.windDir:record.wind_direction);
+  const speed=record.wspd!==undefined?record.wspd:(record.windSpeed!==undefined?record.windSpeed:record.wind_speed_kt);
+  const gust=record.wgst!==undefined?record.wgst:(record.windGust!==undefined?record.windGust:record.wind_gust_kt);
+  return{dir,speed,gust};
+}
+
+function inferFlightCategory(record){
+  const visibilityRaw=record.visib??record.visibility??record.vis??record.prevail_vis_sm;
+  const visibility=typeof visibilityRaw==='string'&&visibilityRaw.includes('+')
+    ? Number(visibilityRaw.replace('+',''))||10
+    : Number(visibilityRaw);
+  const cloudLayers=Array.isArray(record.clouds)&&record.clouds.length
+    ? record.clouds
+    : (record.cover||record.base ? [{cover:record.cover,base:record.base}] : []);
+  const ceilingBases=cloudLayers
+    .filter(layer=>['BKN','OVC','OVX'].includes(String(layer.cover||'').toUpperCase()))
+    .map(layer=>Number(layer.base))
+    .filter(base=>Number.isFinite(base));
+  const ceiling=ceilingBases.length?Math.min(...ceilingBases):Infinity;
+
+  if((Number.isFinite(visibility)&&visibility<1)||ceiling<500) return 'LIFR';
+  if((Number.isFinite(visibility)&&visibility<3)||ceiling<1000) return 'IFR';
+  if((Number.isFinite(visibility)&&visibility<=5)||ceiling<=3000) return 'MVFR';
+  return 'VFR';
+}
+
+function showTooltip(airportId,clientX,clientY){
+  const airport=airports.find(a=>a.id===airportId);
+  if(!airport) return;
+
+  const raw=metarById.get(airportId)||getFallbackMetar(airport);
+  const record=metarRecordById.get(airportId);
+  const inferredCategory=record?inferFlightCategory(record):airport.cat;
+  const category=inferredCategory&&colors[inferredCategory]?inferredCategory:(record?(record.fltCat||record.flightCategory||record.flight_category||airport.cat):airport.cat);
+  const visibility=record&&(record.visib||record.visibility||record.vis||record.prevail_vis_sm);
+  const tempC=record&&(record.temp!==undefined?record.temp:record.tempC);
+  const tempF=(tempC!==undefined&&tempC!==null&&tempC!=='')?Math.round((Number(tempC)*9/5)+32):null;
+  const clouds=record&&Array.isArray(record.clouds)&&record.clouds.length?record.clouds[0]:null;
+
+  const decodedParts=[category];
+  if(visibility) decodedParts.push(`${visibility}SM`);
+  if(clouds&&(clouds.cover||clouds.base)) decodedParts.push(`${clouds.cover||''}${clouds.base||''}`);
+  if(tempF!==null&&Number.isFinite(tempF)) decodedParts.push(`${tempF}°F`);
+  if(airport.obsDate instanceof Date&&!isNaN(airport.obsDate.getTime())){
+    const ageMs=Date.now()-airport.obsDate.getTime();
+    if(ageMs>=0&&ageMs<=24*60*60*1000){
+      decodedParts.push(`${Math.round(ageMs/60000)}m old`);
+    }
+  }
+  if(airport.stale) decodedParts.push('STALE');
+
+  const decoded=record?decodedParts.join(' • '):(airport.stale?`${airport.cat} • STALE`:'');
+  tooltip.innerHTML=
+    `<div class="tip-id">${airportId}</div>`+
+    `${decoded?`<div class="tip-summary">${decoded}</div>`:''}`+
+    `<div class="tip-raw">${raw}</div>`;
+  tooltip.style.display='block';
+
+  const margin=14;
+  const wrapRect=document.getElementById('wrap').getBoundingClientRect();
+  const tipRect=tooltip.getBoundingClientRect();
+  let left=clientX-wrapRect.left+margin;
+  let top=clientY-wrapRect.top+margin;
+  if(left+tipRect.width>wrapRect.width-margin) left=clientX-wrapRect.left-tipRect.width-margin;
+  if(top+tipRect.height>wrapRect.height-margin) top=clientY-wrapRect.top-tipRect.height-margin;
+  left=Math.max(margin,left);
+  top=Math.max(margin,top);
+  tooltip.style.left=`${left}px`;
+  tooltip.style.top=`${top}px`;
+}
+
+function hideTooltip(){ tooltip.style.display='none'; }
+
+function setHomeAirport(airportId,{restart=false}={}){
+  if(!airports.some(a=>a.id===airportId)) return;
+  homeAirportId=airportId;
+  localStorage.setItem('homeAirportId_nebraska',airportId);
+  welcomeError.textContent='';
+  if(restart){
+    startApp();
+    return;
+  }
+  drawHomeCompass();
+}
+
+function attachTooltipHandlers(){
+  dots.querySelectorAll('g[data-airport-id]').forEach(node=>{
+    node.addEventListener('mouseenter',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
+    node.addEventListener('mousemove',e=>showTooltip(node.dataset.airportId,e.clientX,e.clientY));
+    node.addEventListener('mouseleave',hideTooltip);
+    node.addEventListener('dblclick',e=>{
+      e.preventDefault();
+      const airportId=node.dataset.airportId;
+      setHomeAirport(airportId);
+      hideTooltip();
+    });
+  });
+}
+
+function buildSockSegment(group,startX,width,startHeight,endHeight,cls,style=''){
+  const segment=svgEl('g',{class:'windsock-segment',style});
+  const poly=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:cls
+  });
+  const outline=svgEl('polygon',{
+    points:`${startX},${-startHeight/2} ${startX+width},${-endHeight/2} ${startX+width},${endHeight/2} ${startX},${startHeight/2}`,
+    class:'windsock-outline'
+  });
+  segment.appendChild(poly);
+  segment.appendChild(outline);
+  group.appendChild(segment);
+}
+
+function buildSockRibbon(group,{
+  bandLengths=[],
+  totalLength=80,
+  mouthRadius=10,
+  tailWidth=6,
+  inflate=1,
+  stretch=0,
+  wavePhase=0,
+  waveAmp=1,
+  sag=2,
+  gustAmp=0,
+  angleDeg=0
+}){
+  const angleRad=angleDeg*Math.PI/180;
+  const dirX=Math.cos(angleRad);
+  const dirY=Math.sin(angleRad);
+  const normalX=-dirY;
+  const normalY=dirX;
+  const samples=24;
+  const pts=[];
+  for(let i=0;i<=samples;i++){
+    const t=i/samples;
+    const stretchFactor=1+stretch*(0.15+0.85*t);
+    const along=8+t*totalLength*stretchFactor;
+    const width=(mouthRadius*2)*(1-Math.pow(t,0.82))+tailWidth*Math.pow(t,0.82);
+    const sagCurve=sag*Math.pow(t,1.3);
+    const flowT=1-t;
+    const primaryWave=Math.sin((flowT*1.9+wavePhase)*Math.PI*2)*waveAmp*(0.28+0.92*t);
+    const gustWave=Math.sin((flowT*2.15+wavePhase*1.02)*Math.PI*2)*gustAmp*(0.03+0.62*t);
+    const wave=primaryWave+gustWave;
+    const x=along*dirX + wave*normalX;
+    const y=along*dirY + wave*normalY + sagCurve;
+    pts.push({x,y,width});
+  }
+
+  let consumed=0;
+  const bandStops=bandLengths.map(length=>{
+    const start=consumed/totalLength;
+    consumed+=length;
+    return {start,end:consumed/totalLength};
+  });
+
+  for(let i=0;i<samples;i++){
+    const a=pts[i];
+    const b=pts[i+1];
+    const dx=b.x-a.x;
+    const dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len;
+    const ny=dx/len;
+    const midT=((i+0.5)/samples);
+    let bandIndex=bandStops.findIndex(stop=>midT>=stop.start&&midT<stop.end);
+    if(bandIndex===-1) bandIndex=bandStops.length-1;
+    const fill=bandIndex%2===0?'windsock-segment-orange':'windsock-segment-white';
+
+    const poly=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:fill
+    });
+    const outline=svgEl('polygon',{
+      points:[
+        `${a.x+nx*(a.width/2)},${a.y+ny*(a.width/2)}`,
+        `${b.x+nx*(b.width/2)},${b.y+ny*(b.width/2)}`,
+        `${b.x-nx*(b.width/2)},${b.y-ny*(b.width/2)}`,
+        `${a.x-nx*(a.width/2)},${a.y-ny*(a.width/2)}`
+      ].join(' '),
+      class:'windsock-outline'
+    });
+    group.appendChild(poly);
+    group.appendChild(outline);
+  }
+}
+
+function getSockSegmentCount(speed){
+  const windSpeed=Math.max(0,Number(speed)||0);
+  if(windSpeed < 5) return 1;
+  if(windSpeed < 9) return 2;
+  if(windSpeed <= 11) return 3;
+  if(windSpeed <= 15) return 4;
+  return 5;
+}
+
+function normalizeHeading(deg){
+  const normalized=((deg%360)+360)%360;
+  return normalized===0?360:normalized;
+}
+
+function getAirportMagneticVariationEast(airportId){
+  return magneticVariationByAirport[airportId]??DEFAULT_NEBRASKA_MAGNETIC_VARIATION_EAST;
+}
+
+function trueToMagnetic(deg,airportId){
+  return normalizeHeading(Number(deg)-getAirportMagneticVariationEast(airportId));
+}
+
+function shortestAngleDelta(fromDeg,toDeg){
+  let delta=((toDeg-fromDeg+540)%360)-180;
+  if(delta===-180) delta=180;
+  return delta;
+}
+
+function easeInOutSine(t){
+  return -(Math.cos(Math.PI*t)-1)/2;
+}
+
+function getVariableWindVisualHeading(airportId){
+  const now=Date.now();
+  const current=vrbVisualStateByAirport.get(airportId);
+  if(current){
+    if(now<current.nextChangeAt){
+      const duration=Math.max(1,current.nextChangeAt-current.startAt);
+      const progress=Math.min(1,Math.max(0,(now-current.startAt)/duration));
+      const eased=easeInOutSine(progress);
+      return normalizeHeading(current.fromHeading + current.delta*eased);
+    }
+    const settledHeading=normalizeHeading(current.fromHeading + current.delta);
+    const nextTarget=Math.round(Math.random()*359);
+    const nextDuration=1800+Math.random()*1800;
+    vrbVisualStateByAirport.set(airportId,{
+      fromHeading:settledHeading,
+      delta:shortestAngleDelta(settledHeading,nextTarget),
+      startAt:now,
+      nextChangeAt:now+nextDuration
+    });
+    return settledHeading;
+  }
+
+  const initialHeading=Math.round(Math.random()*359);
+  const nextTarget=Math.round(Math.random()*359);
+  const nextDuration=1800+Math.random()*1800;
+  vrbVisualStateByAirport.set(airportId,{
+    fromHeading:initialHeading,
+    delta:shortestAngleDelta(initialHeading,nextTarget),
+    startAt:now,
+    nextChangeAt:now+nextDuration
+  });
+  return initialHeading;
+}
+
+function getSmoothedHeadingAroundBase(airportId,baseHeading,rangeDeg=5){
+  const key=`${airportId}:${Math.round(baseHeading)}`;
+  const now=Date.now();
+  const current=steadyWindVisualStateByAirport.get(key);
+
+  if(current){
+    if(now<current.nextChangeAt){
+      const duration=Math.max(1,current.nextChangeAt-current.startAt);
+      const progress=Math.min(1,Math.max(0,(now-current.startAt)/duration));
+      const eased=easeInOutSine(progress);
+      return normalizeHeading(current.fromHeading + current.delta*eased);
+    }
+    const settledHeading=normalizeHeading(current.fromHeading + current.delta);
+    const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+    const nextDuration=1800+Math.random()*1800;
+    steadyWindVisualStateByAirport.set(key,{
+      fromHeading:settledHeading,
+      delta:shortestAngleDelta(settledHeading,nextTarget),
+      startAt:now,
+      nextChangeAt:now+nextDuration
+    });
+    return settledHeading;
+  }
+
+  const initialHeading=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg*0.5));
+  const nextTarget=normalizeHeading(baseHeading + ((Math.random()*2-1)*rangeDeg));
+  const nextDuration=1800+Math.random()*1800;
+  steadyWindVisualStateByAirport.set(key,{
+    fromHeading:initialHeading,
+    delta:shortestAngleDelta(initialHeading,nextTarget),
+    startAt:now,
+    nextChangeAt:now+nextDuration
+  });
+  return initialHeading;
+}
+
+function projectExactRunways(runways,airport){
+  if(!airport||!runways.every(runway=>Array.isArray(runway.ends)&&runway.ends.length===2)) return null;
+  const airportPoint=albersNE(airport.lat,airport.lon);
+  const projected=runways.map(runway=>{
+    const [[lon1,lat1],[lon2,lat2]]=runway.ends;
+      const p1=albersNE(lat1,lon1);
+      const p2=albersNE(lat2,lon2);
+    return{
+      p1:{x:p1.x-airportPoint.x,y:p1.y-airportPoint.y},
+      p2:{x:p2.x-airportPoint.x,y:p2.y-airportPoint.y},
+      widthFt:Number(runway.widthFt)||75
+    };
+  });
+
+  const xs=projected.flatMap(runway=>[runway.p1.x,runway.p2.x]);
+  const ys=projected.flatMap(runway=>[runway.p1.y,runway.p2.y]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const spanX=Math.max(0.000001,maxX-minX);
+  const spanY=Math.max(0.000001,maxY-minY);
+  const scale=Math.min(112/spanX,92/spanY);
+
+  return projected.map(runway=>({
+    x1:123+runway.p1.x*scale,
+    y1:114-runway.p1.y*scale,
+    x2:123+runway.p2.x*scale,
+    y2:114-runway.p2.y*scale,
+    width:Math.max(5.5,Math.min(9,(runway.widthFt/150)*9))
+  }));
+}
+
+function drawRunwayOverlay(airportId,target=homeCompass){
+  const runways=runwayDataByAirport[airportId];
+  if(!runways||!runways.length) return;
+  const airport=airports.find(a=>a.id===airportId);
+
+  const group=svgEl('g',{class:'runway-group'});
+  const exactRunways=projectExactRunways(runways,airport);
+  if(exactRunways){
+    exactRunways.forEach(runway=>{
+      const dx=runway.x2-runway.x1;
+      const dy=runway.y2-runway.y1;
+      const length=Math.sqrt(dx*dx+dy*dy);
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const centerX=(runway.x1+runway.x2)/2;
+      const centerY=(runway.y1+runway.y2)/2;
+      const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${angle})`});
+      runwayGroup.appendChild(svgEl('rect',{
+        x:-length/2,
+        y:-runway.width/2,
+        width:length,
+        height:runway.width,
+        rx:1.5,
+        ry:1.5,
+        class:'runway-strip'
+      }));
+      runwayGroup.appendChild(svgEl('line',{
+        x1:-length/2+5,
+        y1:0,
+        x2:length/2-5,
+        y2:0,
+        class:'runway-centerline'
+      }));
+      group.appendChild(runwayGroup);
+    });
+    target.appendChild(group);
+    return;
+  }
+
+  const maxLength=Math.max(...runways.map(runway=>runway.length||0),1);
+  runways.forEach(runway=>{
+    const headingValue=Number(runway.heading)||0;
+    const heading=headingValue-90;
+    const normalizedLength=36+((runway.length||0)/maxLength)*42;
+    const width=8;
+    const offset=Number(runway.offset)||0;
+    const xOffset=Number(runway.xOffset)||0;
+    const yOffset=Number(runway.yOffset)||0;
+    const headingRad=heading*Math.PI/180;
+    const normalX=-Math.sin(headingRad);
+    const normalY=Math.cos(headingRad);
+    const centerX=123+normalX*offset+xOffset;
+    const centerY=114+normalY*offset+yOffset;
+    const runwayGroup=svgEl('g',{transform:`translate(${centerX} ${centerY}) rotate(${heading})`});
+    runwayGroup.appendChild(svgEl('rect',{
+      x:-normalizedLength/2,
+      y:-width/2,
+      width:normalizedLength,
+      height:width,
+      rx:1.5,
+      ry:1.5,
+      class:'runway-strip'
+    }));
+    runwayGroup.appendChild(svgEl('line',{
+      x1:-normalizedLength/2+5,
+      y1:0,
+      x2:normalizedLength/2-5,
+      y2:0,
+      class:'runway-centerline'
+    }));
+    group.appendChild(runwayGroup);
+  });
+  target.appendChild(group);
+}
+
+function drawHomeCompass(){
+  homeCompass.innerHTML='';
+  const airport=airports.find(a=>a.id===homeAirportId);
+  const record=metarRecordById.get(homeAirportId);
+  const ageMin=getDisplayAgeMinutes(record,airport);
+  const compassRotation=airport?getAirportMagneticVariationEast(airport.id):DEFAULT_NEBRASKA_MAGNETIC_VARIATION_EAST;
+  const badgeColor=airport?getAirportDisplayColor(airport):colors.NONE;
+  const badgeStroke=airport&&badgeColor!==colors.NONE?'rgba(255,255,255,.22)':'rgba(148,163,184,.35)';
+  const badgeTextColor=badgeColor===colors.VFR?'#020617':'#f8fafc';
+
+  homeTitle.textContent=airport?`HOME AIRPORT WINDSOCK`:'HOME AIRPORT WINDSOCK';
+
+  const compassFrame=svgEl('g',{transform:`rotate(${compassRotation} 123 114)`});
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:90,class:'windsock-ring'}));
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:66,class:'windsock-ring-inner'}));
+  if(airport) drawRunwayOverlay(airport.id,compassFrame);
+  compassFrame.appendChild(svgEl('circle',{cx:123,cy:114,r:4,fill:'#f8fafc',stroke:'rgba(15,23,42,.65)','stroke-width':'1.2'}));
+  [['N',0],['E',90],['S',180],['W',270]].forEach(([label,deg])=>{
+    const rad=(deg-90)*Math.PI/180;
+    const tx=123+Math.cos(rad)*75;
+    const ty=114+Math.sin(rad)*70+4;
+    compassFrame.appendChild(svgEl('text',{x:tx,y:ty,class:'windsock-card'},label));
+  });
+  for(let deg=0;deg<360;deg+=30){
+    const rad=(deg-90)*Math.PI/180;
+    const x1=123+Math.cos(rad)*78;
+    const y1=114+Math.sin(rad)*78;
+    const x2=123+Math.cos(rad)*88;
+    const y2=114+Math.sin(rad)*88;
+    compassFrame.appendChild(svgEl('line',{x1,y1,x2,y2,class:'windsock-tick'}));
+  }
+  homeCompass.appendChild(compassFrame);
+  homeCompass.appendChild(svgEl('text',{x:123,y:-8,class:'windsock-airport'},homeAirportId||'----'));
+  homeCompass.appendChild(svgEl('text',{x:123,y:8,class:'windsock-airport-name'},getAirportCardName(airport,record)));
+
+  const statusBadge=svgEl('rect',{
+    x:194,y:20,width:52,height:20,rx:10,ry:10,class:'windsock-badge',
+    fill:badgeColor,
+    stroke:badgeStroke
+  });
+  const statusText=svgEl('text',{x:220,y:34,class:'windsock-status',style:`fill:${badgeTextColor}`},airport?airport.cat:'WAITING');
+  homeCompass.appendChild(statusBadge);
+  homeCompass.appendChild(statusText);
+
+  if(!airport||!record){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},'WAITING FOR METAR'));
+    return;
+  }
+
+  const {dir,speed,gust}=extractWind(record);
+  if(dir===undefined||dir===null||speed===undefined||speed===null){
+    homeCompass.appendChild(svgEl('text',{x:138,y:108,class:'windsock-copy'},'NO WIND DATA'));
+    homeCompass.appendChild(svgEl('text',{x:138,y:128,class:'windsock-sub'},airport.stale?'STALE METAR':'NO WIND FIELD'));
+    return;
+  }
+
+  if(dir==='VRB'){
+    const variableHeading=getVariableWindVisualHeading(homeAirportId||'VRB');
+    const streamAngle=(variableHeading+90)%360;
+    const vrbSpeed=Math.max(0,Number(speed)||0);
+    const vrbGustDelta=Math.max(0,(Number(gust)||0)-vrbSpeed);
+    const vrbAnchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
+    const vrbMotion=svgEl('g',{
+      class:'windsock-rig',
+      style:'--sway:2deg;--wave-ms:1600ms'
+    });
+    const vrbCloth=svgEl('g');
+    buildSockRibbon(vrbCloth,{
+      bandLengths:[18],
+      totalLength:34,
+      mouthRadius:13.5,
+      tailWidth:8.5,
+      inflate:Math.min(1,vrbSpeed/15),
+      stretch:0.01,
+      wavePhase:(Date.now()%2600)/2600,
+      waveAmp:0.24,
+      sag:1.8,
+      gustAmp:vrbGustDelta>0?0.04:0,
+      angleDeg:streamAngle
+    });
+    vrbMotion.appendChild(vrbCloth);
+    vrbAnchor.appendChild(vrbMotion);
+    homeCompass.appendChild(vrbAnchor);
+
+    const vrbAlert=(Number(speed)>=20)||(gust&&Number(gust)>=20);
+    const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
+    const measureText=(text,cls)=>{
+      const probe=svgEl('text',{x:-9999,y:-9999,class:cls,style:'visibility:hidden;text-anchor:start;'});
+      probe.textContent=text;
+      homeCompass.appendChild(probe);
+      const width=probe.getComputedTextLength();
+      probe.remove();
+      return width;
+    };
+    const dirLabel='VRB';
+    const speedLabel=`${speed}KT${gust?` G${gust}`:''}`;
+    const gap=12;
+    const dirWidth=measureText(dirLabel,'windsock-copy');
+    const speedWidth=measureText(speedLabel,'windsock-copy');
+    const totalWidth=dirWidth+gap+speedWidth;
+    let cursorX=123-totalWidth/2;
+    const vrbText=svgEl('g');
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},dirLabel));
+    cursorX+=dirWidth+gap;
+    vrbText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${vrbAlert?alertFill:'#e5eefc'};`},speedLabel));
+    homeCompass.appendChild(vrbText);
+    homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    if(gust){
+      homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},`GUSTING TO ${gust}KT`));
+    }else{
+      homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},airport.stale?'STALE METAR':'VARIABLE WIND'));
+    }
+    return;
+  }
+
+  const windDir=Number(dir);
+  const magneticWindDir=trueToMagnetic(windDir,airport?airport.id:homeAirportId);
+  const windSpeed=Math.max(0,Number(speed)||0);
+  const gustSpeed=Math.max(windSpeed,Number(gust)||0);
+  const gustDelta=Math.max(0,gustSpeed-windSpeed);
+
+  if(windSpeed===0){
+    homeCompass.appendChild(svgEl('text',{x:123,y:114,class:'windsock-copy'},'NO WIND'));
+    homeCompass.appendChild(svgEl('text',{x:123,y:256,class:'windsock-sub'},ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`));
+    return;
+  }
+
+  const segmentCount=getSockSegmentCount(windSpeed);
+  const calmFactor=Math.min(1,windSpeed/12);
+  const intensity=Math.min(1,(windSpeed*0.35+gustDelta*1.1)/28);
+  const visualHeading=getSmoothedHeadingAroundBase(homeAirportId||'HOME',magneticWindDir,5);
+  const streamAngle=(visualHeading+90)%360;
+  const lightWindFactor=Math.min(1,windSpeed/6);
+  const swayDeg=(0.5+calmFactor*1.6+gustDelta*0.22).toFixed(2);
+  const flutterPx=(0.18+calmFactor*0.72+gustDelta*0.22).toFixed(2);
+  const waveMs=Math.max(900,Math.round(2200-intensity*650-gustDelta*55));
+  const waveMsFast=Math.max(520,Math.round(1700-intensity*720-gustDelta*95));
+
+  const anchor=svgEl('g',{transform:`translate(123 114) rotate(${compassRotation})`});
+  const motion=svgEl('g',{
+    class:'windsock-rig',
+    style:`--sway:${swayDeg}deg;--wave-ms:${waveMsFast}ms`
+  });
+  const cloth=svgEl('g');
+  const bandLengths=[18,16,15,14,13].slice(0,segmentCount);
+  const veryLightWind=windSpeed<=4;
+  const lowWindTrim=windSpeed<5 ? 16-(windSpeed*1.5) : (windSpeed<7 ? (7-windSpeed)*3 : 0);
+  const totalLength=veryLightWind
+    ? 34
+    : Math.max(34,bandLengths.reduce((sum,length)=>sum+length,0)+12-lowWindTrim);
+  const inflate=Math.min(1,windSpeed/15);
+  const stretch=Math.min(0.35,Math.max(0,gustDelta)*0.03 + windSpeed*0.006) * (0.35+0.65*lightWindFactor);
+  const wavePhase=((Date.now()%2400)/2400);
+  buildSockRibbon(cloth,{
+    bandLengths,
+    totalLength,
+    mouthRadius:13.5,
+    tailWidth:veryLightWind ? 8.5 : Math.max(4.5,8-(segmentCount*0.55)),
+    inflate,
+    stretch:veryLightWind ? 0.01 : stretch,
+    wavePhase,
+    waveAmp:veryLightWind ? 0.22 : Number(flutterPx)*(0.2+0.55*lightWindFactor),
+    sag:veryLightWind ? 1.8 : (1-inflate)*(7+6*lightWindFactor),
+    gustAmp:veryLightWind ? 0 : Math.max(0,gustDelta)*0.14*(0.3+0.7*lightWindFactor),
+    angleDeg:streamAngle
+  });
+
+  motion.appendChild(cloth);
+  anchor.appendChild(motion);
+  homeCompass.appendChild(anchor);
+
+  const ageCopy=ageMin===null?(airport.stale?'STALE METAR':'NO AGE DATA'):`${ageMin} MIN${ageMin===1?'':'S'} AGO`;
+  const gustCopy=gust&&Number(gust)>windSpeed?`GUSTING TO ${gust}KT`:'';
+  const speedAlert=windSpeed>=20;
+  const gustAlert=gust&&Number(gust)>=20;
+  const alertFill=(Math.floor(Date.now()/350)%2===0)?'#ffffff':'#ef4444';
+  const measureText=(text,cls)=>{
+    const probe=svgEl('text',{x:-9999,y:-9999,class:cls,style:'visibility:hidden;text-anchor:start;'});
+    probe.textContent=text;
+    homeCompass.appendChild(probe);
+    const width=probe.getComputedTextLength();
+    probe.remove();
+    return width;
+  };
+  const dirLabel=`${String(windDir).padStart(3,'0')} DEG`;
+  const speedLabel=`${windSpeed}KT`;
+  const gustLabel=gust?`G${gust}`:'';
+  const gap=12;
+  const dirWidth=measureText(dirLabel,'windsock-copy');
+  const speedWidth=measureText(speedLabel,'windsock-copy');
+  const gustWidth=gust?measureText(gustLabel,'windsock-copy'):0;
+  const totalWidth=dirWidth+gap+speedWidth+(gust?(gap+gustWidth):0);
+  let cursorX=123-totalWidth/2;
+  const windText=svgEl('g');
+  windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:'text-anchor:start;fill:#e5eefc;'},dirLabel));
+  cursorX+=dirWidth+gap;
+  windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${speedAlert?alertFill:'#e5eefc'};`},speedLabel));
+  cursorX+=speedWidth+gap;
+  if(gust){
+    windText.appendChild(svgEl('text',{x:cursorX,y:248,class:'windsock-copy',style:`text-anchor:start;fill:${gustAlert?alertFill:'#e5eefc'};`},gustLabel));
+  }
+
+  homeCompass.appendChild(windText);
+  homeCompass.appendChild(svgEl('text',{x:123,y:269,class:'windsock-sub'},ageCopy));
+  if(gustCopy){
+    homeCompass.appendChild(svgEl('text',{x:123,y:286,class:'windsock-sub'},gustCopy));
+  }
+}
+
+async function fetchMetars(){
+  const url=`./metars.json?t=${Date.now()}`;
+  liveMetarStatus=`0 of ${airports.length} Airports updated`;
+  lastMetarError='';
+  updateHudButtons();
+
+  try{
+    const response=await fetch(url,{cache:'no-store'});
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const payload=await response.json();
+    const data=Array.isArray(payload)?payload:(Array.isArray(payload.data)?payload.data:null);
+    if(!data) throw new Error('BAD SHAPE');
+    const fetchStartedAt=Date.now();
+    let latestDataTimestampMs=null;
+
+    metarById.clear();
+    metarRecordById.clear();
+    airports.forEach(a=>{
+      a.stale=false;
+      a.cat='NONE';
+      a.obsDate=null;
+    });
+
+    data.forEach(item=>{
+      const id=extractAirportId(item);
+      const raw=extractRawMetar(item);
+      const upstreamCategory=item.fltCat||item.flightCategory||item.flight_category;
+      if(!id) return;
+
+      const airport=airports.find(a=>a.id===id);
+      if(airport){
+        const inferredCategory=inferFlightCategory(item);
+        const resolvedCategory=inferredCategory&&colors[inferredCategory]?inferredCategory:(upstreamCategory&&colors[upstreamCategory]?upstreamCategory:'NONE');
+        airport.cat=resolvedCategory;
+      }
+      if(raw){
+        const priorRaw=lastSeenMetarRawById.get(id);
+        if(priorRaw&&priorRaw!==raw){
+          freshUpdateUntilById.set(id,fetchStartedAt+3000);
+        }
+        lastSeenMetarRawById.set(id,raw);
+      }
+      if(raw) metarById.set(id,raw);
+      metarRecordById.set(id,item);
+      const itemTimestamp=parseObsTime(item);
+      if(itemTimestamp instanceof Date&&!isNaN(itemTimestamp.getTime())){
+        const itemMs=itemTimestamp.getTime();
+        if(latestDataTimestampMs===null||itemMs>latestDataTimestampMs){
+          latestDataTimestampMs=itemMs;
+        }
+      }
+      if(airport){
+        airport.stale=isStaleObs(itemTimestamp);
+        airport.obsDate=itemTimestamp;
+      }
+    });
+    missingAirportIds=airports.filter(a=>!metarRecordById.has(a.id)).map(a=>a.id);
+    staleAirportIds=airports.filter(a=>a.stale).map(a=>a.id);
+
+    const updatedAirportCount=airports.length-missingAirportIds.length;
+    liveMetarStatus=`${updatedAirportCount} of ${airports.length} Airports updated`;
+    lastMetarUpdatedAt=latestDataTimestampMs?new Date(latestDataTimestampMs).toISOString():null;
+    drawDots();
+    drawHomeCompass();
+    drawClocks();
+    updateMissingStationsDisplay();
+    updateHudButtons();
+  }catch(error){
+    liveMetarStatus=`0 of ${airports.length} Airports updated`;
+    lastMetarError=error.message||'UNKNOWN';
+    lastMetarUpdatedAt=null;
+    missingAirportIds=airports.map(a=>a.id);
+    staleAirportIds=[];
+    updateMissingStationsDisplay();
+    updateHudButtons();
+    console.error('Cached METAR load failed',error);
+  }
+}
+
+function draw(){
+  drawMap();
+  drawDots();
+  drawClocks();
+  drawHomeCompass();
+  updateMissingStationsDisplay();
+}
+
+function updateColorMode(){
+  document.body.classList.toggle('alt-color',altColorMode);
+  drawMap();
+}
+
+function toggleColorMode(){
+  altColorMode=!altColorMode;
+  updateColorMode();
+}
+
+function showInstructions(){
+  infoOverlay.classList.add('show');
+  infoOverlay.setAttribute('aria-hidden','false');
+}
+
+function hideInstructions(){
+  infoOverlay.classList.remove('show');
+  infoOverlay.setAttribute('aria-hidden','true');
+}
+
+function goToUsaMap(){
+  const wantsKiosk=kioskMode?'1':'0';
+  sessionStorage.setItem('usaReturnKiosk',wantsKiosk);
+  sessionStorage.setItem('navReturnKiosk',wantsKiosk);
+  window.location.href='./usa-led-map.html';
+}
+
+function restoreReturnMode(){
+  const wantsKiosk=(sessionStorage.getItem('navReturnKiosk')==='1')||(sessionStorage.getItem('usaReturnKiosk')==='1');
+  sessionStorage.removeItem('navReturnKiosk');
+  sessionStorage.removeItem('usaReturnKiosk');
+  if(wantsKiosk){
+    kioskMode=true;
+    document.body.classList.add('kiosk');
+  }
+}
+
+function stopIntervals(){
+  if(clockIntervalId) clearInterval(clockIntervalId);
+  if(metarIntervalId) clearInterval(metarIntervalId);
+  if(compassIntervalId) clearInterval(compassIntervalId);
+  clockIntervalId=null;
+  metarIntervalId=null;
+  compassIntervalId=null;
+}
+
+function startApp(){
+  stopIntervals();
+  welcomeOverlay.classList.remove('show');
+  draw();
+  fetchMetars();
+  clockIntervalId=setInterval(drawClocks,1000);
+  metarIntervalId=setInterval(fetchMetars,5*60*1000);
+  compassIntervalId=setInterval(drawHomeCompass,200);
+}
+
+function initWelcome(){
+  if(!homeAirportId&&airports.length){
+    setHomeAirport(airports[0].id);
+  }
+  startApp();
+}
+
+windToggle.addEventListener('click',e=>{
+  const rect=windToggle.getBoundingClientRect();
+  const clickedRightHalf=(e.clientX-rect.left)>(rect.width/2);
+  if(clickedRightHalf){
+    toggleHudWindsock();
+    return;
+  }
+  toggleWindsock();
+});
+
+welcomeBtn.addEventListener('click',()=>{
+  const val=welcomeInput.value.trim().toUpperCase();
+  if(!airports.some(a=>a.id===val)){
+    welcomeError.textContent='Enter a valid Nebraska airport from this map';
+    return;
+  }
+  setHomeAirport(val,{restart:true});
+});
+
+welcomeInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter') welcomeBtn.click();
+});
+
+document.addEventListener('keydown',async e=>{
+  if(e.target===welcomeInput) return;
+
+  if(e.key==='m'||e.key==='M'||e.key==='s'||e.key==='S'){
+    showMetarHud=!showMetarHud;
+    updateHudButtons();
+  }
+
+  if(e.key==='w'||e.key==='W'){
+    toggleWindsock();
+  }
+
+  if(e.key==='f'||e.key==='F'){
+    try{
+      if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    }catch(err){
+      console.warn(err);
+    }
+  }
+
+  if(e.key==='k'||e.key==='K'){
+    kioskMode=!kioskMode;
+    document.body.classList.toggle('kiosk',kioskMode);
+  }
+
+  if(e.key==='c'||e.key==='C'){
+    toggleColorMode();
+  }
+
+  if(e.key==='Escape'&&kioskMode){
+    kioskMode=false;
+    document.body.classList.remove('kiosk');
+  }
+});
+
+document.getElementById('homePanel').addEventListener('click',()=>{
+  stopIntervals();
+  welcomeOverlay.classList.add('show');
+  welcomeInput.value=homeAirportId||'';
+  setTimeout(()=>welcomeInput.focus(),50);
+});
+
+topHelpBtn.addEventListener('click',showInstructions);
+topUsaBtn.addEventListener('click',goToUsaMap);
+infoOverlay.addEventListener('click',hideInstructions);
+
+document.querySelector('svg').addEventListener('click',e=>{
+  if(e.target===e.currentTarget){
+    toggleColorMode();
+  }
+});
+
+window.addEventListener('resize',positionWindToggle);
+
+initWelcome();
+restoreReturnMode();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
