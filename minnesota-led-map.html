@@ -432,6 +432,15 @@ const imageBounds={
   minY:Math.min(...imageOutline.map(p=>p[1])),
   maxY:Math.max(...imageOutline.map(p=>p[1]))
 };
+const projWidth=projBounds.maxX-projBounds.minX;
+const projHeight=projBounds.maxY-projBounds.minY;
+const frameWidth=imageBounds.maxX-imageBounds.minX;
+const frameHeight=imageBounds.maxY-imageBounds.minY;
+const fitScale=Math.min(frameWidth/projWidth,frameHeight/projHeight);
+const fittedWidth=projWidth*fitScale;
+const fittedHeight=projHeight*fitScale;
+const frameOffsetX=imageBounds.minX+((frameWidth-fittedWidth)/2);
+const frameOffsetY=imageBounds.minY+((frameHeight-fittedHeight)/2);
 
 function getDisplayAgeMinutes(record,airport){
   const primary=
@@ -461,11 +470,9 @@ function getDisplayAgeMinutes(record,airport){
 
 function project(lat,lon){
   const p=albersMN(lat,lon);
-  const nx=(p.x-projBounds.minX)/(projBounds.maxX-projBounds.minX);
-  const ny=(p.y-projBounds.minY)/(projBounds.maxY-projBounds.minY);
   return{
-    x:imageBounds.minX+nx*(imageBounds.maxX-imageBounds.minX),
-    y:imageBounds.maxY-ny*(imageBounds.maxY-imageBounds.minY)
+    x:frameOffsetX+((p.x-projBounds.minX)*fitScale),
+    y:frameOffsetY+((projBounds.maxY-p.y)*fitScale)
   };
 }
 
