@@ -390,7 +390,7 @@ function computeBounds(points){
   return{projected,minX,maxX,minY,maxY,width:maxX-minX,height:maxY-minY};
 }
 
-const projBounds=computeBounds(mnOutline);
+const projBounds=computeBounds(alOutline);
 const imageBounds={
   minX:Math.min(...imageOutline.map(p=>p[0])),
   maxX:Math.max(...imageOutline.map(p=>p[0])),
@@ -492,7 +492,7 @@ function toggleHudWindsock(){
 function drawMap(){
   map.innerHTML='';
   let path='';
-  mnOutline.forEach(([lon,lat],i)=>{
+  alOutline.forEach(([lon,lat],i)=>{
     const p=project(lat,lon);
     path+=`${i===0?'M':'L'} ${p.x} ${p.y} `;
   });
@@ -1534,6 +1534,7 @@ restoreReturnMode();
 </script>
 </body>
 </html>
+
 
 
 
